@@ -30,7 +30,7 @@ describe("AuthProvider", () => {
   it("restores an existing session on mount", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(json({
       org_id: "org-1",
-      user: { id: "u1", name: "Rina", scopes: ["assets:read", "assets:write"] },
+      user: { id: "u1", name: "Rina", permissions: ["assets:read", "assets:write"], location_scope: null, scopes: [] },
     }));
     renderProbe();
     await waitFor(() => expect(screen.getByTestId("user")).toHaveTextContent("Rina"));
@@ -47,7 +47,7 @@ describe("AuthProvider", () => {
       .mockResolvedValueOnce(json({ title: "Authentication required" }, 401))
       .mockResolvedValueOnce(json({ id: "u1", name: "Rina", org_id: "org-1", role: "admin" }))
       .mockResolvedValueOnce(json({
-        org_id: "org-1", user: { id: "u1", name: "Rina", scopes: ["admin"] },
+        org_id: "org-1", user: { id: "u1", name: "Rina", permissions: ["admin"], location_scope: null, scopes: [] },
       }));
     renderProbe();
     await waitFor(() => expect(screen.getByTestId("user")).toHaveTextContent("anonymous"));
@@ -58,7 +58,7 @@ describe("AuthProvider", () => {
   it("clears the user on sign out", async () => {
     vi.spyOn(globalThis, "fetch")
       .mockResolvedValueOnce(json({
-        org_id: "org-1", user: { id: "u1", name: "Rina", scopes: ["admin"] },
+        org_id: "org-1", user: { id: "u1", name: "Rina", permissions: ["admin"], location_scope: null, scopes: [] },
       }))
       .mockResolvedValueOnce(new Response(null, { status: 204 }));
     renderProbe();
@@ -67,19 +67,33 @@ describe("AuthProvider", () => {
     await waitFor(() => expect(screen.getByTestId("user")).toHaveTextContent("anonymous"));
   });
 
-  it("reports scopes through can()", async () => {
+  it("reports permissions through can()", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(json({
-      org_id: "org-1", user: { id: "u1", name: "Vera", scopes: ["assets:read"] },
+      org_id: "org-1",
+      user: {
+        id: "u1", name: "Vera", permissions: ["assets:read"],
+        location_scope: null, scopes: [],
+      },
     }));
     renderProbe();
     await waitFor(() => expect(screen.getByTestId("can-write")).toHaveTextContent("false"));
   });
 
-  it("treats the admin scope as granting everything", async () => {
+  it("grants only what the role actually holds", async () => {
+    // There is no superuser permission any more: the Administrator role simply
+    // has every permission, so can() is a plain membership check. A role that
+    // omits assets:write cannot write, whatever it is called.
     vi.spyOn(globalThis, "fetch").mockResolvedValue(json({
-      org_id: "org-1", user: { id: "u1", name: "Ada", scopes: ["admin"] },
+      org_id: "org-1",
+      user: {
+        id: "u1", name: "Read Only",
+        permissions: ["assets:read", "reports:read"],
+        location_scope: null, scopes: [],
+      },
     }));
     renderProbe();
-    await waitFor(() => expect(screen.getByTestId("can-write")).toHaveTextContent("true"));
+    await waitFor(() =>
+      expect(screen.getByTestId("can-write")).toHaveTextContent("false"));
+    expect(screen.getByTestId("user")).toHaveTextContent("Read Only");
   });
 });

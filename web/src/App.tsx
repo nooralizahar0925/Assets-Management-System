@@ -9,6 +9,7 @@ import NotFound from "./pages/OtherPage/NotFound";
 import Dashboard from "./pages/Dashboard/Home";
 import ComingSoon from "./pages/ComingSoon";
 import UserProfiles from "./pages/UserProfiles";
+import AssetList from "./pages/Assets/AssetList";
 
 /**
  * The whole route table exists from this task onward. Screens a later task
@@ -27,7 +28,7 @@ export default function App() {
             <Route element={<AppLayout />}>
               <Route index path="/" element={<Dashboard />} />
 
-              <Route path="/assets" element={<ComingSoon title="Assets" />} />
+              <Route path="/assets" element={<AssetList />} />
               <Route path="/assets/new" element={<ComingSoon title="New asset" />} />
               <Route path="/assets/:id" element={<ComingSoon title="Asset" />} />
               <Route path="/assets/:id/edit" element={<ComingSoon title="Edit asset" />} />

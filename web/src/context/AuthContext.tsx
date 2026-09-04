@@ -7,6 +7,16 @@ import { api, ApiError } from "../api/client";
 export interface SessionUser {
   id: string;
   name: string;
+  /**
+   * The fine-grained permissions the person's role grants. This is what the API
+   * actually enforces, so it is what the UI gates on - deciding from the coarse
+   * published scopes instead would offer actions the API then refuses, and hide
+   * ones it would allow.
+   */
+  permissions: string[];
+  /** null means organisation-wide; a list means only those branches. */
+  location_scope: string[] | null;
+  /** The published v1 scopes, kept for display. Never used for gating. */
   scopes: string[];
 }
 
@@ -16,7 +26,7 @@ interface AuthValue {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
-  can: (scope: string) => boolean;
+  can: (permission: string) => boolean;
 }
 
 const AuthContext = createContext<AuthValue | null>(null);
@@ -59,8 +69,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const can = useCallback(
-    (scope: string) =>
-      Boolean(user && (user.scopes.includes(scope) || user.scopes.includes("admin"))),
+    (permission: string) =>
+      Boolean(user?.permissions?.includes(permission)),
     [user],
   );
 
