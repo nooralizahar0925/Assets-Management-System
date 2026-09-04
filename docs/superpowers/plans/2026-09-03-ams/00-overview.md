@@ -19,6 +19,7 @@ Every one of these is pure JavaScript or ships a prebuilt binary — the Docker 
 | Phase | File | Tasks | Deliverable |
 |---|---|---|---|
 | 1 — Foundation | [`01-foundation.md`](./01-foundation.md) | 1–4 | Docker stack, schema with RLS, session auth, scoped API keys |
+| 1b — Authorization | [`01b-authorization.md`](./01b-authorization.md) | 4a–4c | Company-defined roles over a fixed permission vocabulary, optional branch scoping |
 | 2 — Core registry | [`02-core-registry.md`](./02-core-registry.md) | 5–9 | Categories with custom field schemas, asset CRUD, search/filter, check-in/out, audit trail |
 | 3 — Data & delivery | [`03-data-and-delivery.md`](./03-data-and-delivery.md) | 10–18 | Import/export, attachments, multi-provider email, notification rules, scheduled jobs, dashboard, multi-format report engine, scheduled reports |
 | 4 — Identification | [`04-identification.md`](./04-identification.md) | 19–20 | QR/Code128 generation, label sheets, tag lookup |
@@ -51,7 +52,13 @@ Every task's requirements implicitly include this section.
 - Public API lives at `/api/v1/*`; the SPA calls `/api/admin/*`. v1 request/response shapes are additive-only once published.
 - Errors are RFC 7807 `application/problem+json`, built with the helpers in `lib/http/problem.ts`. Never return a bare string error.
 - Asset status enum: `available | in_use | maintenance | retired | lost`.
-- API scopes: `assets:read`, `assets:write`, `reports:read`, `admin`.
+- API scopes: `assets:read`, `assets:write`, `reports:read`, `admin`. These are the
+  published v1 contract and do not change; internally each expands to permissions
+  from the fixed vocabulary in `lib/auth/permissions.ts` (Phase 1b).
+- Roles are tenant data a company defines for itself; permissions are code-defined
+  and fixed. One role per user, optionally narrowed to specific locations.
+  Authorization is always `requireAuth(req, permission, { locationId })` — never a
+  role-name comparison.
 - SQL is parameterised. The only values ever interpolated into a query string are `sort.column` and `sort.direction`, and only after passing through `parseSort`'s allowlist.
 - Secrets at rest (email provider credentials, webhook secrets) are encrypted with AES-256-GCM under `APP_ENCRYPTION_KEY` and never returned by the API — reads come back masked.
 - Every outbound email goes through the `email_messages` outbox. Nothing calls a provider SDK directly from a request handler.
@@ -138,6 +145,9 @@ AssetsManagementSystem/
 | 2 | Database schema with row-level security | 1 |
 | 3 | HTTP conventions — problem+json, pagination, guard | 1 |
 | 4 | Session auth and scoped API keys | 1 |
+| 4a | Permission vocabulary, roles schema, seeded system roles | 1b |
+| 4b | Permission resolution, branch scope, rewritten guard | 1b |
+| 4c | Role management API | 1b |
 | 5 | Categories with validated custom field schemas | 2 |
 | 6 | Asset creation and reads, tag generation, audit events | 2 |
 | 7 | Search, filter, sort and pagination | 2 |
