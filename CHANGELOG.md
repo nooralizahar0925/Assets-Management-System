@@ -17,5 +17,9 @@ additive-only; a breaking API change ships as `/api/v2` alongside it.
 
 ### Added
 - Docker stack (`db`, `api`, `web`, `minio`) with a health-checked API service.
+- Database schema with row-level security tenant isolation, including the
+  rental-ready tables and the no-double-book exclusion constraint.
+- RFC 7807 `problem+json` errors, pagination and allowlisted sort parsing.
+- Session authentication for the dashboard and scoped, rate-limited API keys.
 
 [Unreleased]: https://example.invalid/ams/compare/v0.1.0...HEAD
