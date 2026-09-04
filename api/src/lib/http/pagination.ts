@@ -4,9 +4,14 @@ export interface Pagination {
   offset: number;
 }
 
+// Number() would accept " 20 ", 0x14 and 1e3 as 20, 20 and 1000. A query
+// parameter is text from a caller, so only plain digits count.
+const DIGITS = /^\d+$/;
+
 const int = (raw: string | null, fallback: number, min: number, max: number) => {
-  const n = Number(raw);
-  if (!raw || !Number.isInteger(n) || n < min) return fallback;
+  if (!raw || !DIGITS.test(raw)) return fallback;
+  const n = Number.parseInt(raw, 10);
+  if (!Number.isSafeInteger(n) || n < min) return fallback;
   return Math.min(n, max);
 };
 

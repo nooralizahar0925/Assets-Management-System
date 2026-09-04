@@ -26,7 +26,13 @@ export async function withTenant<T>(
     await client.query("COMMIT");
     return out;
   } catch (err) {
-    await client.query("ROLLBACK");
+    // If the connection is gone, ROLLBACK throws too - and that error would
+    // replace the one that actually explains the failure.
+    try {
+      await client.query("ROLLBACK");
+    } catch {
+      // Deliberately swallowed; the original error is the useful one.
+    }
     throw err;
   } finally {
     client.release();

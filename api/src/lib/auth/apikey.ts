@@ -73,20 +73,46 @@ export async function checkRateLimit(
   }
 
   return withTenant(ctx.orgId, async (c) => {
-    await c.query(
-      "DELETE FROM rate_limit_events WHERE occurred_at < now() - interval '1 hour'",
-    );
+    // Count and insert in one statement. Counting and then inserting across two
+    // statements under READ COMMITTED lets N concurrent requests all read the
+    // same total and all insert, so the limit only holds when it is not being
+    // tested - which is exactly backwards.
+    //
+    // The sweep of expired rows is NOT done here: it was a full DELETE on a hot
+    // table on every authenticated request. It belongs in the scheduler
+    // (purgeRateLimitEvents, wired up in Task 15).
     const { rows } = await c.query<{ used: number }>(
-      `SELECT count(*)::int AS used FROM rate_limit_events
-        WHERE api_key_id = $1 AND occurred_at > now() - interval '1 hour'`,
-      [ctx.actor.id],
+      `WITH used AS (
+         SELECT count(*)::int AS n
+           FROM rate_limit_events
+          WHERE api_key_id = $1
+            AND occurred_at > now() - interval '1 hour'
+       ), inserted AS (
+         INSERT INTO rate_limit_events (api_key_id, org_id)
+         SELECT $1, $2 FROM used WHERE used.n < $3
+         RETURNING 1
+       )
+       SELECT used.n AS used FROM used`,
+      [ctx.actor.id, ctx.orgId, LIMIT],
     );
+
     const used = rows[0].used;
     if (used >= LIMIT) return { ok: false, remaining: 0, resetAt };
-    await c.query(
-      "INSERT INTO rate_limit_events (api_key_id, org_id) VALUES ($1, $2)",
-      [ctx.actor.id, ctx.orgId],
-    );
     return { ok: true, remaining: LIMIT - used - 1, resetAt };
   });
+}
+
+/**
+ * Removes rate-limit events outside the window. Called by the scheduler
+ * (Task 15), not by request handlers - sweeping on every request meant a full
+ * DELETE on a hot table, and the lock contention that comes with it, once per
+ * authenticated call.
+ */
+export async function purgeRateLimitEvents(): Promise<number> {
+  const rows = await query<{ id: string }>(
+    `DELETE FROM rate_limit_events
+      WHERE occurred_at < now() - interval '1 hour'
+      RETURNING api_key_id AS id`,
+  );
+  return rows.length;
 }

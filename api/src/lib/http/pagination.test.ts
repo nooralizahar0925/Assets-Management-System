@@ -38,3 +38,21 @@ describe("parseSort", () => {
     });
   });
 });
+
+describe("parsePagination — hostile input", () => {
+  it("ignores values that only look numeric to Number()", () => {
+    for (const raw of ["0x14", " 20 ", "1e3", "20.5", "+20", "20abc", "١٢"]) {
+      expect(parsePagination(url(`?per_page=${encodeURIComponent(raw)}`)).perPage)
+        .toBe(50);
+    }
+  });
+
+  it("still accepts a plain integer", () => {
+    expect(parsePagination(url("?per_page=20")).perPage).toBe(20);
+  });
+
+  it("ignores an absurdly large page rather than overflowing the offset", () => {
+    const { offset } = parsePagination(url("?page=99999999999999999999"));
+    expect(Number.isSafeInteger(offset)).toBe(true);
+  });
+});

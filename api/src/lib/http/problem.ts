@@ -24,6 +24,9 @@ export function validationProblem(error: ZodError): Response {
 }
 
 export function notFound(resource: string): Response {
+  // Only the first letter is raised, so multi-word resources read as
+  // "API key not found" rather than "Api Key Not Found". Callers pass the
+  // resource already cased as they want it to appear, e.g. "API key".
   const title = resource.charAt(0).toUpperCase() + resource.slice(1) + " not found";
   return problem(404, "not-found", title);
 }

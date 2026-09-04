@@ -19,14 +19,26 @@ export async function createSession(userId: string, orgId: string): Promise<stri
   return id;
 }
 
+/**
+ * Whether to mark the session cookie Secure.
+ *
+ * Gating on NODE_ENV was wrong: a staging deployment that does not happen to
+ * set it would serve session cookies over plaintext. What actually decides this
+ * is whether the app is served over TLS, which APP_BASE_URL states directly.
+ */
+const isHttps = () => (process.env.APP_BASE_URL ?? "").startsWith("https:");
+
 export function sessionCookie(id: string): string {
   const maxAge = TTL_DAYS * 86_400;
-  const secure = process.env.NODE_ENV === "production" ? " Secure;" : "";
+  const secure = isHttps() ? " Secure;" : "";
   return `${COOKIE}=${id}; Path=/; HttpOnly;${secure} SameSite=Lax; Max-Age=${maxAge}`;
 }
 
-export const clearSessionCookie = () =>
-  `${COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
+/** Mirrors sessionCookie's attributes so the two are not gratuitously asymmetric. */
+export const clearSessionCookie = () => {
+  const secure = isHttps() ? " Secure;" : "";
+  return `${COOKIE}=; Path=/; HttpOnly;${secure} SameSite=Lax; Max-Age=0`;
+};
 
 function readCookie(req: Request, name: string): string | null {
   const header = req.headers.get("cookie");
