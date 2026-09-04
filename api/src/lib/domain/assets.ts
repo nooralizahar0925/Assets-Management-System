@@ -4,6 +4,8 @@ import { withTenant } from "../db";
 import type { Ctx } from "../http/handler";
 import { buildCustomValidator, type FieldSchema } from "../validation/customFields";
 import { recordEvent, diff } from "./audit";
+import { locationScopeClause } from "../auth/guard";
+import type { Pagination, Sort } from "../http/pagination";
 
 export const STATUSES = [
   "available", "in_use", "maintenance", "retired", "lost",
@@ -210,3 +212,70 @@ export const softDeleteAsset = (ctx: Ctx, id: string) =>
     await recordEvent(c, ctx, { assetId: id, event: "asset.deleted" });
     return true;
   });
+
+export interface AssetFilters {
+  q?: string;
+  status?: AssetStatus[];
+  categoryId?: string;
+  locationId?: string;
+  assigneeId?: string;
+  custom?: Record<string, string>;
+}
+
+export const SORTABLE = [
+  "name", "asset_tag", "status", "created_at", "updated_at", "purchase_date",
+] as const;
+
+export function listAssets(
+  ctx: Ctx,
+  filters: AssetFilters,
+  page: Pagination,
+  sort: Sort,
+): Promise<{ rows: Asset[]; total: number }> {
+  return withTenant(ctx.orgId, async (c) => {
+    const where: string[] = ["a.deleted_at IS NULL"];
+    const params: unknown[] = [];
+    const add = (value: unknown) => `$${params.push(value)}`;
+
+    if (filters.q) {
+      const p = add(`%${filters.q}%`);
+      where.push(`(a.name ILIKE ${p} OR a.serial_no ILIKE ${p} OR a.asset_tag ILIKE ${p})`);
+    }
+    if (filters.status?.length) {
+      where.push(`a.status = ANY(${add(filters.status)}::asset_status[])`);
+    }
+    if (filters.categoryId) where.push(`a.category_id = ${add(filters.categoryId)}`);
+    if (filters.locationId) where.push(`a.location_id = ${add(filters.locationId)}`);
+    if (filters.assigneeId) where.push(`a.assignee_id = ${add(filters.assigneeId)}`);
+    for (const [key, value] of Object.entries(filters.custom ?? {})) {
+      where.push(`a.custom ->> ${add(key)} = ${add(value)}`);
+    }
+
+    // Branch scope goes through the shared clause rather than being rebuilt
+    // here, so there is one implementation to audit. It is ANDed with any
+    // explicit location filter: asking for a branch you cannot see returns
+    // nothing rather than that branch's assets.
+    const scope = locationScopeClause(ctx, "a.location_id", params.length + 1);
+    for (const p of scope.params) params.push(p);
+    where.push(scope.sql);
+
+    const clause = `WHERE ${where.join(" AND ")}`;
+
+    // The count runs over the same clause, so a scoped caller's total reflects
+    // what they can see rather than what exists.
+    const { rows: countRows } = await c.query<{ total: string }>(
+      `SELECT count(*)::text AS total FROM assets a ${clause}`, params,
+    );
+
+    // sort.column and sort.direction come from parseSort's allowlist, never raw
+    // input - they are the only values interpolated into a query in this
+    // codebase.
+    const { rows } = await c.query<Asset>(
+      `${SELECT_ASSET} ${clause}
+        ORDER BY a.${sort.column} ${sort.direction}, a.id
+        LIMIT ${add(page.perPage)} OFFSET ${add(page.offset)}`,
+      params,
+    );
+    return { rows, total: Number(countRows[0].total) };
+  });
+}
