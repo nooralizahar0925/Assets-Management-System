@@ -99,7 +99,9 @@ async function validateCustom(
   return parsed.data;
 }
 
-export function createAsset(ctx: Ctx, raw: AssetInput): Promise<Asset> {
+// async, so a validation failure rejects like every other error rather than
+// throwing synchronously - a caller using .catch() would otherwise miss it.
+export async function createAsset(ctx: Ctx, raw: AssetInput): Promise<Asset> {
   const input = AssetInput.parse(raw);
   return withTenant(ctx.orgId, async (c) => {
     const tag = input.asset_tag ?? (await nextAssetTag(c, ctx.orgId));

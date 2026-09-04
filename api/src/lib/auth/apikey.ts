@@ -131,12 +131,16 @@ export async function checkRateLimit(
  * (Task 15), not by request handlers - sweeping on every request meant a full
  * DELETE on a hot table, and the lock contention that comes with it, once per
  * authenticated call.
+ *
+ * Runs per tenant, under the guard: rate_limit_events carries org_id and
+ * row-level security, so there is no cross-tenant sweep to perform.
  */
-export async function purgeRateLimitEvents(): Promise<number> {
-  const rows = await query<{ id: string }>(
-    `DELETE FROM rate_limit_events
-      WHERE occurred_at < now() - interval '1 hour'
-      RETURNING api_key_id AS id`,
+export async function purgeRateLimitEvents(ctx: Ctx): Promise<number> {
+  return withTenant(ctx.orgId, async (c) =>
+    (await c.query(
+      `DELETE FROM rate_limit_events
+        WHERE occurred_at < now() - interval '1 hour'
+        RETURNING api_key_id`,
+    )).rows.length,
   );
-  return rows.length;
 }
