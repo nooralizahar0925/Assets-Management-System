@@ -144,6 +144,14 @@ git push origin main --follow-tags
 Tagging triggers `.github/workflows/release.yml`, which builds the images and publishes
 the release row that the in-app "What's new" panel reads.
 
+## Accepted risks
+
+Security findings we have decided not to fix yet are recorded in
+[docs/accepted-risks.md](docs/accepted-risks.md), with the reasoning and what
+would change the decision. A finding that is not written down there has not been
+accepted, only forgotten. Review it at each release and whenever a dependency
+audit changes.
+
 ## Migrations and rollback
 
 Migrations are forward-only and additive within a release: add the new column, backfill

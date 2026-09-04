@@ -9,6 +9,21 @@ const dir = join(dirname(fileURLToPath(import.meta.url)), "..", "migrations");
 const isProduction = process.env.NODE_ENV === "production";
 
 /**
+ * `--test` points the runner at the throwaway database from
+ * docker-compose.test.yml, matching the defaults in src/test/setup.ts.
+ *
+ * It is an explicit flag rather than an implicit fallback: a runner that
+ * silently picked a database when none was configured would eventually migrate
+ * the wrong one. Setting the variable inline is also not portable - it works in
+ * bash and not in PowerShell - so the flag is what makes `npm run migrate:test`
+ * work everywhere.
+ */
+if (process.argv.includes("--test")) {
+  const port = process.env.TEST_DB_PORT ?? "5433";
+  process.env.MIGRATION_DATABASE_URL ??= `postgres://ams:ams@localhost:${port}/ams_test`;
+}
+
+/**
  * Sets the application role's password from the environment.
  *
  * Migration 004 creates ams_app with no password, so this is what makes the
