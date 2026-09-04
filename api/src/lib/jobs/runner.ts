@@ -6,6 +6,7 @@ import { purgeRateLimitEvents } from "../auth/apikey";
 import { purgeOldLoginAttempts } from "../auth/loginThrottle";
 import { runOverdueJob } from "./overdue";
 import { runExpiryJobs } from "./expiring";
+import { runDueSchedules } from "../reports/schedules";
 import { logError } from "../http/logger";
 
 /**
@@ -29,6 +30,7 @@ const systemCtx = (orgId: string): Ctx => ({
 });
 
 export interface JobRunSummary {
+  scheduled_reports?: number;
   org_id: string;
   overdue: number;
   warranty: number;
@@ -72,6 +74,15 @@ export async function runAllJobs(): Promise<JobRunSummary[]> {
       // notifications going out.
       logError(`scheduled jobs for org ${org.id}`, err);
     }
+  }
+
+  // Scheduled reports iterate organisations themselves, so they run once after
+  // the per-org loop rather than inside it.
+  try {
+    const reports = await runDueSchedules();
+    if (summaries.length > 0) summaries[0].scheduled_reports = reports.delivered;
+  } catch (err) {
+    logError("scheduled report delivery", err);
   }
 
   // login_attempts is the one table with no tenant - login happens before an
