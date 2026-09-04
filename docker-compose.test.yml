@@ -5,7 +5,10 @@ services:
       POSTGRES_DB: ams_test
       POSTGRES_USER: ams
       POSTGRES_PASSWORD: ams
-    ports: ["5433:5432"]
+    # Overridable, because 5433 is a popular choice and a developer machine may
+    # already have something on it. Set TEST_DB_PORT to match in the shell that
+    # runs the tests, or put it in .env.
+    ports: ["${TEST_DB_PORT:-5433}:5432"]
     tmpfs: ["/var/lib/postgresql/data"]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ams -d ams_test"]

@@ -1,5 +1,6 @@
 import { Client } from "pg";
 import { randomUUID } from "node:crypto";
+import { seedRolesForOrg } from "../../scripts/seed-permissions";
 
 /**
  * Provisions a tenant for a test.
@@ -27,6 +28,9 @@ export async function createOrg(name = "Test Org"): Promise<string> {
       "INSERT INTO organizations (id, name, slug) VALUES ($1::uuid, $2, $3)",
       [id, name, `org-${id}`],
     );
+    // A real organisation gets the system roles at sign-up, so a fixture that
+    // skipped them would test a world no customer ever sees.
+    await seedRolesForOrg(owner, id);
   } finally {
     await owner.end();
   }
