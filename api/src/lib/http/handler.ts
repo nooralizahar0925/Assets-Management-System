@@ -1,11 +1,17 @@
 import { problem } from "./problem";
+import type { PermissionKey } from "../auth/permissions";
 import { logError } from "./logger";
 
 export interface Actor {
   type: "user" | "api_key" | "system";
   id: string;
   label: string;
+  /** The published API scopes, kept for the v1 contract and for display. */
   scopes: string[];
+  /** The resolved fine-grained permissions this actor holds. */
+  permissions: PermissionKey[];
+  /** Branch restriction. null means organisation-wide. */
+  locationScope: string[] | null;
 }
 
 export interface Ctx {

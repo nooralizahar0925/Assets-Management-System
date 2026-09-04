@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { withTenant } from "../db";
-import { createOrg } from "../../test/org";
-import { hashPassword } from "./password";
+import { createOrg, createUserWithRole } from "../../test/org";
 import {
   createSession,
   readSession,
@@ -14,25 +13,10 @@ let orgId: string;
 let adminId: string;
 let viewerId: string;
 
-async function createUser(
-  org: string,
-  email: string,
-  role: "admin" | "viewer",
-): Promise<string> {
-  return withTenant(org, async (c) => {
-    const { rows } = await c.query<{ id: string }>(
-      `INSERT INTO users (org_id, email, password_hash, name, role)
-       VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-      [org, email, await hashPassword("pw"), email.split("@")[0], role],
-    );
-    return rows[0].id;
-  });
-}
-
 beforeAll(async () => {
   orgId = await createOrg("Session Org");
-  adminId = await createUser(orgId, `admin-${orgId}@example.test`, "admin");
-  viewerId = await createUser(orgId, `viewer-${orgId}@example.test`, "viewer");
+  adminId = (await createUserWithRole(orgId, "Administrator")).id;
+  viewerId = (await createUserWithRole(orgId, "Viewer")).id;
 });
 
 const withCookie = (id: string) =>
@@ -50,12 +34,24 @@ describe("sessions", () => {
     });
   });
 
-  it("grants an admin the admin scope and a viewer only read scopes", async () => {
+  it("resolves permissions from the role, not from a hardcoded scope list", async () => {
     const admin = await readSession(withCookie(await createSession(adminId, orgId)));
     const viewer = await readSession(withCookie(await createSession(viewerId, orgId)));
-    expect(admin?.actor.scopes).toContain("admin");
-    expect(viewer?.actor.scopes).toEqual(["assets:read", "reports:read"]);
-    expect(viewer?.actor.scopes).not.toContain("assets:write");
+
+    expect(admin?.actor.permissions).toContain("roles:write");
+    expect(admin?.actor.permissions).toContain("assets:delete");
+
+    expect(viewer?.actor.permissions).toContain("assets:read");
+    expect(viewer?.actor.permissions).not.toContain("assets:write");
+    // A viewer reads the register; the organisation's keys and administrative
+    // history are not part of that.
+    expect(viewer?.actor.permissions).not.toContain("api_keys:read");
+    expect(viewer?.actor.permissions).not.toContain("audit:read");
+  });
+
+  it("reports no branch restriction for an unscoped user", async () => {
+    const ctx = await readSession(withCookie(await createSession(adminId, orgId)));
+    expect(ctx?.actor.locationScope).toBeNull();
   });
 
   it("returns null when there is no cookie", async () => {

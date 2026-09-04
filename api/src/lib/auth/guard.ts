@@ -2,10 +2,18 @@ import { readSession } from "./session";
 import { readApiKey, checkRateLimit } from "./apikey";
 import { unauthorized, forbidden, problem } from "../http/problem";
 import type { Ctx } from "../http/handler";
-
-export type Scope = "assets:read" | "assets:write" | "reports:read" | "admin";
+import type { PermissionKey } from "./permissions";
 
 const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+export interface AuthOptions {
+  /**
+   * The location the request concerns, when it concerns one. `null` means the
+   * target explicitly has no location; omit the field entirely when the request
+   * is not about a located thing at all.
+   */
+  locationId?: string | null;
+}
 
 /**
  * Cross-origin write protection for cookie-authenticated requests.
@@ -56,10 +64,27 @@ export function assertSameOrigin(req: Request, ctx: Ctx): Response | null {
   );
 }
 
+export const hasPermission = (ctx: Ctx, permission: PermissionKey): boolean =>
+  ctx.actor.permissions.includes(permission);
+
+/**
+ * Whether `ctx` may act on something at `locationId`.
+ *
+ * An unscoped actor may act anywhere. A scoped one may act only within their
+ * branches - and not on an asset with no location, because treating "unplaced"
+ * as permitted would make it a hole in every scope.
+ */
+export function withinLocationScope(ctx: Ctx, locationId: string | null): boolean {
+  if (ctx.actor.locationScope === null) return true;
+  if (locationId === null) return false;
+  return ctx.actor.locationScope.includes(locationId);
+}
+
 /** Returns a Ctx, or a Response to return immediately. */
 export async function requireAuth(
   req: Request,
-  scope: Scope,
+  permission: PermissionKey,
+  opts: AuthOptions = {},
 ): Promise<Ctx | Response> {
   const ctx = (await readApiKey(req)) ?? (await readSession(req));
   if (!ctx) return unauthorized();
@@ -67,8 +92,15 @@ export async function requireAuth(
   const crossOrigin = assertSameOrigin(req, ctx);
   if (crossOrigin) return crossOrigin;
 
-  if (!ctx.actor.scopes.includes(scope) && !ctx.actor.scopes.includes("admin")) {
-    return forbidden(`This credential lacks the "${scope}" scope.`);
+  if (!hasPermission(ctx, permission)) {
+    return forbidden(`This credential lacks the "${permission}" permission.`);
+  }
+
+  if ("locationId" in opts && !withinLocationScope(ctx, opts.locationId ?? null)) {
+    return forbidden(
+      "Your access is limited to specific branches, and this asset is not in " +
+        "one of them.",
+    );
   }
 
   const limit = await checkRateLimit(ctx);
@@ -83,6 +115,28 @@ export async function requireAuth(
   }
 
   return ctx;
+}
+
+/**
+ * The clause a list query composes into its WHERE to honour branch scope.
+ *
+ * This is deliberately the only way branch filtering is expressed, so there is
+ * one place to audit and one place to fix. `column` is a caller-supplied SQL
+ * identifier and is never derived from request input.
+ *
+ * `placeholder` is the parameter number the caller has reached, so the clause
+ * composes into a larger query without colliding with its other parameters.
+ */
+export function locationScopeClause(
+  ctx: Ctx,
+  column: string,
+  placeholder = 1,
+): { sql: string; params: unknown[] } {
+  if (ctx.actor.locationScope === null) return { sql: "TRUE", params: [] };
+  return {
+    sql: `${column} = ANY($${placeholder}::uuid[])`,
+    params: [ctx.actor.locationScope],
+  };
 }
 
 export const isResponse = (v: unknown): v is Response => v instanceof Response;

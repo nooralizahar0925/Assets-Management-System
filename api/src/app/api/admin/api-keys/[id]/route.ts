@@ -7,7 +7,7 @@ export const DELETE = safe(async (
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) => {
-  const ctx = await requireAuth(req, "admin");
+  const ctx = await requireAuth(req, "api_keys:write");
   if (isResponse(ctx)) return ctx;
   const { id } = await params;
 

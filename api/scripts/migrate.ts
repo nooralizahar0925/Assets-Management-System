@@ -2,6 +2,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Client } from "pg";
+import { seedPermissions } from "./seed-permissions";
 
 const dir = join(dirname(fileURLToPath(import.meta.url)), "..", "migrations");
 
@@ -104,6 +105,11 @@ async function main() {
       throw new Error(`migration ${file} failed: ${(err as Error).message}`);
     }
   }
+
+  // Reconciles the permission vocabulary and the system roles with the code.
+  // Runs every time, so adding a permission is a code change picked up by the
+  // next deploy rather than a hand-written migration each time.
+  await seedPermissions(client);
 
   // After the role exists, and on every run, so rotating APP_DB_PASSWORD and
   // re-running migrate is all it takes to change the credential.
