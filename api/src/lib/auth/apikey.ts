@@ -1,6 +1,22 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { query, withTenant } from "../db";
 import type { Ctx } from "../http/handler";
+import {
+  API_SCOPE_PERMISSIONS, type ApiScope, type PermissionKey,
+} from "./permissions";
+
+/**
+ * Expands a key's published v1 scopes into the internal permission vocabulary.
+ * The scope strings are a contract with integrators and cannot change; what
+ * they mean internally can.
+ */
+const expandScopes = (scopes: string[]): PermissionKey[] => {
+  const out = new Set<PermissionKey>();
+  for (const scope of scopes) {
+    for (const key of API_SCOPE_PERMISSIONS[scope as ApiScope] ?? []) out.add(key);
+  }
+  return [...out];
+};
 
 const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
 
@@ -58,7 +74,15 @@ export async function readApiKey(req: Request): Promise<Ctx | null> {
 
   return {
     orgId: row.org_id,
-    actor: { type: "api_key", id: row.id, label: row.name, scopes: row.scopes },
+    actor: {
+      type: "api_key",
+      id: row.id,
+      label: row.name,
+      scopes: row.scopes,
+      permissions: expandScopes(row.scopes),
+      // A key belongs to the organisation, not to a person at a site.
+      locationScope: null,
+    },
   };
 }
 

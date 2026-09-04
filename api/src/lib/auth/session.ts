@@ -1,6 +1,8 @@
 import { randomBytes } from "node:crypto";
 import { query, withTenant } from "../db";
 import type { Ctx } from "../http/handler";
+import { permissionsForUser } from "./resolve";
+import { apiScopesFromPermissions } from "./permissions";
 
 const COOKIE = "ams_session";
 const TTL_DAYS = 7;
@@ -54,35 +56,31 @@ interface SessionRow {
   org_id: string;
   user_id: string;
   name: string;
-  role: "admin" | "manager" | "technician" | "viewer";
-}
-
-/** A dashboard user's effective scopes derive from their role. */
-function scopesForRole(role: SessionRow["role"]): string[] {
-  switch (role) {
-    case "viewer":
-      return ["assets:read", "reports:read"];
-    case "admin":
-      return ["assets:read", "assets:write", "reports:read", "admin"];
-    default:
-      return ["assets:read", "assets:write", "reports:read"];
-  }
+  role_id: string | null;
+  role_name: string | null;
 }
 
 export async function readSession(req: Request): Promise<Ctx | null> {
   const id = readCookie(req, COOKIE);
   if (!id) return null;
-  // Pre-tenant lookup - see migration 006.
+  // Pre-tenant lookup - see migrations 006 and 009.
   const rows = await query<SessionRow>("SELECT * FROM auth_lookup_session($1)", [id]);
   const row = rows[0];
   if (!row) return null;
+
+  const { permissions, locationScope } = await permissionsForUser(row.user_id);
+
   return {
     orgId: row.org_id,
     actor: {
       type: "user",
       id: row.user_id,
       label: row.name,
-      scopes: scopesForRole(row.role),
+      // Published scopes are derived for display and for v1 compatibility;
+      // authorization is decided by `permissions`.
+      scopes: apiScopesFromPermissions(permissions),
+      permissions,
+      locationScope,
     },
   };
 }

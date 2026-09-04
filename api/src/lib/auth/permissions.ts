@@ -79,8 +79,6 @@ export type PermissionKey = (typeof PERMISSIONS)[number]["key"];
 
 const ALL = PERMISSIONS.map((p) => p.key) as PermissionKey[];
 
-const READ_ONLY = ALL.filter((k) => k.endsWith(":read")) as PermissionKey[];
-
 /**
  * The roles every organisation starts with. Seeded per tenant so a customer can
  * edit or rename them; `is_system` only prevents deletion, because deleting the
@@ -120,7 +118,13 @@ export const SYSTEM_ROLES: Record<
   },
   Viewer: {
     description: "Reads the register and runs reports. Changes nothing.",
-    permissions: [...READ_ONLY, "reports:read"] as PermissionKey[],
+    // Listed explicitly rather than derived as "everything ending in :read".
+    // That derivation swept in api_keys:read, users:read, roles:read and
+    // audit:read, so a viewer could see the organisation's integration keys and
+    // its administrative history - which is not what "reads the register" means.
+    permissions: [
+      "assets:read", "categories:read", "locations:read", "reports:read",
+    ],
   },
 };
 

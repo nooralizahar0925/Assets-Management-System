@@ -1,7 +1,5 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { withTenant } from "@/lib/db";
-import { createOrg } from "@/test/org";
-import { hashPassword } from "@/lib/auth/password";
+import { createOrg, createUserWithRole } from "@/test/org";
 import { createSession } from "@/lib/auth/session";
 import { mintApiKey } from "@/lib/auth/apikey";
 import { GET, POST } from "./route";
@@ -11,17 +9,6 @@ let orgId: string;
 let otherOrgId: string;
 let adminSession: string;
 let viewerSession: string;
-
-async function createUser(org: string, role: "admin" | "viewer"): Promise<string> {
-  return withTenant(org, async (c) => {
-    const { rows } = await c.query<{ id: string }>(
-      `INSERT INTO users (org_id, email, password_hash, name, role)
-       VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-      [org, `${role}-${crypto.randomUUID()}@keys.test`, await hashPassword("pw"), role, role],
-    );
-    return rows[0].id;
-  });
-}
 
 const req = (session: string, method = "GET", body?: unknown) =>
   new Request("http://api.test/api/admin/api-keys", {
@@ -33,8 +20,10 @@ const req = (session: string, method = "GET", body?: unknown) =>
 beforeAll(async () => {
   orgId = await createOrg("Keys Org");
   otherOrgId = await createOrg("Other Keys Org");
-  adminSession = await createSession(await createUser(orgId, "admin"), orgId);
-  viewerSession = await createSession(await createUser(orgId, "viewer"), orgId);
+  adminSession = await createSession(
+    (await createUserWithRole(orgId, "Administrator")).id, orgId);
+  viewerSession = await createSession(
+    (await createUserWithRole(orgId, "Viewer")).id, orgId);
 });
 
 describe("GET /api/admin/api-keys", () => {

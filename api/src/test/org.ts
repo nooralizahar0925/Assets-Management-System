@@ -36,3 +36,53 @@ export async function createOrg(name = "Test Org"): Promise<string> {
   }
   return id;
 }
+
+/** The legacy users.role enum value matching a system role name. */
+const LEGACY_ROLE: Record<string, string> = {
+  Administrator: "admin",
+  Manager: "manager",
+  Technician: "technician",
+  Viewer: "viewer",
+};
+
+export interface TestUser {
+  id: string;
+  email: string;
+}
+
+/**
+ * Creates a user holding one of the seeded system roles.
+ *
+ * Permissions now resolve from role_id, so a fixture that set only the legacy
+ * enum would produce a user with no permissions at all - which is a confusing
+ * way for an unrelated test to fail.
+ */
+export async function createUserWithRole(
+  orgId: string,
+  roleName: keyof typeof LEGACY_ROLE | string,
+  opts: { name?: string; email?: string; password?: string } = {},
+): Promise<TestUser> {
+  const { hashPassword } = await import("../lib/auth/password");
+  const { withTenant } = await import("../lib/db");
+
+  const email = opts.email ?? `${roleName.toLowerCase()}-${randomUUID()}@test.local`;
+  const name = opts.name ?? String(roleName);
+  const passwordHash = await hashPassword(opts.password ?? "pw");
+
+  const id = await withTenant(orgId, async (c) => {
+    const { rows } = await c.query<{ id: string }>(
+      "SELECT id FROM roles WHERE org_id = $1 AND lower(name) = lower($2)",
+      [orgId, roleName],
+    );
+    const roleId = rows[0]?.id ?? null;
+
+    const inserted = await c.query<{ id: string }>(
+      `INSERT INTO users (org_id, email, password_hash, name, role, role_id)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+      [orgId, email, passwordHash, name, LEGACY_ROLE[roleName] ?? "viewer", roleId],
+    );
+    return inserted.rows[0].id;
+  });
+
+  return { id, email };
+}

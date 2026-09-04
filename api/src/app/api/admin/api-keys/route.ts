@@ -12,7 +12,7 @@ const Body = z.object({
 });
 
 export const GET = safe(async (req: Request) => {
-  const ctx = await requireAuth(req, "admin");
+  const ctx = await requireAuth(req, "api_keys:read");
   if (isResponse(ctx)) return ctx;
   const rows = await withTenant(ctx.orgId, async (c) =>
     (await c.query(
@@ -24,7 +24,7 @@ export const GET = safe(async (req: Request) => {
 });
 
 export const POST = safe(async (req: Request) => {
-  const ctx = await requireAuth(req, "admin");
+  const ctx = await requireAuth(req, "api_keys:write");
   if (isResponse(ctx)) return ctx;
   const parsed = Body.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return validationProblem(parsed.error);

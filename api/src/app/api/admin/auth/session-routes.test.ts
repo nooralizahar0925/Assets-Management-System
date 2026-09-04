@@ -1,7 +1,5 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { withTenant } from "@/lib/db";
-import { createOrg } from "@/test/org";
-import { hashPassword } from "@/lib/auth/password";
+import { createOrg, createUserWithRole } from "@/test/org";
 import { createSession } from "@/lib/auth/session";
 import { GET as ME } from "./me/route";
 import { POST as LOGOUT } from "./logout/route";
@@ -14,14 +12,7 @@ const withCookie = (url: string, sid: string, method = "GET") =>
 
 beforeAll(async () => {
   orgId = await createOrg("Session Routes Org");
-  userId = await withTenant(orgId, async (c) => {
-    const { rows } = await c.query<{ id: string }>(
-      `INSERT INTO users (org_id, email, password_hash, name, role)
-       VALUES ($1, $2, $3, 'Route User', 'manager') RETURNING id`,
-      [orgId, `routes-${orgId}@session.test`, await hashPassword("pw")],
-    );
-    return rows[0].id;
-  });
+  userId = (await createUserWithRole(orgId, "Manager")).id;
 });
 
 describe("GET /api/admin/auth/me", () => {
@@ -38,13 +29,22 @@ describe("GET /api/admin/auth/me", () => {
 
     const body = (await res.json()) as {
       org_id: string;
-      user: { id: string; name: string; scopes: string[] };
+      user: {
+        id: string;
+        name: string;
+        permissions: string[];
+        location_scope: string[] | null;
+      };
     };
     expect(body.org_id).toBe(orgId);
     expect(body.user.id).toBe(userId);
-    // A manager writes but does not administer.
-    expect(body.user.scopes).toContain("assets:write");
-    expect(body.user.scopes).not.toContain("admin");
+    // A manager runs the register but does not administer the organisation.
+    expect(body.user.permissions).toContain("assets:write");
+    expect(body.user.permissions).toContain("categories:write");
+    expect(body.user.permissions).not.toContain("roles:write");
+    expect(body.user.permissions).not.toContain("settings:write");
+    // Unscoped, so the dashboard shows every branch.
+    expect(body.user.location_scope).toBeNull();
   });
 
   it("never returns the password hash", async () => {
