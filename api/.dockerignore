@@ -1,0 +1,23 @@
+# The build context is copied wholesale by `COPY . .`, so anything not excluded
+# here ends up in an image layer and survives `docker history`.
+
+# Host-built modules: wrong platform, and they would overwrite the clean tree
+# installed inside the image.
+node_modules
+
+# Secrets. .env is gitignored but that says nothing about Docker.
+.env
+.env.*
+
+# Build output and local state.
+.next
+dist-scripts
+*.log
+
+# Not needed to build, and .git can be large.
+.git
+.gitignore
+
+# Tests do not run in the image.
+**/*.test.ts
+**/*.test.tsx

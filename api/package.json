@@ -10,18 +10,21 @@
     "seed": "tsx scripts/seed.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:scripts": "esbuild scripts/migrate.ts --bundle --platform=node --format=esm --packages=external --outdir=dist-scripts",
+    "migrate:prod": "node dist-scripts/migrate.js"
   },
   "dependencies": {
     "next": "^15.1.0",
+    "pg": "^8.13.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "pg": "^8.13.1",
     "zod": "^3.24.1"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
     "@types/pg": "^8.11.10",
+    "esbuild": "^0.28.2",
     "tsx": "^4.19.2",
     "typescript": "~5.7.2",
     "vitest": "^2.1.8"
