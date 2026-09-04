@@ -810,5 +810,5 @@ The plan is split one file per phase under
 | 4 — Identification | `04-identification.md` | 19–20 | QR/Code128 generation, label sheets, tag lookup |
 | 5 — Frontend | `05-frontend.md` | 21–32 | The full dashboard on the TailAdmin template, including scanning, report builder, email settings and "What's new" |
 | 6 — Integration & release | `06-integration-and-release.md` | 33–36 | Webhooks, idempotency, OpenAPI document, versioning/CI/release pipeline |
-| 7 — Docs & enablement | `07-docs-enablement.md` | 37–40 | Developer portal, in-app tour, help centre, project docs |
+| 7 — Docs & enablement | `07-docs-enablement.md` | 37–42 | Developer portal, in-app tour, help centre, project docs, seed data, E2E smoke suite |
 | 8 — Rental (future) | not planned here | — | Built on the primitives prepared in §12 |
