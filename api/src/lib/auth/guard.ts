@@ -97,10 +97,7 @@ export async function requireAuth(
   }
 
   if ("locationId" in opts && !withinLocationScope(ctx, opts.locationId ?? null)) {
-    return forbidden(
-      "Your access is limited to specific branches, and this asset is not in " +
-        "one of them.",
-    );
+    return branchForbidden();
   }
 
   const limit = await checkRateLimit(ctx);
@@ -138,5 +135,19 @@ export function locationScopeClause(
     params: [ctx.actor.locationScope],
   };
 }
+
+/**
+ * The refusal for an asset outside the caller's branches.
+ *
+ * requireAuth raises this when a handler knows the location up front. A handler
+ * that only learns it by loading the row - reading one asset by id, say - calls
+ * withinLocationScope after the fetch and returns this, so both paths give the
+ * caller the same answer.
+ */
+export const branchForbidden = (): Response =>
+  forbidden(
+    "Your access is limited to specific branches, and this asset is not in " +
+      "one of them.",
+  );
 
 export const isResponse = (v: unknown): v is Response => v instanceof Response;
