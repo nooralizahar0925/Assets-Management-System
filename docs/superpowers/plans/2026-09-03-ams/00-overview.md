@@ -24,7 +24,7 @@ Every one of these is pure JavaScript or ships a prebuilt binary — the Docker 
 | 4 — Identification | [`04-identification.md`](./04-identification.md) | 19–20 | QR/Code128 generation, label sheets, tag lookup |
 | 5 — Frontend | [`05-frontend.md`](./05-frontend.md) | 21–32 | The full dashboard on the TailAdmin template, including scanning, report builder, email settings and "What's new" |
 | 6 — Integration & release | [`06-integration-and-release.md`](./06-integration-and-release.md) | 33–36 | Webhooks, idempotency, OpenAPI document, versioning and the release pipeline |
-| 7 — Docs & enablement | [`07-docs-enablement.md`](./07-docs-enablement.md) | 37–40 | Developer portal, in-app tour, help centre, project docs |
+| 7 — Docs & enablement | [`07-docs-enablement.md`](./07-docs-enablement.md) | 37–42 | Developer portal, in-app tour, help centre, project docs, seed data, E2E smoke suite |
 
 Phases run in order. Within a phase, tasks run in order. Each task ends with a
 committable, independently testable deliverable.
@@ -170,7 +170,9 @@ AssetsManagementSystem/
 | 34 | OpenAPI document | 6 |
 | 35 | Version endpoint, build provenance and release-notes API | 6 |
 | 36 | CI pipeline, changelog generation and the release runbook | 6 |
-| 37 | Developer portal | 7 |
-| 38 | In-app tour and contextual help | 7 |
-| 39 | Help centre | 7 |
-| 40 | Project documentation, seed data and E2E smoke suite | 7 |
+| 37 | Error catalogue endpoint with an anti-drift test | 7 |
+| 38 | Developer portal — shell, reference, overview, auth, conventions | 7 |
+| 39 | Recipes in four languages, webhooks, errors, changelog | 7 |
+| 40 | First-run tour, contextual help, empty states, onboarding checklists | 7 |
+| 41 | Help centre and the generated printable user guide | 7 |
+| 42 | Project documentation, seed data and E2E smoke suite | 7 |
