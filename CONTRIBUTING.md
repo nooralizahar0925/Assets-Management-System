@@ -102,6 +102,16 @@ BREAKING CHANGE: `tag` is now `asset_tag` on every /api/v1/assets response.
 Trailers are ordinary git trailers, so `git commit -m "..." -m "release-note: ..."` and
 `git interpret-trailers` both work.
 
+**All trailers must sit in one unbroken final block.** Git only parses the last paragraph
+of a message as trailers, so a blank line between `release-note:` and a following
+`Co-Authored-By:` makes the release note invisible to the generator. Verify with:
+
+```bash
+git log -1 --pretty='%(trailers:key=release-note,valueonly)'
+```
+
+Empty output on a `feat` or `fix` commit means the note will not reach a customer.
+
 ### Enforcement
 
 `.githooks/commit-msg` rejects a message that is not a Conventional Commit. Enable the
