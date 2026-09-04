@@ -41,9 +41,16 @@ export const listLocations = (ctx: Ctx) =>
     )).rows,
   );
 
+export interface Location {
+  id: string;
+  name: string;
+  parent_id: string | null;
+  address: string | null;
+}
+
 export const createLocation = (ctx: Ctx, input: LocationInput) =>
   withTenant(ctx.orgId, async (c) =>
-    (await c.query(
+    (await c.query<Location>(
       `INSERT INTO locations (org_id, name, parent_id, address)
        VALUES ($1,$2,$3,$4) RETURNING id, name, parent_id, address`,
       [ctx.orgId, input.name, input.parent_id ?? null, input.address ?? null],
