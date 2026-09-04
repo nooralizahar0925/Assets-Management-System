@@ -5,12 +5,79 @@ import { Client } from "pg";
 
 const dir = join(dirname(fileURLToPath(import.meta.url)), "..", "migrations");
 
+const isProduction = process.env.NODE_ENV === "production";
+
+/**
+ * Sets the application role's password from the environment.
+ *
+ * Migration 004 creates ams_app with no password, so this is what makes the
+ * role usable. Keeping the secret here rather than in the migration means it is
+ * never committed, and that setting APP_DB_PASSWORD actually rotates the
+ * credential instead of silently disagreeing with a literal in the SQL.
+ *
+ * Holding this role's credentials defeats row-level security completely - the
+ * holder can set app.org_id to any tenant - so refusing to invent one in
+ * production is the whole point.
+ */
+async function setAppRolePassword(client: Client): Promise<void> {
+  const password = process.env.APP_DB_PASSWORD;
+
+  if (!password) {
+    if (isProduction) {
+      throw new Error(
+        "APP_DB_PASSWORD is not set. Refusing to fall back to a well-known " +
+          "password for the application database role in production.",
+      );
+    }
+    process.stdout.write(
+      "APP_DB_PASSWORD not set - using the development default for ams_app\n",
+    );
+  }
+
+  // ALTER ROLE takes no bind parameter for the password, so the statement is
+  // built by the server: format(%L) does the quoting and escaping, and the
+  // password still travels as a bound parameter rather than being pasted into
+  // SQL by us.
+  const { rows } = await client.query<{ sql: string }>(
+    "SELECT format('ALTER ROLE ams_app WITH LOGIN PASSWORD %L', $1::text) AS sql",
+    [password ?? "ams_app"],
+  );
+  await client.query(rows[0].sql);
+}
+
+/**
+ * The auth lookup functions in migration 006 are SECURITY DEFINER and must be
+ * able to read tables carrying FORCE ROW LEVEL SECURITY, which applies to the
+ * table owner too. That only works if their owner bypasses RLS.
+ *
+ * Without this check the failure is silent and expensive: the functions return
+ * zero rows, so every login returns 401 and every session resolves to null,
+ * with nothing in the logs to say why.
+ */
+async function assertOwnerBypassesRls(client: Client): Promise<void> {
+  const { rows } = await client.query<{ ok: boolean }>(
+    `SELECT (rolsuper OR rolbypassrls) AS ok
+       FROM pg_roles WHERE rolname = current_user`,
+  );
+  if (!rows[0]?.ok) {
+    throw new Error(
+      `Migration role "${process.env.PGUSER ?? "current_user"}" has neither ` +
+        "SUPERUSER nor BYPASSRLS. The auth lookup functions in 006 would own " +
+        "no way past FORCE ROW LEVEL SECURITY, and every login would fail " +
+        "silently. Grant BYPASSRLS to the migration role and re-run.",
+    );
+  }
+}
+
 async function main() {
   const client = new Client({
     connectionString:
       process.env.MIGRATION_DATABASE_URL ?? process.env.DATABASE_URL,
   });
   await client.connect();
+
+  await assertOwnerBypassesRls(client);
+
   await client.query(`
     CREATE TABLE IF NOT EXISTS schema_migrations (
       filename   text PRIMARY KEY,
@@ -37,6 +104,11 @@ async function main() {
       throw new Error(`migration ${file} failed: ${(err as Error).message}`);
     }
   }
+
+  // After the role exists, and on every run, so rotating APP_DB_PASSWORD and
+  // re-running migrate is all it takes to change the credential.
+  await setAppRolePassword(client);
+
   await client.end();
   process.stdout.write("migrations up to date\n");
 }
