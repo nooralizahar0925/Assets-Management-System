@@ -12,6 +12,7 @@ import UserProfiles from "./pages/UserProfiles";
 import AssetList from "./pages/Assets/AssetList";
 import AssetDetail from "./pages/Assets/AssetDetail";
 import TagRedirect from "./pages/Assets/TagRedirect";
+import AssetForm from "./pages/Assets/AssetForm";
 
 /**
  * The whole route table exists from this task onward. Screens a later task
@@ -31,9 +32,9 @@ export default function App() {
               <Route index path="/" element={<Dashboard />} />
 
               <Route path="/assets" element={<AssetList />} />
-              <Route path="/assets/new" element={<ComingSoon title="New asset" />} />
+              <Route path="/assets/new" element={<AssetForm mode="create" />} />
               <Route path="/assets/:id" element={<AssetDetail />} />
-              <Route path="/assets/:id/edit" element={<ComingSoon title="Edit asset" />} />
+              <Route path="/assets/:id/edit" element={<AssetForm mode="edit" />} />
               {/* Scanned QR codes land here and resolve to the asset. */}
               <Route path="/a/:tag" element={<TagRedirect />} />
 
