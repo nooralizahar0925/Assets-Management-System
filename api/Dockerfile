@@ -27,6 +27,14 @@ FROM node:22-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
+# .next/standalone's server.js reads PORT and HOSTNAME and defaults to
+# localhost:3000. The -p 4000 in the npm scripts applies to `next dev` and
+# `next start`, not to the standalone server, so without these the container
+# listens on 3000 while the port mapping and the healthcheck both target 4000 -
+# and nothing is reachable. Binding 0.0.0.0 is what lets the mapping through.
+ENV PORT=4000
+ENV HOSTNAME=0.0.0.0
+
 # next.config.ts sets output: "standalone", so .next/standalone carries server.js
 # plus the traced subset of node_modules it actually needs.
 COPY --from=build /app/.next/standalone ./
