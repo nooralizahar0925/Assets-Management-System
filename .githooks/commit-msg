@@ -34,7 +34,31 @@ fi
 # CI fails on this; warn here so it is caught before the push.
 case "$subject" in
   feat*|fix*)
-    if ! grep -Eqi '^release-note:[[:space:]]*[^[:space:]]' "$msg_file"; then
+    # Ask git itself, not grep. A release-note: line separated from the other
+    # trailers by a blank line still matches a grep but is not a trailer at
+    # all: git parses only the final paragraph, so the note silently vanishes.
+    parsed=$(git interpret-trailers --parse <"$msg_file"              | grep -Eic '^release-note:[[:space:]]*[^[:space:]]')
+    written=$(grep -Eic '^release-note:[[:space:]]*[^[:space:]]' "$msg_file")
+
+    if [ "$parsed" -eq 0 ] && [ "$written" -gt 0 ]; then
+      echo "" >&2
+      echo "  Commit message rejected — the 'release-note:' trailer is present" >&2
+      echo "  but git does not parse it as a trailer, so it would not reach the" >&2
+      echo "  release notes." >&2
+      echo "" >&2
+      echo "  Almost always this is a blank line inside the trailer block." >&2
+      echo "  Git reads only the last paragraph, so every trailer must sit" >&2
+      echo "  together with no blank line between them:" >&2
+      echo "" >&2
+      echo "    release-note: Scan a QR code to open an asset instantly." >&2
+      echo "    Co-Authored-By: ..." >&2
+      echo "" >&2
+      echo "  See CONTRIBUTING.md." >&2
+      echo "" >&2
+      exit 1
+    fi
+
+    if [ "$parsed" -eq 0 ]; then
       echo "" >&2
       echo "  Warning: no 'release-note:' trailer on a $(printf '%s' "$subject" | cut -d: -f1) commit." >&2
       echo "  This change will not appear in the customer-facing release notes," >&2

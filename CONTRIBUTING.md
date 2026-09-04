@@ -104,7 +104,8 @@ Trailers are ordinary git trailers, so `git commit -m "..." -m "release-note: ..
 
 **All trailers must sit in one unbroken final block.** Git only parses the last paragraph
 of a message as trailers, so a blank line between `release-note:` and a following
-`Co-Authored-By:` makes the release note invisible to the generator. Verify with:
+`Co-Authored-By:` makes the release note invisible to the generator. The
+`commit-msg` hook rejects this, but only if the hook is enabled. Verify with:
 
 ```bash
 git log -1 --pretty='%(trailers:key=release-note,valueonly)'
