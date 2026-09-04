@@ -4,6 +4,9 @@ import { safe } from "@/lib/http/handler";
 import { runReport, parseReportParams, REPORTS } from "@/lib/reports/engine";
 import { renderJson } from "@/lib/reports/renderers/json";
 import { renderCsv } from "@/lib/reports/renderers/csv";
+import { renderXlsx } from "@/lib/reports/renderers/xlsx";
+import { renderPdf } from "@/lib/reports/renderers/pdf";
+import { renderSvg, renderPng } from "@/lib/reports/renderers/svg";
 
 const FORMATS = new Set(["json", "csv", "xlsx", "pdf", "svg", "png"]);
 
@@ -28,9 +31,14 @@ export const GET = safe(async (
   // Every report applies the caller's branch scope in its own query, so a
   // scoped user's export contains only their branches.
   const result = await runReport(ctx, key, parseReportParams(url));
+  // One definition, six renderings. No renderer runs its own query - each takes
+  // the ReportResult and formats it, so the CSV and the PDF cannot disagree.
   switch (format) {
-    case "csv": return renderCsv(result);
-    // xlsx, pdf, svg and png are wired up in Task 18.
-    default: return renderJson(result);
+    case "csv":  return renderCsv(result);
+    case "xlsx": return renderXlsx(result);
+    case "pdf":  return renderPdf(result);
+    case "svg":  return renderSvg(result);
+    case "png":  return renderPng(result);
+    default:     return renderJson(result);
   }
 });
