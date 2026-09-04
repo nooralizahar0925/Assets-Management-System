@@ -1,0 +1,70 @@
+import {
+  requireAuth, isResponse, withinLocationScope, branchForbidden,
+} from "@/lib/auth/guard";
+import { validationProblem, notFound, problem } from "@/lib/http/problem";
+import { safe } from "@/lib/http/handler";
+import {
+  AssetInput, getAsset, updateAsset, softDeleteAsset, CustomFieldError,
+} from "@/lib/domain/assets";
+
+type Params = { params: Promise<{ id: string }> };
+
+export const GET = safe(async (req: Request, { params }: Params) => {
+  const ctx = await requireAuth(req, "assets:read");
+  if (isResponse(ctx)) return ctx;
+
+  const asset = await getAsset(ctx, (await params).id);
+  if (!asset) return notFound("asset");
+  // The branch check happens after the fetch, because the asset's location is
+  // not known until it is loaded. requireAuth handles the case where a handler
+  // knows the location up front; both paths return the same refusal.
+  if (!withinLocationScope(ctx, asset.location_id)) return branchForbidden();
+
+  return Response.json(asset);
+});
+
+export const PATCH = safe(async (req: Request, { params }: Params) => {
+  const ctx = await requireAuth(req, "assets:write");
+  if (isResponse(ctx)) return ctx;
+
+  const parsed = AssetInput.partial().safeParse(await req.json().catch(() => ({})));
+  if (!parsed.success) return validationProblem(parsed.error);
+
+  const id = (await params).id;
+  const existing = await getAsset(ctx, id);
+  if (!existing) return notFound("asset");
+  if (!withinLocationScope(ctx, existing.location_id)) return branchForbidden();
+  // Moving an asset out of the caller's branches would otherwise be a way to
+  // push it somewhere they can no longer see, or to claim one they cannot.
+  if (parsed.data.location_id !== undefined
+      && !withinLocationScope(ctx, parsed.data.location_id ?? null)) {
+    return branchForbidden();
+  }
+
+  try {
+    const asset = await updateAsset(ctx, id, parsed.data);
+    return asset ? Response.json(asset) : notFound("asset");
+  } catch (err) {
+    if (err instanceof CustomFieldError) {
+      return problem(422, "validation", "Validation failed", { detail: err.message });
+    }
+    const e = err as { code?: string; message: string };
+    if (e.code === "23505") {
+      return problem(409, "conflict", "Duplicate value", { detail: e.message });
+    }
+    throw err;
+  }
+});
+
+export const DELETE = safe(async (req: Request, { params }: Params) => {
+  const ctx = await requireAuth(req, "assets:delete");
+  if (isResponse(ctx)) return ctx;
+
+  const id = (await params).id;
+  const existing = await getAsset(ctx, id);
+  if (!existing) return notFound("asset");
+  if (!withinLocationScope(ctx, existing.location_id)) return branchForbidden();
+
+  const done = await softDeleteAsset(ctx, id);
+  return done ? new Response(null, { status: 204 }) : notFound("asset");
+});
