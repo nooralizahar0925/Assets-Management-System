@@ -1,0 +1,54 @@
+#!/bin/sh
+# Rejects a commit message that is not a Conventional Commit.
+# The changelog and the user-facing release notes are generated from these
+# messages, so a malformed one silently disappears from the release.
+# See CONTRIBUTING.md. Enable with: git config core.hooksPath .githooks
+
+msg_file="$1"
+subject=$(sed -n '1p' "$msg_file")
+
+# Let git's own generated messages through.
+case "$subject" in
+  "Merge "*|"Revert "*|"fixup! "*|"squash! "*|"#"*|"") exit 0 ;;
+esac
+
+pattern='^(feat|fix|perf|docs|test|refactor|chore|ci|build|style|revert)(\([a-z0-9._/-]+\))?!?: .+'
+
+if ! printf '%s' "$subject" | grep -Eq "$pattern"; then
+  echo "" >&2
+  echo "  Commit message rejected — not a Conventional Commit." >&2
+  echo "" >&2
+  echo "    $subject" >&2
+  echo "" >&2
+  echo "  Expected:  <type>(<scope>): <subject>" >&2
+  echo "  Types:     feat fix perf docs test refactor chore ci build style revert" >&2
+  echo "  Example:   feat(assets): add qr code scanning" >&2
+  echo "" >&2
+  echo "  The body of the message becomes the release note users read." >&2
+  echo "  See CONTRIBUTING.md. Bypass with --no-verify if you must." >&2
+  echo "" >&2
+  exit 1
+fi
+
+# A feat or fix with no release-note trailer never reaches a customer.
+# CI fails on this; warn here so it is caught before the push.
+case "$subject" in
+  feat*|fix*)
+    if ! grep -Eqi '^release-note:[[:space:]]*[^[:space:]]' "$msg_file"; then
+      echo "" >&2
+      echo "  Warning: no 'release-note:' trailer on a $(printf '%s' "$subject" | cut -d: -f1) commit." >&2
+      echo "  This change will not appear in the customer-facing release notes," >&2
+      echo "  and CI will reject it. Add a trailer such as:" >&2
+      echo "" >&2
+      echo "    release-note: Scan a QR code to open an asset instantly." >&2
+      echo "" >&2
+    fi
+    ;;
+esac
+
+if [ ${#subject} -gt 72 ]; then
+  echo "  Commit subject is ${#subject} characters; keep it under 72." >&2
+  exit 1
+fi
+
+exit 0
