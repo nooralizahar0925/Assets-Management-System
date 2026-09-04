@@ -17,6 +17,6 @@ export const DELETE = safe(async (
       [id],
     )).rows,
   );
-  if (rows.length === 0) return notFound("api key");
+  if (rows.length === 0) return notFound("API key");
   return new Response(null, { status: 204 });
 });

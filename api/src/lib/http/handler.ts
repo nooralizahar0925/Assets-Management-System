@@ -1,4 +1,5 @@
 import { problem } from "./problem";
+import { logError } from "./logger";
 
 export interface Actor {
   type: "user" | "api_key" | "system";
@@ -20,7 +21,8 @@ export function safe<A extends unknown[]>(
     try {
       return await fn(...args);
     } catch (err) {
-      console.error(err);
+      // Redacted: a pg error's detail field quotes the offending row.
+      logError("unhandled", err);
       return problem(500, "internal", "Internal server error");
     }
   };
