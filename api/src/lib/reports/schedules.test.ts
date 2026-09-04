@@ -140,7 +140,10 @@ describe("schedule CRUD", () => {
   });
 });
 
-describe("runDueSchedules", () => {
+// runDueSchedules is O(organisations) by design - it has to consider every
+// tenant's schedules - and the shared test database accumulates one org per
+// suite, so these need more than the default timeout.
+describe("runDueSchedules", { timeout: 60_000 }, () => {
   it("queues an email with the rendered report attached", async () => {
     await createSchedule(ctx, {
       saved_report_id: savedId, format: "xlsx", cadence: "daily",

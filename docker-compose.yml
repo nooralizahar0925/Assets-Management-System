@@ -53,17 +53,13 @@ services:
       db: { condition: service_healthy }
     restart: unless-stopped
 
-  # Built from Task 21 onward, when the TailAdmin template is copied to web/.
-  # Until it exists, `docker compose up` would fail on a missing build context,
-  # so the service sits behind a profile and is opted into explicitly:
-  #   docker compose --profile web up
-  # Delete the profile line once web/ exists, so the default up brings up
-  # everything as the global constraints require.
   web:
-    profiles: ["web"]
-    build: ./web
-    environment:
-      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:4000}
+    build:
+      context: ./web
+      # Vite inlines the API base at build time, so it is a build arg rather
+      # than a runtime environment variable.
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:4000}
     ports: ["3000:80"]
     depends_on: [api]
 

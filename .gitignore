@@ -1,7 +1,7 @@
-node_modules/
-.next/
-dist/
-.env
 *.log
-dist-scripts/
 *.tsbuildinfo
+.env
+.next/
+dist-scripts/
+dist/
+node_modules/
