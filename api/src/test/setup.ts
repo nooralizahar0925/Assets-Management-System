@@ -18,3 +18,7 @@ process.env.S3_ENDPOINT ??= "http://localhost:9000";
 process.env.S3_BUCKET ??= "ams-attachments";
 process.env.S3_ACCESS_KEY ??= "ams";
 process.env.S3_SECRET_KEY ??= "ams-secret";
+
+// A fixed key for tests only. Production refuses to start without a real one.
+process.env.APP_ENCRYPTION_KEY ??=
+  "0000000000000000000000000000000000000000000000000000000000000001";

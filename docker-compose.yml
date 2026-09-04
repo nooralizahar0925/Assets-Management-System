@@ -23,6 +23,7 @@ services:
       # that this value, and not a literal in the SQL, is the credential.
       APP_DB_PASSWORD: ${APP_DB_PASSWORD:-ams_app}
       SESSION_SECRET: ${SESSION_SECRET:-dev-secret-change-me}
+      APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY:?APP_ENCRYPTION_KEY must be set - see .env.example}
       APP_BASE_URL: ${APP_BASE_URL:-http://localhost:3000}
       S3_ENDPOINT: http://minio:9000
       S3_BUCKET: ams-attachments
