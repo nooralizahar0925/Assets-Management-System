@@ -2,6 +2,7 @@ import { z } from "zod";
 import { withTenant } from "../db";
 import type { Ctx } from "../http/handler";
 import { recordEvent } from "./audit";
+import { dispatch } from "../notify/dispatch";
 
 /** The asset exists but is in a state this operation cannot act on. */
 export class TransitionError extends Error {
@@ -55,13 +56,13 @@ export interface Assignment {
 // one cannot, and neither can one already in someone's hands.
 const CHECKOUTABLE = new Set(["available", "maintenance"]);
 
-export function checkOut(
+export async function checkOut(
   ctx: Ctx,
   assetId: string,
   raw: CheckOutInput,
 ): Promise<Assignment> {
   const input = CheckOutInput.parse(raw);
-  return withTenant(ctx.orgId, async (c) => {
+  const assignment = await withTenant(ctx.orgId, async (c) => {
     // FOR UPDATE holds the row for the transaction, so two concurrent
     // check-outs cannot both read "available" and both proceed. The unique
     // index on one open assignment per asset is the backstop.
@@ -116,15 +117,27 @@ export function checkOut(
     });
     return rows[0];
   });
+
+  // Fired after the transaction commits: a queued email must never be able to
+  // roll back a completed check-out, and dispatch never throws.
+  await dispatch(ctx, "asset.checked_out", {
+    assetId,
+    assigneeId: input.assignee_type === "user" ? input.assignee_id ?? null : null,
+    actorId: ctx.actor.type === "user" ? ctx.actor.id : null,
+    asset: await getAssetSummary(ctx, assetId),
+    assignment,
+  });
+
+  return assignment;
 }
 
-export function checkIn(
+export async function checkIn(
   ctx: Ctx,
   assetId: string,
   raw: CheckInInput,
 ): Promise<Assignment> {
   const input = CheckInInput.parse(raw);
-  return withTenant(ctx.orgId, async (c) => {
+  const assignment = await withTenant(ctx.orgId, async (c) => {
     const { rows } = await c.query<Assignment>(
       `UPDATE assignments SET
          checked_in_at = now(),
@@ -167,6 +180,26 @@ export function checkIn(
     });
     return rows[0];
   });
+
+  await dispatch(ctx, "asset.checked_in", {
+    assetId,
+    assigneeId: assignment.assignee_id,
+    actorId: ctx.actor.type === "user" ? ctx.actor.id : null,
+    asset: await getAssetSummary(ctx, assetId),
+    assignment,
+  });
+
+  return assignment;
+}
+
+/** The few asset fields a notification template needs, without a full row fetch. */
+async function getAssetSummary(ctx: Ctx, assetId: string) {
+  return withTenant(ctx.orgId, async (c) =>
+    (await c.query<{ name: string; asset_tag: string; status: string }>(
+      "SELECT name, asset_tag, status::text AS status FROM assets WHERE id = $1",
+      [assetId],
+    )).rows[0] ?? null,
+  );
 }
 
 export const addNote = (ctx: Ctx, assetId: string, note: string) =>
