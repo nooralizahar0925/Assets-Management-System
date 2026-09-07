@@ -1,5 +1,6 @@
 import { withTenant } from "../db";
 import type { Ctx } from "../http/handler";
+import { bookValueAt, type Period } from "./depreciation";
 
 export type Method = "none" | "straight_line" | "reducing_balance";
 
@@ -103,4 +104,66 @@ export async function listDepreciableAssets(ctx: Ctx): Promise<DepreciableAsset[
       policy: toPolicy(row),
     }));
   });
+}
+
+/**
+ * Writes closed periods, skipping any already recorded.
+ *
+ * ON CONFLICT DO NOTHING rather than an upsert: a snapshot is a statement about
+ * a month that has ended, and rewriting it because a cost was corrected later
+ * would change a figure finance has already reported.
+ */
+export async function saveSnapshots(
+  ctx: Ctx,
+  assetId: string,
+  method: Method,
+  periods: Period[],
+): Promise<number> {
+  if (periods.length === 0) return 0;
+
+  return withTenant(ctx.orgId, async (c) => {
+    let written = 0;
+    for (const p of periods) {
+      const { rowCount } = await c.query(
+        `INSERT INTO asset_book_values
+           (org_id, asset_id, period_end, method,
+            opening_value, charge, closing_value, accumulated)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         ON CONFLICT (asset_id, period_end) DO NOTHING`,
+        [ctx.orgId, assetId, p.period_end, method,
+         p.opening, p.charge, p.closing, p.accumulated],
+      );
+      written += rowCount ?? 0;
+    }
+    return written;
+  });
+}
+
+/**
+ * The live figure the interface shows, calculated rather than read back.
+ *
+ * Reading the newest snapshot would be up to a month stale, which is wrong on
+ * an asset detail page. Reports use the snapshots instead, because those must
+ * reprint identically.
+ */
+export async function bookValueNow(
+  ctx: Ctx,
+  assetId: string,
+  on: string = new Date().toISOString().slice(0, 10),
+): Promise<number> {
+  const [policy, asset] = await Promise.all([
+    resolvePolicy(ctx, assetId),
+    withTenant(ctx.orgId, async (c) =>
+      (await c.query<{ cost: string | null; start: string | null }>(
+        `SELECT purchase_cost AS cost,
+                coalesce(depreciation_start, purchase_date)::text AS start
+           FROM assets WHERE id = $1`,
+        [assetId],
+      )).rows[0],
+    ),
+  ]);
+
+  const cost = Number(asset?.cost ?? 0);
+  if (!asset?.start || cost <= 0 || policy.method === "none") return cost;
+  return bookValueAt(cost, asset.start, policy, on);
 }

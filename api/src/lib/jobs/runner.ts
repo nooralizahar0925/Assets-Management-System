@@ -7,6 +7,7 @@ import { purgeRateLimitEvents } from "../auth/apikey";
 import { purgeOldLoginAttempts } from "../auth/loginThrottle";
 import { runOverdueJob } from "./overdue";
 import { runExpiryJobs } from "./expiring";
+import { runDepreciationJob } from "./depreciation";
 import { runDueSchedules } from "../reports/schedules";
 import { logError } from "../http/logger";
 
@@ -15,6 +16,8 @@ export interface JobRunSummary {
   scheduled_reports?: number;
   org_id: string;
   overdue: number;
+  /** Book-value rows written. Zero for most of the month, by design. */
+  depreciation: number;
   warranty: number;
   licence: number;
   maintenance: number;
@@ -44,9 +47,14 @@ export async function runAllJobs(): Promise<JobRunSummary[]> {
       // guard - the table it sweeps carries org_id and row-level security.
       await purgeRateLimitEvents(ctx);
 
+      // Month-end book values. Runs nightly and writes nothing for most of the
+      // month; the first run after a month closes records that month.
+      const depreciation = await runDepreciationJob(ctx);
+
       summaries.push({
         org_id: org.id,
         overdue: overdue.notified,
+        depreciation: depreciation.periods,
         ...expiry,
         sent: mail.sent,
         failed: mail.failed,
