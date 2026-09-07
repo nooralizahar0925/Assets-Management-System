@@ -14,6 +14,8 @@ import AssetDetail from "./pages/Assets/AssetDetail";
 import TagRedirect from "./pages/Assets/TagRedirect";
 import AssetForm from "./pages/Assets/AssetForm";
 import ImportWizard from "./pages/Import/ImportWizard";
+import ReportGallery from "./pages/Reports/ReportGallery";
+import ReportViewer from "./pages/Reports/ReportViewer";
 
 /**
  * The whole route table exists from this task onward. Screens a later task
@@ -40,8 +42,8 @@ export default function App() {
               <Route path="/a/:tag" element={<TagRedirect />} />
 
               <Route path="/import" element={<ImportWizard />} />
-              <Route path="/reports" element={<ComingSoon title="Reports" />} />
-              <Route path="/reports/:key" element={<ComingSoon title="Report" />} />
+              <Route path="/reports" element={<ReportGallery />} />
+              <Route path="/reports/:key" element={<ReportViewer />} />
 
               <Route path="/categories" element={<ComingSoon title="Categories" />} />
               <Route path="/locations" element={<ComingSoon title="Locations" />} />
