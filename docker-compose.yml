@@ -33,6 +33,10 @@ services:
       S3_BUCKET: ams-attachments
       S3_ACCESS_KEY: ${MINIO_ROOT_USER:-ams}
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-ams-secret}
+      # Database archives live apart from customer attachments: different
+      # retention, different access, different blast radius.
+      S3_BACKUP_BUCKET: ${S3_BACKUP_BUCKET:-ams-backups}
+      BACKUP_KEEP: ${BACKUP_KEEP:-14}
     ports: ["4000:4000"]
     depends_on:
       db: { condition: service_healthy }

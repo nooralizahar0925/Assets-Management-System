@@ -27,6 +27,11 @@ FROM node:22-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
+# pg_dump and pg_restore, for `npm run backup:prod` and the restore runbook.
+# The client must not be older than the server it dumps, so this tracks the
+# postgres image in docker-compose.yml.
+RUN apk add --no-cache postgresql16-client
+
 # .next/standalone's server.js reads PORT and HOSTNAME and defaults to
 # localhost:3000. The -p 4000 in the npm scripts applies to `next dev` and
 # `next start`, not to the standalone server, so without these the container
