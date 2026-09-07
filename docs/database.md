@@ -1,6 +1,6 @@
 # The database
 
-PostgreSQL 16. Twenty migrations in `api/migrations`, applied in filename order
+PostgreSQL 16. Twenty-one migrations in `api/migrations`, applied in filename order
 by `npm run migrate`, each recorded in `schema_migrations` so the runner is
 idempotent.
 
