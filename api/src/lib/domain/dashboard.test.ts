@@ -6,6 +6,7 @@ import type { Ctx } from "../http/handler";
 import { createAsset, updateAsset } from "./assets";
 import { createCategory } from "./categories";
 import { createLocation } from "./locations";
+import { runDepreciationJob } from "../jobs/depreciation";
 import { checkOut } from "./assignments";
 import { getDashboardSummary } from "./dashboard";
 
@@ -88,6 +89,41 @@ describe("getDashboardSummary", () => {
   it("sums purchase value", async () => {
     const summary = await getDashboardSummary(ctx);
     expect(Number(summary.totals.total_value)).toBe(107_000_000);
+  });
+
+  it("reports book value as cost until anything has been depreciated", async () => {
+    // Nothing in this fixture carries a depreciation policy, so written-down
+    // value and cost are the same figure. A tile that showed zero here would
+    // read as a register worth nothing.
+    const summary = await getDashboardSummary(ctx);
+    expect(Number(summary.totals.book_value)).toBe(107_000_000);
+  });
+
+  it("subtracts accumulated depreciation from book value", async () => {
+    const cat = await createCategory(ctx, {
+      name: "Depreciating", kind: "it", field_schema: { fields: [] },
+    });
+    await withTenant(orgId, (c) =>
+      c.query(
+        `UPDATE categories SET depreciation_method = 'straight_line',
+                useful_life_months = 10 WHERE id = $1`,
+        [cat.id],
+      ),
+    );
+    const asset = await createAsset(ctx, {
+      name: "Writes down", category_id: cat.id,
+      purchase_cost: 10_000_000, purchase_date: "2026-01-05",
+    });
+    await runDepreciationJob(ctx, "2026-04-10");
+
+    const summary = await getDashboardSummary(ctx);
+    // Cost rises by the new asset; book value rises by cost less three months.
+    expect(Number(summary.totals.total_value)).toBe(117_000_000);
+    expect(Number(summary.totals.book_value)).toBe(114_000_000);
+
+    await withTenant(orgId, (c) =>
+      c.query("DELETE FROM assets WHERE id = $1", [asset.id]),
+    );
   });
 
   it("breaks the register down by status", async () => {

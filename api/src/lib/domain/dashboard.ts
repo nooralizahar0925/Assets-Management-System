@@ -9,6 +9,8 @@ export interface DashboardSummary {
     overdue: number;
     maintenance: number;
     total_value: string;
+    /** Cost less accumulated depreciation, from the month-end snapshots. */
+    book_value: string;
     currency: string;
   };
   by_status: { status: string; count: number }[];
@@ -47,6 +49,21 @@ export function getDashboardSummary(ctx: Ctx): Promise<DashboardSummary> {
            coalesce(sum(purchase_cost), 0)::text AS total_value,
            coalesce(max(currency), 'IDR') AS currency
          FROM live
+       ),
+       -- Written-down value: cost less whatever the latest closed month
+       -- recorded. LATERAL rather than a join, so an asset valued for twelve
+       -- months is counted once and not twelve times.
+       book AS (
+         SELECT coalesce(sum(
+                  l.purchase_cost - coalesce(b.accumulated, 0)
+                ), 0)::text AS book_value
+         FROM live l
+         LEFT JOIN LATERAL (
+           SELECT accumulated FROM asset_book_values
+            WHERE asset_id = l.id
+            ORDER BY period_end DESC LIMIT 1
+         ) b ON true
+         WHERE l.purchase_cost IS NOT NULL
        ),
        assignments_now AS (
          SELECT
@@ -118,6 +135,7 @@ export function getDashboardSummary(ctx: Ctx): Promise<DashboardSummary> {
            'overdue', an.overdue,
            'maintenance', t.maintenance,
            'total_value', t.total_value,
+           'book_value', bv.book_value,
            'currency', t.currency),
          'by_status', coalesce(bs.rows, '[]'::jsonb),
          'by_category', coalesce(bc.rows, '[]'::jsonb),
@@ -129,7 +147,7 @@ export function getDashboardSummary(ctx: Ctx): Promise<DashboardSummary> {
            CASE WHEN t.assets = 0 THEN 0
                 ELSE round(t.in_use::numeric * 100 / t.assets) END)
        ) AS payload
-       FROM totals t, assignments_now an, by_status bs, by_category bc,
+       FROM totals t, book bv, assignments_now an, by_status bs, by_category bc,
             by_location bl, recent r, expiring ex`,
       [EXPIRY_FIELDS, scope],
     );

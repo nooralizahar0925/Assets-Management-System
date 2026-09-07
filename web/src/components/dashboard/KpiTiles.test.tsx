@@ -6,7 +6,7 @@ import KpiTiles from "./KpiTiles";
 
 const totals = {
   assets: 1284, active_assignments: 96, overdue: 4, maintenance: 12,
-  total_value: "8450000000", currency: "IDR",
+  total_value: "8450000000", book_value: "8450000000", currency: "IDR",
 };
 
 /** The /me probe AuthProvider makes on mount. */
@@ -64,6 +64,22 @@ describe("KpiTiles", () => {
     // The exact figure stays reachable on hover, since the tile itself rounds.
     const tile = screen.getByText("Register value").closest("[title]");
     expect(tile?.getAttribute("title")).toMatch(/8[.,]450[.,]000[.,]000/);
+  });
+
+  it("says nothing about writing down when nothing has depreciated", async () => {
+    // Book value equals cost until a policy is set. Claiming it was "written
+    // down to" the same figure would imply a policy that does not exist.
+    setup();
+    await ready();
+    expect(screen.queryByText(/Written down/i)).not.toBeInTheDocument();
+  });
+
+  it("shows the written-down value once depreciation has reduced it", async () => {
+    setup({ book_value: "6000000000" });
+    await ready();
+    expect(screen.getByText(/Written down to/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Register value/i }))
+      .toHaveAttribute("href", "/reports/asset-book-value");
   });
 
   it("links each tile into a pre-filtered register", async () => {

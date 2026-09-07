@@ -24,6 +24,10 @@ export default function KpiTiles({
   // register filter for "overdue" or "utilisation" to fall back to.
   const report = (path: string) => (can("reports:read") ? path : undefined);
 
+  // Book value equals cost until something has been depreciated, and a
+  // register with no policy set should not imply one.
+  const writtenDown = Number(totals.book_value) < Number(totals.total_value);
+
   const tiles: Tile[] = [
     { label: "Total assets", value: totals.assets.toLocaleString("en-GB"), href: "/assets" },
     {
@@ -45,7 +49,14 @@ export default function KpiTiles({
     {
       label: "Register value", value: money(totals.total_value, totals.currency),
       title: moneyExact(totals.total_value, totals.currency),
-      href: report("/reports/assets-by-category"),
+      // Written down only when depreciation has actually reduced it; showing
+      // "written down to" the same number would just be noise.
+      hint: writtenDown
+        ? `Written down to ${money(totals.book_value, totals.currency)}`
+        : undefined,
+      href: report(
+        writtenDown ? "/reports/asset-book-value" : "/reports/assets-by-category",
+      ),
     },
     {
       label: "Utilisation", value: `${utilisation.in_use_pct}%`,

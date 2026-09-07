@@ -137,6 +137,8 @@ export interface DashboardSummary {
     overdue: number;
     maintenance: number;
     total_value: string;
+    /** Cost less accumulated depreciation, from the month-end snapshots. */
+    book_value: string;
     currency: string;
   };
   by_status: { status: AssetStatus; count: number }[];
