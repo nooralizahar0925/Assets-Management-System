@@ -3,6 +3,7 @@ import {
 } from "@/lib/auth/guard";
 import { validationProblem, problem } from "@/lib/http/problem";
 import { safe } from "@/lib/http/handler";
+import { withIdempotency } from "@/lib/http/idempotency";
 import { parsePagination, parseSort, paginated } from "@/lib/http/pagination";
 import {
   AssetInput, STATUSES, SORTABLE, listAssets, createAsset, CustomFieldError,
@@ -59,17 +60,22 @@ export const POST = safe(async (req: Request) => {
     return branchForbidden();
   }
 
-  try {
-    return Response.json(await createAsset(ctx, parsed.data), { status: 201 });
-  } catch (err) {
-    if (err instanceof CustomFieldError) {
-      return problem(422, "validation", "Validation failed", { detail: err.message });
+  // Creating an asset is the write integrators retry most: a timeout leaves
+  // them unable to tell whether it happened, and retrying without this makes
+  // two.
+  return withIdempotency(req, ctx, async () => {
+    try {
+      return Response.json(await createAsset(ctx, parsed.data), { status: 201 });
+    } catch (err) {
+      if (err instanceof CustomFieldError) {
+        return problem(422, "validation", "Validation failed", { detail: err.message });
+      }
+      if ((err as { code?: string }).code === "23505") {
+        return problem(409, "conflict", "Duplicate value", {
+          detail: "An asset with that tag or serial number already exists.",
+        });
+      }
+      throw err;
     }
-    if ((err as { code?: string }).code === "23505") {
-      return problem(409, "conflict", "Duplicate value", {
-        detail: "An asset with that tag or serial number already exists.",
-      });
-    }
-    throw err;
-  }
+  });
 });
