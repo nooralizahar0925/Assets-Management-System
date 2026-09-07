@@ -7,7 +7,7 @@ import { createAsset, updateAsset } from "./assets";
 import { createCategory } from "./categories";
 import { createLocation } from "./locations";
 import { runDepreciationJob } from "../jobs/depreciation";
-import { checkOut } from "./assignments";
+import { checkOut, checkIn } from "./assignments";
 import { getDashboardSummary } from "./dashboard";
 
 let orgId: string;
@@ -201,5 +201,30 @@ describe("branch scope", () => {
     expect(summary.totals.assets).toBe(2);
     expect(summary.totals.active_assignments).toBe(1);
     expect(summary.totals.maintenance).toBe(1);
+  });
+});
+
+describe("the onboarding counts", () => {
+  it("counts what has actually been set up, not what somebody ticked", async () => {
+    const summary = await getDashboardSummary(ctx);
+    expect(summary.setup.categories).toBeGreaterThan(0);
+    expect(summary.setup.users).toBeGreaterThan(0);
+  });
+
+  it("counts assignments ever opened, not the ones open now", async () => {
+    // A checklist item that un-ticks itself when the asset comes back would
+    // tell a customer they had never checked anything out.
+    const before = (await getDashboardSummary(ctx)).setup.checkouts;
+    const asset = await createAsset(ctx, { name: "Counted Once" });
+    await checkOut(ctx, asset.id, { assignee_type: "external", assignee_label: "Rina" });
+    await checkIn(ctx, asset.id, {});
+    const after = (await getDashboardSummary(ctx)).setup.checkouts;
+    expect(after).toBe(before + 1);
+  });
+
+  it("does not count a dry run as an import", async () => {
+    // A preview writes nothing, so claiming the register has been imported
+    // would be a lie the customer cannot see through.
+    expect((await getDashboardSummary(ctx)).setup.imports).toBe(0);
   });
 });

@@ -17,6 +17,7 @@
     "@zxing/library": "^0.23.0",
     "apexcharts": "^4.1.0",
     "clsx": "^2.1.1",
+    "driver.js": "^1.8.0",
     "flatpickr": "^4.6.13",
     "react": "^19.0.0",
     "react-apexcharts": "^1.7.0",

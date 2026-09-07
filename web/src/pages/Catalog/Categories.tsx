@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import EmptyState from "../../components/common/EmptyState";
 import PageMeta from "../../components/common/PageMeta";
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import ComponentCard from "../../components/common/ComponentCard";
@@ -108,11 +109,16 @@ export default function Categories() {
         )}
 
         {categories.length === 0 ? (
-          <p className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-            {canWrite
-              ? "No categories yet. Create one for each kind of asset you track."
-              : "No categories have been set up yet."}
-          </p>
+          <EmptyState
+            title="No categories yet"
+            description={
+              canWrite
+                ? "Categories decide which extra fields an asset carries - a warranty date for laptops, running hours for machinery - and hold the depreciation policy those assets inherit."
+                : "Nobody has set up categories yet. Once somebody does, assets can carry the extra fields their kind needs."
+            }
+            actionLabel={canWrite ? "Create a category" : undefined}
+            onAction={canWrite ? () => open(null) : undefined}
+          />
         ) : (
           <ul className="divide-y divide-gray-100 dark:divide-gray-800">
             {categories.map((category) => (

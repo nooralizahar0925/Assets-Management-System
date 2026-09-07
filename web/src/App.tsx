@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router";
 import { AuthProvider } from "./context/AuthContext";
 import RequireAuth from "./components/auth/RequireAuth";
+import { TourProvider } from "./components/help/TourProvider";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 
@@ -81,7 +82,7 @@ export default function App() {
           </Route>
 
           <Route element={<RequireAuth />}>
-            <Route element={<AppLayout />}>
+            <Route element={<TourProvider><AppLayout /></TourProvider>}>
               <Route index path="/" element={<Dashboard />} />
 
               <Route path="/assets" element={<AssetList />} />

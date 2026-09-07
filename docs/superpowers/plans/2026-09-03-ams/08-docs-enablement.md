@@ -1665,14 +1665,48 @@ user. Keying it by user id in `localStorage` needs no schema change and no reque
 every page load. The trade-off is that a user on a second browser sees it again, which
 is a mild annoyance rather than a defect, and the tour is dismissible in one click.
 
-- [ ] **Step 1: Install driver.js**
+
+**Corrections made during execution (2026-09-07).**
+
+- The plan keys the onboarding checklist on `user.role` with the values
+  `admin | manager | technician | viewer`. `SessionUser` has no `role` field,
+  and roles are tenant-owned and renameable since Phase 1b — keying on the
+  string "admin" breaks the moment a customer calls their administrators
+  something else, which they are free to do. `checklistFor` takes `can` and
+  filters by permission, the same way every other gate in the UI works.
+- Completion needs counts the dashboard did not return. `GET
+  /api/v1/dashboard/summary` gained a `setup` block (categories, users, api
+  keys, committed imports, assignments ever opened). "Ever opened" rather than
+  "open now", so an item does not un-tick itself when the asset comes back;
+  committed imports only, so a dry run cannot claim the register was imported.
+- The register's teaching empty state already existed and is better than the
+  plan's version — it distinguishes "nothing here" from "nothing matches your
+  filters" and gates each action by permission. Left alone; `EmptyState` was
+  applied to Categories instead.
+- File paths in the plan are wrong throughout: the dashboard is
+  `pages/Dashboard/Home.tsx`, the register `pages/Assets/AssetList.tsx`, and
+  categories `pages/Catalog/Categories.tsx`.
+- The plan's route list for the help topics is a subset of the real one. The
+  test reads the routes out of `App.tsx` instead, so a new page without help
+  fails the build; `/a/:tag` is excluded, being a redirect nobody looks at.
+- `topicForPath` needed an exact-match-first rule: `/assets/new` matches the
+  `/assets/:id` pattern, so without it somebody adding an asset was shown how
+  to read an asset's history.
+- driver.js is imported only when the tour runs (its own 26 kB chunk), and a
+  test reads the `data-tour` attributes out of the source — driver.js skips a
+  step whose element is missing, silently, which is the failure nobody notices.
+- The tour is replayable from the help panel rather than only from the help
+  centre in Task 54: somebody who dismissed it on day one otherwise has no way
+  back to it.
+
+- [x] **Step 1: Install driver.js**
 
 ```bash
 cd web
 npm install driver.js
 ```
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 `web/src/content/help/topics.test.ts`:
 
@@ -1801,12 +1835,12 @@ describe("onboarding checklist", () => {
 });
 ```
 
-- [ ] **Step 3: Run to verify they fail**
+- [x] **Step 3: Run to verify they fail**
 
 Run: `cd web && npx vitest run src/content/help src/components/help`
 Expected: FAIL — `Cannot find module './topics'`.
 
-- [ ] **Step 4: Implement the block renderer**
+- [x] **Step 4: Implement the block renderer**
 
 `web/src/content/help/blocks.tsx`:
 
@@ -1861,7 +1895,7 @@ export function Blocks({ blocks }: { blocks: Block[] }) {
 }
 ```
 
-- [ ] **Step 5: Write the per-route help topics**
+- [x] **Step 5: Write the per-route help topics**
 
 `web/src/content/help/topics.ts`:
 
@@ -1982,7 +2016,7 @@ export const HELP_TOPICS: Record<string, HelpTopic> = {
 };
 ```
 
-- [ ] **Step 6: Build the help button and panel**
+- [x] **Step 6: Build the help button and panel**
 
 `web/src/components/help/HelpPanel.tsx`:
 
@@ -2068,7 +2102,7 @@ export default function HelpButton({ route }: { route: string }) {
 }
 ```
 
-- [ ] **Step 7: Build the first-run tour**
+- [x] **Step 7: Build the first-run tour**
 
 `web/src/components/help/tourSteps.ts`:
 
@@ -2222,7 +2256,7 @@ the filter bar (`filters`), the first table row (`asset-row`), the check-out but
 (`checkout`), the scan button (`scan`), the import nav item (`import`) and the help
 button (`help`).
 
-- [ ] **Step 8: Build the teaching empty state**
+- [x] **Step 8: Build the teaching empty state**
 
 `web/src/components/common/EmptyState.tsx`:
 
@@ -2290,7 +2324,7 @@ On categories:
 />
 ```
 
-- [ ] **Step 9: Build the role-based onboarding checklist**
+- [x] **Step 9: Build the role-based onboarding checklist**
 
 `web/src/components/help/OnboardingChecklist.tsx`:
 
@@ -2400,12 +2434,12 @@ export default function OnboardingChecklist({ role, state }: Props) {
 Render it at the top of `Dashboard.tsx`, passing `user.role` and counts already fetched
 for the KPI tiles.
 
-- [ ] **Step 10: Run to verify it passes**
+- [x] **Step 10: Run to verify it passes**
 
 Run: `cd web && npx vitest run src/content/help src/components/help`
 Expected: PASS — 3 topic tests, 3 panel tests, 4 checklist tests.
 
-- [ ] **Step 11: Commit**
+- [x] **Step 11: Commit**
 
 ```
 git add web/src/content/help web/src/components/help \

@@ -32,6 +32,7 @@ export default function ScanButton() {
   return (
     <>
       <button
+        data-tour="scan"
         type="button"
         onClick={openModal}
         title="Scan an asset (or use a handheld scanner from any screen)"

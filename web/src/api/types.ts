@@ -161,6 +161,15 @@ export interface DashboardSummary {
     id: string; name: string; field: string; expires_on: string; days_left: number;
   }[];
   utilisation: { in_use_pct: number };
+  /** Counts the onboarding checklist derives completion from. */
+  setup: {
+    categories: number;
+    users: number;
+    api_keys: number;
+    imports: number;
+    /** Assignments ever opened, not the ones open now. */
+    checkouts: number;
+  };
 }
 
 export interface ReportColumn {

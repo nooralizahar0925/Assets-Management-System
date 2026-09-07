@@ -109,10 +109,12 @@ export default function AssetList() {
           </div>
         </div>
 
-        <AssetFilters
-          query={query} categories={categories} locations={locations} users={users}
-          onFilter={setFilter} onClear={clear}
-        />
+        <div data-tour="filters">
+          <AssetFilters
+            query={query} categories={categories} locations={locations} users={users}
+            onFilter={setFilter} onClear={clear}
+          />
+        </div>
 
         {error && (
           <div role="alert" className="rounded-lg border border-error-500 bg-error-50 px-4 py-3 text-sm text-error-600 dark:bg-error-500/10">
@@ -120,22 +122,24 @@ export default function AssetList() {
           </div>
         )}
 
-        {!loading && assets.length === 0 ? (
-          <EmptyRegister filtered={hasFilters} onClear={clear} />
-        ) : (
-          <>
-            <AssetTable
-              assets={assets}
-              selected={selected}
-              onSelect={toggle}
-              onSelectAll={toggleAll}
-              sort={query.sort}
-              onSort={setSort}
-            />
+        <div data-tour="register" className="space-y-5">
+          {!loading && assets.length === 0 ? (
+            <EmptyRegister filtered={hasFilters} onClear={clear} />
+          ) : (
+            <>
+              <AssetTable
+                assets={assets}
+                selected={selected}
+                onSelect={toggle}
+                onSelectAll={toggleAll}
+                sort={query.sort}
+                onSort={setSort}
+              />
 
-            <Pagination meta={meta} onPage={setPage} />
-          </>
-        )}
+              <Pagination meta={meta} onPage={setPage} />
+            </>
+          )}
+        </div>
       </div>
 
       <BulkActionBar

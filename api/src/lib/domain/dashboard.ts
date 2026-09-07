@@ -21,6 +21,22 @@ export interface DashboardSummary {
     id: string; name: string; field: string; expires_on: string; days_left: number;
   }[];
   utilisation: { in_use_pct: number };
+  /**
+   * Counts the onboarding checklist derives completion from.
+   *
+   * Read from the register rather than stored as flags: a checklist that can
+   * disagree with reality is worse than none, because it tells a new customer
+   * they have done something they have not. Deliberately organisation-wide -
+   * a branch-scoped user has still "set up categories" when somebody else did.
+   */
+  setup: {
+    categories: number;
+    users: number;
+    api_keys: number;
+    imports: number;
+    /** Assignments ever opened, not the ones open now. */
+    checkouts: number;
+  };
 }
 
 const EXPIRY_FIELDS = ["warranty_end", "license_expiry", "next_service_at"] as const;
@@ -127,6 +143,14 @@ export function getDashboardSummary(ctx: Ctx): Promise<DashboardSummary> {
               ORDER BY (l.custom ->> f.field)::date
               LIMIT 10
            ) t
+       ),
+       setup AS (
+         SELECT
+           (SELECT count(*)::int FROM categories) AS categories,
+           (SELECT count(*)::int FROM users) AS users,
+           (SELECT count(*)::int FROM api_keys WHERE revoked_at IS NULL) AS api_keys,
+           (SELECT count(*)::int FROM import_jobs WHERE NOT dry_run) AS imports,
+           (SELECT count(*)::int FROM assignments) AS checkouts
        )
        SELECT jsonb_build_object(
          'totals', jsonb_build_object(
@@ -145,10 +169,16 @@ export function getDashboardSummary(ctx: Ctx): Promise<DashboardSummary> {
          'utilisation', jsonb_build_object(
            'in_use_pct',
            CASE WHEN t.assets = 0 THEN 0
-                ELSE round(t.in_use::numeric * 100 / t.assets) END)
+                ELSE round(t.in_use::numeric * 100 / t.assets) END),
+         'setup', jsonb_build_object(
+           'categories', su.categories,
+           'users', su.users,
+           'api_keys', su.api_keys,
+           'imports', su.imports,
+           'checkouts', su.checkouts)
        ) AS payload
        FROM totals t, book bv, assignments_now an, by_status bs, by_category bc,
-            by_location bl, recent r, expiring ex`,
+            by_location bl, recent r, expiring ex, setup su`,
       [EXPIRY_FIELDS, scope],
     );
 

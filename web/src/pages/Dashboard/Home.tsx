@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import PageMeta from "../../components/common/PageMeta";
 import ComponentCard from "../../components/common/ComponentCard";
 import KpiTiles from "../../components/dashboard/KpiTiles";
+import OnboardingChecklist from "../../components/help/OnboardingChecklist";
 
 // ApexCharts is 590 kB - larger than the rest of the application put together.
 // The KPI tiles are what people read first, and an empty register draws no
@@ -91,6 +92,10 @@ export default function Home() {
       <PageMeta title="Dashboard | AMS" description="Asset management dashboard" />
 
       <div className="space-y-5">
+        <OnboardingChecklist
+          can={can}
+          state={{ ...summary.setup, assets: summary.totals.assets }}
+        />
         <KpiTiles totals={summary.totals} utilisation={summary.utilisation} />
 
         <div className="grid gap-5 lg:grid-cols-2">
