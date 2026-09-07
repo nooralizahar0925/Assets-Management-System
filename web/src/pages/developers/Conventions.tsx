@@ -35,14 +35,19 @@ export default function Conventions() {
         descending: <code>sort=-purchase_cost</code>.
       </p>
 
-      <h2>Money is a string</h2>
+      <h2>Money is read as a string and written as a number</h2>
 
       <p>
-        Amounts are decimal strings, not numbers. A register of 400-million
-        rupiah machines exceeds what a JavaScript number holds exactly, and a
-        rounding error in an asset value is not a small problem. Parse them with
-        a decimal library, or keep them as strings if you are only displaying
-        them.
+        Amounts come back as decimal strings — <code>"24500000.00"</code> — so
+        no precision is lost on the way to you. Parse them with a decimal
+        library, or leave them as strings if you are only displaying them.
+      </p>
+
+      <p>
+        Writes are the other way round: <code>purchase_cost</code> is sent as a
+        JSON number. That asymmetry is worth knowing before you echo a value
+        straight back — sending the string you were given is rejected with a{" "}
+        <code>422</code>.
       </p>
 
       <h2>Dates and times</h2>

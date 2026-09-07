@@ -13,8 +13,11 @@ const PAGES = [
   { to: "/developers", label: "Overview", end: true },
   { to: "/developers/authentication", label: "Authentication" },
   { to: "/developers/conventions", label: "Conventions" },
+  { to: "/developers/recipes", label: "Recipes" },
   { to: "/developers/reference", label: "API reference" },
+  { to: "/developers/webhooks", label: "Webhooks" },
   { to: "/developers/errors", label: "Errors" },
+  { to: "/developers/changelog", label: "Changelog" },
 ];
 
 export default function DevelopersLayout() {

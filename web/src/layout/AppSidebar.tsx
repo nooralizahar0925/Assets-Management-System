@@ -43,6 +43,7 @@ const othersItems: NavItem[] = [
       { name: "People", path: "/settings/users", pro: false },
       { name: "Roles", path: "/settings/roles", pro: false },
       { name: "API keys", path: "/settings/api-keys", pro: false },
+      { name: "Webhooks", path: "/settings/webhooks", pro: false },
       { name: "Email", path: "/settings/email", pro: false },
       { name: "Notifications", path: "/settings/notifications", pro: false },
     ],

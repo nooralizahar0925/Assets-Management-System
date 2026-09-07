@@ -827,7 +827,52 @@ described once as an `HttpRequest` and rendered by four small functions, so the 
 tabs are provably the same call. Adding a language later is one function, not eight
 more snippets.
 
-- [ ] **Step 1: Write the failing tests**
+
+**Corrections made during execution (2026-09-07).** The plan's recipes were
+written against endpoints that do not exist. Read out of the handlers instead:
+
+- `/check-out` and `/check-in` are `checkout` and `checkin`.
+- `/api/v1/tags/<tag>` does not exist; the scanner endpoint is
+  `GET /api/v1/assets/lookup?tag=`.
+- The custody body field is `note`, not `checkout_note`/`checkin_note` — those
+  are the stored column names. Zod strips unknown keys, so the plan's version
+  would have been accepted with the note silently discarded.
+- `purchase_cost` is written as a **number** and read back as a decimal string.
+  The plan sent a string, which is a 422.
+- `/history` takes no pagination and returns `data.events` and
+  `data.assignments` together.
+- The import is multipart with a required `mapping` field, so the renderers
+  grew an `upload` case rather than pretending it is a JSON body.
+
+A test now asserts every recipe's path is one the API actually serves.
+
+**Defects found while writing the webhooks page, and fixed here:**
+
+1. `asset.created`, `asset.updated`, `asset.deleted` and `import.completed`
+   were subscribable and **never dispatched**. A customer could subscribe and
+   receive nothing for ever, and "no deliveries" is indistinguishable from
+   "nothing happened". Now dispatched from the asset routes and the import
+   route, with an integration test that drives the real routes and asserts a
+   delivery row appears, plus a source scanner that fails the build if a
+   published event has no dispatch site.
+2. `warranty.expiring` and `licence.expiring` were dispatched but **not
+   subscribable** — the reverse gap. Added to `WEBHOOK_EVENTS`.
+3. The delivery body carried no `id`, so the standard advice to de-duplicate
+   at-least-once deliveries was impossible to follow. It now carries the
+   delivery id, stable across retries.
+4. `dispatch` forwarded only `asset_id` to the webhook payload, so
+   `import.completed` delivered `{"asset_id": null}` and nothing else. The
+   whole event context now travels, minus the two keys that only decide who
+   gets emailed.
+5. There was **no Settings → Webhooks screen at all**: the only way to
+   subscribe was to POST by hand, and the signing secret — returned exactly
+   once — arrived in a terminal. Built here, driven by the event list the
+   server publishes.
+
+**Also moved:** the Errors page was built in Task 51 so the sidebar had no dead
+link.
+
+- [x] **Step 1: Write the failing tests**
 
 `web/src/content/renderers.test.ts`:
 
@@ -974,12 +1019,12 @@ describe("errors page", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify they fail**
+- [x] **Step 2: Run to verify they fail**
 
 Run: `cd web && npx vitest run src/content src/pages/developers/Errors`
 Expected: FAIL — `Cannot find module './renderers'`.
 
-- [ ] **Step 3: Implement the renderers**
+- [x] **Step 3: Implement the renderers**
 
 `web/src/content/renderers.ts`:
 
@@ -1103,7 +1148,7 @@ function phpArray(value: unknown): string {
 }
 ```
 
-- [ ] **Step 4: Write the recipe catalogue**
+- [x] **Step 4: Write the recipe catalogue**
 
 `web/src/content/recipes.ts`:
 
@@ -1230,7 +1275,7 @@ export const RECIPES: Recipe[] = [
 ];
 ```
 
-- [ ] **Step 5: Build CodeTabs and the four pages**
+- [x] **Step 5: Build CodeTabs and the four pages**
 
 `web/src/components/developers/CodeTabs.tsx`:
 
@@ -1547,7 +1592,7 @@ export default function Changelog() {
 }
 ```
 
-- [ ] **Step 6: Register the remaining routes**
+- [x] **Step 6: Register the remaining routes**
 
 In `web/src/App.tsx`, inside the existing `/developers` route:
 
@@ -1558,12 +1603,12 @@ In `web/src/App.tsx`, inside the existing `/developers` route:
 <Route path="changelog" element={<Changelog />} />
 ```
 
-- [ ] **Step 7: Run to verify it passes**
+- [x] **Step 7: Run to verify it passes**
 
 Run: `cd web && npx vitest run src/content src/pages/developers`
 Expected: PASS — 15 renderer tests, 1 errors-page test, 3 from Task 51.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```
 git add web/src/content web/src/components/developers/CodeTabs.tsx \

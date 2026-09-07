@@ -23,6 +23,24 @@ export interface OpenApiDocument {
   servers: { url: string; description: string }[];
   tags: { name: string; description: string }[];
   paths: Record<string, Record<string, OpenApiOperation>>;
+  components?: {
+    schemas?: Record<string, unknown>;
+  };
+}
+
+/**
+ * The events an endpoint can subscribe to, read out of the published document.
+ *
+ * The list lives in one place in the API and reaches the document through the
+ * schema its handler parses, so a page rendering this cannot advertise an
+ * event the server does not accept.
+ */
+export function webhookEventsIn(doc: OpenApiDocument): string[] {
+  const schema = doc.components?.schemas?.WebhookInput as
+    | { properties?: { events?: { items?: { enum?: unknown } } } }
+    | undefined;
+  const values = schema?.properties?.events?.items?.enum;
+  return Array.isArray(values) ? values.map(String) : [];
 }
 
 export interface CatalogError {

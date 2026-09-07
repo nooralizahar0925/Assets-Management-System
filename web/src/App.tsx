@@ -25,6 +25,7 @@ import Categories from "./pages/Catalog/Categories";
 import Locations from "./pages/Catalog/Locations";
 import Users from "./pages/Settings/Users";
 import ApiKeys from "./pages/Settings/ApiKeys";
+import WebhookSettings from "./pages/Settings/Webhooks";
 import Roles from "./pages/Settings/Roles";
 
 /**
@@ -38,6 +39,9 @@ const DevAuthentication = lazy(() => import("./pages/developers/Authentication")
 const DevConventions = lazy(() => import("./pages/developers/Conventions"));
 const DevReference = lazy(() => import("./pages/developers/Reference"));
 const DevErrors = lazy(() => import("./pages/developers/Errors"));
+const DevRecipes = lazy(() => import("./pages/developers/Recipes"));
+const DevWebhooks = lazy(() => import("./pages/developers/Webhooks"));
+const DevChangelog = lazy(() => import("./pages/developers/Changelog"));
 
 /**
  * The whole route table exists from this task onward. Screens a later task
@@ -70,7 +74,10 @@ export default function App() {
             <Route path="authentication" element={<Suspense fallback={null}><DevAuthentication /></Suspense>} />
             <Route path="conventions" element={<Suspense fallback={null}><DevConventions /></Suspense>} />
             <Route path="reference" element={<Suspense fallback={null}><DevReference /></Suspense>} />
+            <Route path="recipes" element={<Suspense fallback={null}><DevRecipes /></Suspense>} />
+            <Route path="webhooks" element={<Suspense fallback={null}><DevWebhooks /></Suspense>} />
             <Route path="errors" element={<Suspense fallback={null}><DevErrors /></Suspense>} />
+            <Route path="changelog" element={<Suspense fallback={null}><DevChangelog /></Suspense>} />
           </Route>
 
           <Route element={<RequireAuth />}>
@@ -98,6 +105,7 @@ export default function App() {
               <Route path="/settings/users" element={<Users />} />
               <Route path="/settings/roles" element={<Roles />} />
               <Route path="/settings/api-keys" element={<ApiKeys />} />
+              <Route path="/settings/webhooks" element={<WebhookSettings />} />
               <Route path="/settings/email" element={<EmailSettings />} />
               <Route path="/settings/notifications" element={<NotificationSettings />} />
 

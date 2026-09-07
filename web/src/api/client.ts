@@ -93,6 +93,24 @@ export const api = {
   get: <T>(path: string, params?: Params) =>
     request<T>(path, { method: "GET" }, params),
 
+  /**
+   * The whole response body, unwrapped by nobody.
+   *
+   * `get` peels a `data` envelope, which is right almost everywhere and wrong
+   * for an endpoint that returns something alongside the rows - the webhook
+   * list publishes the subscribable events next to the subscriptions, and
+   * peeling would silently drop them.
+   */
+  getEnvelope: async <T>(path: string, params?: Params): Promise<T> => {
+    const response = await fetch(withParams(path, params), { credentials: "include" });
+    if (!response.ok) {
+      throw new ApiError(response.status, await response.json().catch(() => ({
+        type: "unknown", status: response.status, title: "Request failed",
+      })));
+    }
+    return response.json() as Promise<T>;
+  },
+
   /** For list endpoints where the caller needs `meta` as well as the rows. */
   getPage: async <T>(path: string, params?: Params): Promise<Paginated<T>> => {
     const response = await fetch(withParams(path, params), { credentials: "include" });

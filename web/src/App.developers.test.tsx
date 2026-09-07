@@ -48,6 +48,27 @@ describe("the developer portal's routes", () => {
       .toHaveTextContent(/API reference/i);
   });
 
+  it("serve the recipes under /developers/recipes", async () => {
+    window.history.pushState({}, "", "/developers/recipes");
+    renderApp();
+    expect(await screen.findByRole("heading", { level: 1 }))
+      .toHaveTextContent(/^Recipes$/);
+  });
+
+  it("serve the webhook guide under /developers/webhooks", async () => {
+    window.history.pushState({}, "", "/developers/webhooks");
+    renderApp();
+    expect(await screen.findByRole("heading", { level: 1 }))
+      .toHaveTextContent(/^Webhooks$/);
+  });
+
+  it("serve the changelog under /developers/changelog", async () => {
+    window.history.pushState({}, "", "/developers/changelog");
+    renderApp();
+    expect(await screen.findByRole("heading", { level: 1 }))
+      .toHaveTextContent(/^Changelog$/);
+  });
+
   it("serve the error catalogue under /developers/errors", async () => {
     window.history.pushState({}, "", "/developers/errors");
     renderApp();
