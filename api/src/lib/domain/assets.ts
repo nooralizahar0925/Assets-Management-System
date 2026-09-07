@@ -25,6 +25,22 @@ export const AssetInput = z.object({
   purchase_cost: z.number().nonnegative().nullish(),
   currency: z.string().length(3).default("IDR"),
   custom: z.record(z.unknown()).default({}),
+  /** Bought in one month, brought into service in another. */
+  depreciation_start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullish(),
+  /**
+   * The asset's own policy, overriding its category.
+   *
+   * Patched as a unit so it can be undone: `null` clears the override and
+   * returns the asset to its category, `undefined` leaves it alone. The
+   * coalesce pattern the other columns use cannot express the difference, and
+   * an override that cannot be cleared is a trap.
+   */
+  depreciation: z.object({
+    method: z.enum(["none", "straight_line", "reducing_balance"]),
+    useful_life_months: z.number().int().positive().nullable(),
+    salvage_pct: z.number().min(0).max(100),
+    declining_rate_pct: z.number().min(0).max(100).nullable(),
+  }).nullish(),
 });
 export type AssetInput = z.input<typeof AssetInput>;
 
@@ -48,6 +64,11 @@ export interface Asset {
   purchase_cost: string | null;
   currency: string;
   custom: Record<string, unknown>;
+  depreciation_start: string | null;
+  depreciation_method: "none" | "straight_line" | "reducing_balance" | null;
+  useful_life_months: number | null;
+  salvage_pct: string | null;
+  declining_rate_pct: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -57,6 +78,9 @@ export const SELECT_ASSET = `
          c.name AS category_name, a.serial_no, a.status, a.location_id,
          l.name AS location_name, a.assignee_id, u.name AS assignee_name,
          a.purchase_date, a.purchase_cost, a.currency, a.custom,
+         a.depreciation_start::text AS depreciation_start,
+         a.depreciation_method, a.useful_life_months,
+         a.salvage_pct, a.declining_rate_pct,
          a.created_at, a.updated_at
     FROM assets a
     LEFT JOIN categories c ON c.id = a.category_id
@@ -110,8 +134,10 @@ export async function createAsset(ctx: Ctx, raw: AssetInput): Promise<Asset> {
     const { rows } = await c.query<{ id: string }>(
       `INSERT INTO assets (org_id, asset_tag, name, description, category_id,
                            serial_no, status, location_id, assignee_id,
-                           purchase_date, purchase_cost, currency, custom)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+                           purchase_date, purchase_cost, currency, custom,
+                           depreciation_start, depreciation_method,
+                           useful_life_months, salvage_pct, declining_rate_pct)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
        RETURNING id`,
       [
         ctx.orgId, tag, input.name, input.description ?? null,
@@ -119,6 +145,11 @@ export async function createAsset(ctx: Ctx, raw: AssetInput): Promise<Asset> {
         input.location_id ?? null, input.assignee_id ?? null,
         input.purchase_date ?? null, input.purchase_cost ?? null,
         input.currency, JSON.stringify(custom),
+        input.depreciation_start ?? null,
+        input.depreciation?.method ?? null,
+        input.depreciation?.useful_life_months ?? null,
+        input.depreciation?.salvage_pct ?? null,
+        input.depreciation?.declining_rate_pct ?? null,
       ],
     );
     const id = rows[0].id;
@@ -176,7 +207,19 @@ export function updateAsset(
          purchase_date = coalesce($10, purchase_date),
          purchase_cost = coalesce($11, purchase_cost),
          currency      = coalesce($12, currency),
-         custom        = $13
+         custom        = $13,
+         depreciation_start = coalesce($14, depreciation_start),
+         -- The override is replaced as a unit, so it can be undone: $15 says
+         -- whether the patch mentioned it at all. Writing all four as NULL is
+         -- what "back to inheriting" means, which coalesce cannot express.
+         depreciation_method =
+           CASE WHEN $15 THEN $16::depreciation_method ELSE depreciation_method END,
+         useful_life_months =
+           CASE WHEN $15 THEN $17::integer ELSE useful_life_months END,
+         salvage_pct =
+           CASE WHEN $15 THEN $18::numeric ELSE salvage_pct END,
+         declining_rate_pct =
+           CASE WHEN $15 THEN $19::numeric ELSE declining_rate_pct END
        WHERE id = $1 AND deleted_at IS NULL
        RETURNING id`,
       [
@@ -185,6 +228,14 @@ export function updateAsset(
         patch.location_id ?? null, patch.assignee_id ?? null,
         patch.purchase_date ?? null, patch.purchase_cost ?? null,
         patch.currency ?? null, JSON.stringify(mergedCustom),
+        patch.depreciation_start ?? null,
+        // Did the patch mention the override at all? undefined leaves it
+        // alone; null and an object both write, null clearing all four.
+        patch.depreciation !== undefined,
+        patch.depreciation?.method ?? null,
+        patch.depreciation?.useful_life_months ?? null,
+        patch.depreciation?.salvage_pct ?? null,
+        patch.depreciation?.declining_rate_pct ?? null,
       ],
     );
     if (rows.length === 0) return null;
