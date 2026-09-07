@@ -11,7 +11,9 @@ const asset = (over: Partial<Asset> = {}): Asset => ({
   location_id: null, location_name: "Head Office", assignee_id: null,
   assignee_name: null, purchase_date: "2026-01-10", purchase_cost: "15000000",
   currency: "IDR", custom: {}, created_at: "2026-01-10T00:00:00Z",
-  updated_at: "2026-01-10T00:00:00Z", ...over,
+  updated_at: "2026-01-10T00:00:00Z",
+  depreciation_start: null, depreciation_method: null,
+  useful_life_months: null, salvage_pct: null, declining_rate_pct: null, ...over,
 });
 
 const setup = (props: Partial<React.ComponentProps<typeof AssetTable>> = {}) => {

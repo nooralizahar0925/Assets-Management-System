@@ -18,6 +18,13 @@ export interface Asset {
   purchase_cost: string | null;
   currency: string;
   custom: Record<string, unknown>;
+  /** Defaults to the purchase date; depreciation follows use. */
+  depreciation_start: string | null;
+  /** null means the asset takes its category's policy. */
+  depreciation_method: "none" | "straight_line" | "reducing_balance" | null;
+  useful_life_months: number | null;
+  salvage_pct: string | null;
+  declining_rate_pct: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -33,6 +40,11 @@ export interface FieldDef {
 export interface Category {
   id: string;
   name: string;
+  depreciation_method: "none" | "straight_line" | "reducing_balance";
+  useful_life_months: number | null;
+  /** numeric(5,2) arrives as a string. */
+  salvage_pct: string;
+  declining_rate_pct: string | null;
   kind: "it" | "equipment" | "media";
   field_schema: { fields: FieldDef[] };
   asset_count?: number;

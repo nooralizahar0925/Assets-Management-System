@@ -7,6 +7,9 @@ import Label from "../../components/form/Label";
 import Input from "../../components/form/input/InputField";
 import TextArea from "../../components/form/input/TextArea";
 import CustomFields from "../../components/assets/CustomFields";
+import DepreciationFields, {
+  type DepreciationPolicy,
+} from "../../components/catalog/DepreciationFields";
 import { assetsApi } from "../../api/assets";
 import { catalogApi } from "../../api/catalog";
 import { useAuth } from "../../context/AuthContext";
@@ -62,6 +65,9 @@ export default function AssetForm({ mode }: { mode: "create" | "edit" }) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [banner, setBanner] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  // null means the asset takes its category's policy.
+  const [override, setOverride] = useState<DepreciationPolicy | null>(null);
+  const [startDate, setStartDate] = useState("");
 
   useEffect(() => {
     void Promise.all([catalogApi.categories(), catalogApi.locations()])
@@ -71,19 +77,30 @@ export default function AssetForm({ mode }: { mode: "create" | "edit" }) {
 
   useEffect(() => {
     if (mode !== "edit" || !id) return;
-    void assetsApi.get(id).then((asset) => setForm({
-      name: asset.name,
-      asset_tag: asset.asset_tag,
-      serial_no: asset.serial_no ?? "",
-      description: asset.description ?? "",
-      category_id: asset.category_id ?? "",
-      status: asset.status,
-      location_id: asset.location_id ?? "",
-      purchase_date: asset.purchase_date ?? "",
-      purchase_cost: asset.purchase_cost ?? "",
-      currency: asset.currency,
-      custom: asset.custom,
-    }));
+    void assetsApi.get(id).then((asset) => {
+      setForm({
+        name: asset.name,
+        asset_tag: asset.asset_tag,
+        serial_no: asset.serial_no ?? "",
+        description: asset.description ?? "",
+        category_id: asset.category_id ?? "",
+        status: asset.status,
+        location_id: asset.location_id ?? "",
+        purchase_date: asset.purchase_date ?? "",
+        purchase_cost: asset.purchase_cost ?? "",
+        currency: asset.currency,
+        custom: asset.custom,
+      });
+      setStartDate(asset.depreciation_start ?? "");
+      // A null method means no override: the asset follows its category.
+      setOverride(asset.depreciation_method === null ? null : {
+        method: asset.depreciation_method,
+        useful_life_months: asset.useful_life_months,
+        salvage_pct: Number(asset.salvage_pct ?? 0),
+        declining_rate_pct: asset.declining_rate_pct === null
+          ? null : Number(asset.declining_rate_pct),
+      });
+    });
   }, [mode, id]);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
@@ -91,6 +108,18 @@ export default function AssetForm({ mode }: { mode: "create" | "edit" }) {
 
   const schema =
     categories.find((c) => c.id === form.category_id)?.field_schema.fields ?? [];
+
+  // What this asset's category would give it, so the override starts from the
+  // real policy rather than from nothing.
+  const category = categories.find((c) => c.id === form.category_id);
+  const inheritedPolicy: DepreciationPolicy = {
+    method: category?.depreciation_method ?? "none",
+    useful_life_months: category?.useful_life_months ?? null,
+    salvage_pct: Number(category?.salvage_pct ?? 0),
+    declining_rate_pct: category?.declining_rate_pct === undefined
+      || category?.declining_rate_pct === null
+      ? null : Number(category.declining_rate_pct),
+  };
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -111,6 +140,9 @@ export default function AssetForm({ mode }: { mode: "create" | "edit" }) {
       purchase_cost: form.purchase_cost === "" ? null : Number(form.purchase_cost),
       currency: form.currency,
       custom: form.custom,
+      depreciation_start: startDate || null,
+      // null clears any override and hands the asset back to its category.
+      depreciation: override,
     };
 
     try {
@@ -284,6 +316,31 @@ export default function AssetForm({ mode }: { mode: "create" | "edit" }) {
                 onChange={(e) => set("currency", e.target.value.toUpperCase().slice(0, 3))}
               />
             </div>
+          </div>
+        </ComponentCard>
+
+        <ComponentCard
+          title="Depreciation"
+          desc="Taken from the category unless this asset needs its own."
+        >
+          <div className="space-y-4">
+            <div className="sm:max-w-xs">
+              <Label htmlFor="depreciation_start">In service from</Label>
+              <Input
+                id="depreciation_start" type="date" value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+              <p className="mt-1 text-theme-xs text-gray-400">
+                Defaults to the purchase date. Depreciation follows use, and an
+                asset can be bought one month and put to work in another.
+              </p>
+            </div>
+
+            <DepreciationFields
+              value={override}
+              inherited={inheritedPolicy}
+              onChange={setOverride}
+            />
           </div>
         </ComponentCard>
 

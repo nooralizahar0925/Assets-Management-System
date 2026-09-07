@@ -6,6 +6,9 @@ import Badge from "../../components/ui/badge/Badge";
 import Label from "../../components/form/Label";
 import Input from "../../components/form/input/InputField";
 import FieldSchemaEditor from "../../components/catalog/FieldSchemaEditor";
+import DepreciationFields, {
+  NO_DEPRECIATION, type DepreciationPolicy,
+} from "../../components/catalog/DepreciationFields";
 import { Modal } from "../../components/ui/modal";
 import { useModal } from "../../hooks/useModal";
 import { useAuth } from "../../context/AuthContext";
@@ -32,6 +35,7 @@ export default function Categories() {
   const [name, setName] = useState("");
   const [kind, setKind] = useState<Category["kind"]>("it");
   const [fields, setFields] = useState<FieldDef[]>([]);
+  const [policy, setPolicy] = useState<DepreciationPolicy>(NO_DEPRECIATION);
   const [error, setError] = useState<string | null>(null);
 
   const canWrite = can("categories:write");
@@ -47,13 +51,28 @@ export default function Categories() {
     setName(category?.name ?? "");
     setKind(category?.kind ?? "it");
     setFields(category?.field_schema.fields ?? []);
+    setPolicy(category ? {
+      method: category.depreciation_method,
+      useful_life_months: category.useful_life_months,
+      salvage_pct: Number(category.salvage_pct ?? 0),
+      declining_rate_pct: category.declining_rate_pct === null
+        ? null : Number(category.declining_rate_pct),
+    } : NO_DEPRECIATION);
     setError(null);
     dialog.openModal();
   }
 
   async function save() {
     setError(null);
-    const payload = { name, kind, field_schema: { fields } };
+    // A category carries the policy as flat columns, so it is spelled out
+    // rather than spread - `method` is not a field the API knows.
+    const payload = {
+      name, kind, field_schema: { fields },
+      depreciation_method: policy.method,
+      useful_life_months: policy.useful_life_months,
+      salvage_pct: policy.salvage_pct,
+      declining_rate_pct: policy.declining_rate_pct,
+    };
     try {
       if (editing) await catalogApi.updateCategory(editing.id, payload as never);
       else await catalogApi.createCategory(payload as never);
@@ -160,6 +179,16 @@ export default function Categories() {
                 ))}
               </select>
             </div>
+          </div>
+
+          <div>
+            <h4 className="mb-3 text-sm font-medium text-gray-800 dark:text-white/90">
+              Depreciation
+            </h4>
+            <DepreciationFields
+              value={policy}
+              onChange={(next) => setPolicy(next ?? NO_DEPRECIATION)}
+            />
           </div>
 
           <div>

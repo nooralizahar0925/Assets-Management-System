@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { renderPage } from "../../test/render";
 import AssetForm from "./AssetForm";
 
@@ -7,6 +8,15 @@ const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status, headers: { "content-type": "application/json" },
   });
+
+const CATEGORIES = [
+  {
+    id: "c1", name: "Laptops", kind: "it",
+    field_schema: { fields: [] },
+    depreciation_method: "straight_line", useful_life_months: 36,
+    salvage_pct: "10.00", declining_rate_pct: null,
+  },
+];
 
 const LOCATIONS = [
   { id: "loc-jakarta", name: "Jakarta", parent_id: null, address: null,
@@ -29,7 +39,7 @@ function mockSession(permissions: string[], locationScope: string[] | null) {
       }));
     }
     if (url.includes("/locations")) return Promise.resolve(json({ data: LOCATIONS }));
-    if (url.includes("/categories")) return Promise.resolve(json({ data: [] }));
+    if (url.includes("/categories")) return Promise.resolve(json({ data: CATEGORIES }));
     return Promise.resolve(json({ data: [] }));
   });
 }
@@ -79,5 +89,29 @@ describe("AssetForm branch scope", () => {
     await waitFor(() =>
       expect(screen.getByRole("option", { name: "Bekasi" })).toBeInTheDocument());
     expect(screen.queryByRole("option", { name: "Jakarta" })).not.toBeInTheDocument();
+  });
+});
+
+describe("AssetForm depreciation", () => {
+  it("shows what the category would give before any override", async () => {
+    // Starting blank would look like the asset depreciates nothing, which is
+    // not what its category says.
+    mockSession(["assets:write"], null);
+    renderForm();
+
+    await waitFor(() =>
+      expect(screen.getByLabelText(/^name/i)).toBeInTheDocument());
+    await userEvent.selectOptions(screen.getByLabelText(/category/i), "c1");
+
+    expect(await screen.findByText(/straight line over 36 months/i))
+      .toBeInTheDocument();
+    expect(screen.getByText(/from its category/i)).toBeInTheDocument();
+  });
+
+  it("offers a service date separate from the purchase date", async () => {
+    mockSession(["assets:write"], null);
+    renderForm();
+    await waitFor(() =>
+      expect(screen.getByLabelText(/In service from/i)).toBeInTheDocument());
   });
 });
