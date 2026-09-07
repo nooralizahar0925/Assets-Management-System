@@ -4,6 +4,7 @@ import {
 import { validationProblem, problem } from "@/lib/http/problem";
 import { safe } from "@/lib/http/handler";
 import { withIdempotency } from "@/lib/http/idempotency";
+import { dispatch } from "@/lib/notify/dispatch";
 import { parsePagination, parseSort, paginated } from "@/lib/http/pagination";
 import {
   AssetInput, STATUSES, SORTABLE, listAssets, createAsset, CustomFieldError,
@@ -65,7 +66,17 @@ export const POST = safe(async (req: Request) => {
   // two.
   return withIdempotency(req, ctx, async () => {
     try {
-      return Response.json(await createAsset(ctx, parsed.data), { status: 201 });
+      const asset = await createAsset(ctx, parsed.data);
+      // Dispatched here rather than inside createAsset: an import calls that
+      // function once per row, and a thousand-row spreadsheet should announce
+      // itself as one import.completed, not a thousand deliveries. A replayed
+      // idempotent request never reaches this line, so a retry cannot double.
+      await dispatch(ctx, "asset.created", {
+        assetId: asset.id,
+        actorId: ctx.actor.type === "user" ? ctx.actor.id : null,
+        asset: { name: asset.name, asset_tag: asset.asset_tag, status: asset.status },
+      });
+      return Response.json(asset, { status: 201 });
     } catch (err) {
       if (err instanceof CustomFieldError) {
         return problem(422, "validation", "Validation failed", { detail: err.message });

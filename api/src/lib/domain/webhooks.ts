@@ -20,6 +20,8 @@ export const WEBHOOK_EVENTS = [
   "asset.checked_in",
   "asset.overdue",
   "maintenance.due",
+  "warranty.expiring",
+  "licence.expiring",
   "import.completed",
 ] as const;
 
@@ -163,7 +165,11 @@ export async function deliverPending(
   let failed = 0;
 
   for (const item of due) {
+    // The delivery id is stable across retries, which is what makes it usable
+    // for de-duplication: an endpoint that answered slowly and then answered
+    // again sees the same id twice, not two events.
     const body = JSON.stringify({
+      id: item.id,
       event: item.event,
       delivered_at: new Date().toISOString(),
       data: item.payload,

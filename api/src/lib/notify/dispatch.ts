@@ -26,9 +26,16 @@ export async function dispatch(
   // which is a different question from which external system wants the feed.
   // Queued first so an email failure below cannot swallow the delivery.
   try {
+    // The whole context travels, minus the two keys that exist only to decide
+    // who inside the organisation is emailed. A payload of nothing but an id
+    // forces every subscriber into a second request - and for import.completed
+    // there is no asset to fetch at all, so the delivery said nothing.
+    const {
+      assigneeId: _assignee, actorId: _actor, assetId: _assetId, ...payload
+    } = context;
     await queueDelivery(ctx, event, {
       asset_id: context.assetId ?? null,
-      ...(context.asset ? { asset: context.asset } : {}),
+      ...payload,
     });
   } catch (err) {
     logError(`webhook queue: ${event}`, err);

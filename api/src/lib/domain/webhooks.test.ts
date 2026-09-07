@@ -206,3 +206,33 @@ describe("wired to real events", () => {
     await expect(dispatch(ctx, "asset.created", {})).resolves.toBeDefined();
   });
 });
+
+describe("what a receiver actually gets", () => {
+  it("carries a delivery id that survives a retry", async () => {
+    // Deliveries are at-least-once. Without a stable id a receiver cannot tell
+    // a retry from a second event, and the advice to de-duplicate is empty.
+    await clearDeliveries();
+    await createWebhook(ctx, {
+      url: "https://example.test/retries", events: ["asset.checked_out"],
+    });
+    await queueDelivery(ctx, "asset.checked_out", { asset_id: "a1" });
+
+    const bodies: string[] = [];
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (_url, init) => {
+      bodies.push(String((init as RequestInit).body));
+      return new Response(null, { status: 500 });
+    });
+
+    await deliverPending(ctx);
+    // The retry is due a minute out; move it to now rather than waiting.
+    await withTenant(ctx.orgId, (c) =>
+      c.query("UPDATE webhook_deliveries SET next_attempt_at = now()"),
+    );
+    await deliverPending(ctx);
+
+    expect(bodies).toHaveLength(2);
+    const ids = bodies.map((b) => (JSON.parse(b) as { id: string }).id);
+    expect(ids[0]).toBeTruthy();
+    expect(ids[1]).toBe(ids[0]);
+  });
+});

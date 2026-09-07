@@ -1,10 +1,11 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, beforeEach } from "vitest";
 import { withTenant } from "@/lib/db";
 import { createOrg, createUserWithRole } from "@/test/org";
 import { createSession } from "@/lib/auth/session";
 import { PERMISSIONS, type PermissionKey } from "@/lib/auth/permissions";
 import type { Ctx } from "@/lib/http/handler";
 import { createCategory } from "@/lib/domain/categories";
+import { createWebhook } from "@/lib/domain/webhooks";
 import { POST } from "./route";
 import { GET as GET_JOB } from "./[id]/route";
 
@@ -175,5 +176,54 @@ describe("running the import", () => {
       { params: Promise.resolve({ id }) },
     );
     expect(res.status).toBe(404);
+  });
+});
+
+describe("announcing a finished import", () => {
+  const mapping = JSON.stringify({
+    "Asset Name": "name", "Serial Number": "serial_no", "Status": "status",
+  });
+
+  const queued = () =>
+    withTenant(orgId, async (c) =>
+      (await c.query<{ event: string }>(
+        "SELECT event FROM webhook_deliveries ORDER BY created_at",
+      )).rows.map((r) => r.event),
+    );
+
+  beforeAll(async () => {
+    await createWebhook(adminCtx, {
+      url: "https://example.test/imports", events: ["import.completed"],
+    });
+  });
+
+  beforeEach(() =>
+    withTenant(orgId, (c) => c.query("DELETE FROM webhook_deliveries")),
+  );
+
+  it("tells a subscriber when a committed import finishes", async () => {
+    // There has been a default email rule and a template for this event since
+    // the notifications work; nothing ever fired them.
+    await POST(upload(managerSession, {
+      mapping, category_id: categoryId, dry_run: "false",
+    }));
+    expect(await queued()).toEqual(["import.completed"]);
+  });
+
+  it("says nothing about a dry run, which changed nothing", async () => {
+    await POST(upload(managerSession, { mapping, category_id: categoryId }));
+    expect(await queued()).toEqual([]);
+  });
+
+  it("carries the counts, so a subscriber need not fetch the job", async () => {
+    await POST(upload(managerSession, {
+      mapping, category_id: categoryId, dry_run: "false",
+    }));
+    const payload = await withTenant(orgId, async (c) =>
+      (await c.query<{ payload: Record<string, unknown> }>(
+        "SELECT payload FROM webhook_deliveries LIMIT 1",
+      )).rows[0].payload,
+    );
+    expect(payload).toMatchObject({ total: 2, filename: "assets.csv" });
   });
 });

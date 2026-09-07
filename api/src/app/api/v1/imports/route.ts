@@ -1,6 +1,7 @@
 import { requireAuth, isResponse } from "@/lib/auth/guard";
 import { problem, forbidden } from "@/lib/http/problem";
 import { safe } from "@/lib/http/handler";
+import { dispatch } from "@/lib/notify/dispatch";
 import {
   parseUpload, suggestMapping, runImport, type ColumnMap,
 } from "@/lib/domain/imports";
@@ -74,5 +75,21 @@ export const POST = safe(async (req: Request) => {
   const result = await runImport(ctx, {
     rows, mapping, categoryId, dryRun, filename: file.name,
   });
+
+  // Only a committed run is an event. A dry run changed nothing, and telling
+  // somebody their import finished when it wrote no rows is worse than silence.
+  if (!dryRun) {
+    await dispatch(ctx, "import.completed", {
+      assetId: null,
+      importId: result.job_id,
+      actorId: ctx.actor.type === "user" ? ctx.actor.id : null,
+      filename: file.name,
+      total: result.total,
+      created: result.created,
+      updated: result.updated,
+      skipped: result.skipped,
+    });
+  }
+
   return Response.json(result, { status: dryRun ? 200 : 201 });
 });
