@@ -14,6 +14,7 @@ import {
   TableIcon,
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
+import { useUnseenReleases } from "../hooks/useUnseenReleases";
 
 type NavItem = {
   name: string;
@@ -30,6 +31,7 @@ const navItems: NavItem[] = [
   { icon: <DocsIcon />, name: "Import", path: "/import" },
   { icon: <BoxIcon />, name: "Stock-takes", path: "/stocktakes" },
   { icon: <PlugInIcon />, name: "Maintenance", path: "/maintenance" },
+  { icon: <DocsIcon />, name: "What's new", path: "/whats-new" },
   { icon: <TableIcon />, name: "Reports", path: "/reports" },
 ];
 
@@ -50,6 +52,7 @@ const othersItems: NavItem[] = [
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const location = useLocation();
+  const unseenReleases = useUnseenReleases();
 
   const [openSubmenu, setOpenSubmenu] = useState<{
     type: "main" | "others";
@@ -174,6 +177,17 @@ const AppSidebar: React.FC = () => {
                 </span>
                 {(isExpanded || isHovered || isMobileOpen) && (
                   <span className="menu-item-text">{nav.name}</span>
+                )}
+                {/* The only count in the sidebar. It exists because people
+                    notice when a screen changes and are unsettled when nobody
+                    told them - and it clears itself when they read the page. */}
+                {nav.path === "/whats-new" && unseenReleases > 0 && (
+                  <span
+                    className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-500 px-1.5 text-theme-xs font-medium text-white"
+                    aria-label={`${unseenReleases} unread release notes`}
+                  >
+                    {unseenReleases}
+                  </span>
                 )}
               </Link>
             )
