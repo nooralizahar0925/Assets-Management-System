@@ -13,6 +13,7 @@ import AssetList from "./pages/Assets/AssetList";
 import AssetDetail from "./pages/Assets/AssetDetail";
 import TagRedirect from "./pages/Assets/TagRedirect";
 import AssetForm from "./pages/Assets/AssetForm";
+import ImportWizard from "./pages/Import/ImportWizard";
 
 /**
  * The whole route table exists from this task onward. Screens a later task
@@ -38,7 +39,7 @@ export default function App() {
               {/* Scanned QR codes land here and resolve to the asset. */}
               <Route path="/a/:tag" element={<TagRedirect />} />
 
-              <Route path="/import" element={<ComingSoon title="Import" />} />
+              <Route path="/import" element={<ImportWizard />} />
               <Route path="/reports" element={<ComingSoon title="Reports" />} />
               <Route path="/reports/:key" element={<ComingSoon title="Report" />} />
 
