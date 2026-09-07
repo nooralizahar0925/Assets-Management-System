@@ -29,6 +29,7 @@ const navItems: NavItem[] = [
   { icon: <PieChartIcon />, name: "Locations", path: "/locations" },
   { icon: <DocsIcon />, name: "Import", path: "/import" },
   { icon: <BoxIcon />, name: "Stock-takes", path: "/stocktakes" },
+  { icon: <PlugInIcon />, name: "Maintenance", path: "/maintenance" },
   { icon: <TableIcon />, name: "Reports", path: "/reports" },
 ];
 

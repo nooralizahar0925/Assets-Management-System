@@ -6,6 +6,7 @@ import ComponentCard from "../../components/common/ComponentCard";
 import StatusBadge from "../../components/assets/StatusBadge";
 import HistoryTimeline from "../../components/assets/HistoryTimeline";
 import AssetAttachments from "../../components/assets/AssetAttachments";
+import AssetMaintenance from "../../components/assets/AssetMaintenance";
 import LabelPreview from "../../components/assets/LabelPreview";
 import CheckOutDialog from "../../components/assets/CheckOutDialog";
 import CheckInDialog from "../../components/assets/CheckInDialog";
@@ -14,7 +15,7 @@ import { assetsApi } from "../../api/assets";
 import { useAuth } from "../../context/AuthContext";
 import type { Asset, Assignment, AuditEvent, Attachment } from "../../api/types";
 
-type Tab = "overview" | "history" | "files";
+type Tab = "overview" | "servicing" | "history" | "files";
 
 export default function AssetDetail() {
   const { id = "" } = useParams();
@@ -110,7 +111,7 @@ export default function AssetDetail() {
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
           <div className="flex gap-1 border-b border-gray-200 dark:border-gray-800">
-            {(["overview", "history", "files"] as Tab[]).map((option) => (
+            {(["overview", "servicing", "history", "files"] as Tab[]).map((option) => (
               <button
                 key={option}
                 type="button"
@@ -168,6 +169,8 @@ export default function AssetDetail() {
               <HistoryTimeline events={events} assignments={assignments} />
             </ComponentCard>
           )}
+
+          {tab === "servicing" && <AssetMaintenance assetId={asset.id} />}
 
           {tab === "files" && (
             <ComponentCard title="Files" desc="Photos, documents and manuals.">

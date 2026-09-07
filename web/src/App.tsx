@@ -12,6 +12,7 @@ import AssetDetail from "./pages/Assets/AssetDetail";
 import TagRedirect from "./pages/Assets/TagRedirect";
 import AssetForm from "./pages/Assets/AssetForm";
 import ImportWizard from "./pages/Import/ImportWizard";
+import MaintenanceList from "./pages/Maintenance/MaintenanceList";
 import StocktakeList from "./pages/Stocktake/StocktakeList";
 import StocktakeSession from "./pages/Stocktake/StocktakeSession";
 import ReportGallery from "./pages/Reports/ReportGallery";
@@ -49,6 +50,7 @@ export default function App() {
               <Route path="/a/:tag" element={<TagRedirect />} />
 
               <Route path="/import" element={<ImportWizard />} />
+              <Route path="/maintenance" element={<MaintenanceList />} />
               <Route path="/stocktakes" element={<StocktakeList />} />
               <Route path="/stocktakes/:id" element={<StocktakeSession />} />
               <Route path="/reports" element={<ReportGallery />} />
