@@ -7,8 +7,6 @@ import { ScrollToTop } from "./components/common/ScrollToTop";
 import SignIn from "./pages/AuthPages/SignIn";
 import NotFound from "./pages/OtherPage/NotFound";
 import Dashboard from "./pages/Dashboard/Home";
-import ComingSoon from "./pages/ComingSoon";
-import UserProfiles from "./pages/UserProfiles";
 import AssetList from "./pages/Assets/AssetList";
 import AssetDetail from "./pages/Assets/AssetDetail";
 import TagRedirect from "./pages/Assets/TagRedirect";
@@ -61,9 +59,6 @@ export default function App() {
               <Route path="/settings/email" element={<EmailSettings />} />
               <Route path="/settings/notifications" element={<NotificationSettings />} />
 
-              <Route path="/whats-new" element={<ComingSoon title="What's new" />} />
-              <Route path="/help" element={<ComingSoon title="Help" />} />
-              <Route path="/profile" element={<UserProfiles />} />
             </Route>
           </Route>
 

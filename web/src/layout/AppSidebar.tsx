@@ -11,10 +11,8 @@ import {
   PieChartIcon,
   PlugInIcon,
   TableIcon,
-  UserCircleIcon,
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
-import SidebarWidget from "./SidebarWidget";
 
 type NavItem = {
   name: string;
@@ -44,8 +42,6 @@ const othersItems: NavItem[] = [
       { name: "Notifications", path: "/settings/notifications", pro: false },
     ],
   },
-  { icon: <UserCircleIcon />, name: "What's new", path: "/whats-new" },
-  { icon: <HorizontaLDots />, name: "Help", path: "/help" },
 ];
 
 const AppSidebar: React.FC = () => {
@@ -259,31 +255,17 @@ const AppSidebar: React.FC = () => {
           !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
         }`}
       >
-        <Link to="/">
-          {isExpanded || isHovered || isMobileOpen ? (
-            <>
-              <img
-                className="dark:hidden"
-                src="/images/logo/logo.svg"
-                alt="Logo"
-                width={150}
-                height={40}
-              />
-              <img
-                className="hidden dark:block"
-                src="/images/logo/logo-dark.svg"
-                alt="Logo"
-                width={150}
-                height={40}
-              />
-            </>
-          ) : (
-            <img
-              src="/images/logo/logo-icon.svg"
-              alt="Logo"
-              width={32}
-              height={32}
-            />
+        {/* The wordmark is text rather than an image, so it follows the theme
+            and stays legible at any zoom. */}
+        <Link to="/" className="flex items-center gap-3">
+          <img src="/images/logo/mark.svg" alt="" width={32} height={32} />
+          {(isExpanded || isHovered || isMobileOpen) && (
+            <span className="text-base font-semibold leading-tight text-gray-800 dark:text-white/90">
+              Assets
+              <span className="block text-theme-xs font-normal text-gray-500 dark:text-gray-400">
+                Management System
+              </span>
+            </span>
           )}
         </Link>
       </div>
@@ -324,7 +306,6 @@ const AppSidebar: React.FC = () => {
             </div>
           </div>
         </nav>
-        {isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null}
       </div>
     </aside>
   );
