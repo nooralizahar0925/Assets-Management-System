@@ -17,6 +17,7 @@
     "backup": "tsx scripts/backup.ts",
     "backup:prod": "node dist-scripts/backup.js",
     "restore": "tsx scripts/restore.ts",
+    "release": "tsx scripts/release.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",

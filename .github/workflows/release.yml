@@ -1,0 +1,77 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+# A release is not a thing to run twice at once.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build and publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The changelog is generated from the range since the previous tag,
+          # so the whole history has to be present.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+
+      - run: npm ci
+        working-directory: api
+
+      - name: Work out the range
+        id: range
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          previous=$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || echo "")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "previous=$previous" >> "$GITHUB_OUTPUT"
+          echo "Releasing $version since ${previous:-the beginning}"
+
+      - name: Generate the changelog and release notes
+        id: notes
+        run: |
+          npm run release -- \
+            --from "${{ steps.range.outputs.previous }}" \
+            --version "${{ steps.range.outputs.version }}" \
+            --write | tee /tmp/release-output.txt
+        working-directory: api
+
+      - name: Build the API image with its provenance
+        # Baked in at build time rather than read from a file, so /api/version
+        # reports the build that is actually running.
+        run: |
+          docker build \
+            --build-arg APP_VERSION="${{ steps.range.outputs.version }}" \
+            --build-arg GIT_SHA="${GITHUB_SHA::7}" \
+            --build-arg BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            -t ams-api:"${{ steps.range.outputs.version }}" \
+            ./api
+
+      - name: Build the web image
+        run: docker build -t ams-web:"${{ steps.range.outputs.version }}" ./web
+
+      - name: Publish the GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ steps.range.outputs.version }}
+          body_path: /tmp/release-output.txt
+          generate_release_notes: false
+
+      # The in-app "What's new" panel is published separately, against the
+      # deployed database, because it needs a connection this job does not have
+      # and should not be given. See docs/runbooks/release.md.

@@ -56,6 +56,16 @@ release-note: <one or two plain sentences a customer would understand>
 
 A `!` after the type/scope, or a `BREAKING CHANGE:` footer, forces a MAJOR bump.
 
+**`feat` means a user can now do something they could not before.** Operational
+work — request logging, a deeper health check, a backup job — is real work and
+belongs in the changelog, but no user will ever notice it, and there is no
+honest `release-note:` to write. Those are `chore`, `ci` or `build`.
+
+Getting this wrong is not cosmetic. CI refuses a `feat` or `fix` with no
+release note, so mislabelling operational work either blocks the pull request
+or produces a release note that describes nothing anybody asked for. If you
+cannot write a sentence a customer would care about, the type is wrong.
+
 ### The `release-note:` trailer is what users read
 
 The changelog generator takes two different things from one commit:
