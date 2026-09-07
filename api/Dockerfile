@@ -14,6 +14,13 @@ RUN npm ci --omit=dev
 
 FROM node:22-alpine AS build
 WORKDIR /app
+
+# Provenance, baked in at build time rather than read from a file at runtime.
+# A file could be edited after the fact; a build argument is part of the image,
+# so /api/version answers with the build that is actually running.
+ARG APP_VERSION=unknown
+ARG GIT_SHA=unknown
+ARG BUILD_TIME=unknown
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
@@ -31,6 +38,13 @@ ENV NODE_ENV=production
 # The client must not be older than the server it dumps, so this tracks the
 # postgres image in docker-compose.yml.
 RUN apk add --no-cache postgresql16-client
+
+ARG APP_VERSION=unknown
+ARG GIT_SHA=unknown
+ARG BUILD_TIME=unknown
+ENV APP_VERSION=$APP_VERSION
+ENV GIT_SHA=$GIT_SHA
+ENV BUILD_TIME=$BUILD_TIME
 
 # .next/standalone's server.js reads PORT and HOSTNAME and defaults to
 # localhost:3000. The -p 4000 in the npm scripts applies to `next dev` and

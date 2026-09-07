@@ -18,7 +18,13 @@ services:
       retries: 10
 
   api:
-    build: ./api
+    build:
+      context: ./api
+      args:
+        # Stamped by the release pipeline; "unknown" locally, which is honest.
+        APP_VERSION: ${APP_VERSION:-unknown}
+        GIT_SHA: ${GIT_SHA:-unknown}
+        BUILD_TIME: ${BUILD_TIME:-unknown}
     environment:
       DATABASE_URL: postgres://ams_app:${APP_DB_PASSWORD:-ams_app}@db:5432/ams
       MIGRATION_DATABASE_URL: postgres://ams:${POSTGRES_PASSWORD:-ams}@db:5432/ams
