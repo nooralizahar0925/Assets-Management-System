@@ -37,14 +37,6 @@ export async function createOrg(name = "Test Org"): Promise<string> {
   return id;
 }
 
-/** The legacy users.role enum value matching a system role name. */
-const LEGACY_ROLE: Record<string, string> = {
-  Administrator: "admin",
-  Manager: "manager",
-  Technician: "technician",
-  Viewer: "viewer",
-};
-
 export interface TestUser {
   id: string;
   email: string;
@@ -53,13 +45,13 @@ export interface TestUser {
 /**
  * Creates a user holding one of the seeded system roles.
  *
- * Permissions now resolve from role_id, so a fixture that set only the legacy
- * enum would produce a user with no permissions at all - which is a confusing
- * way for an unrelated test to fail.
+ * Permissions resolve from role_id alone. A fixture whose role name does not
+ * match a seeded role produces a user with no permissions at all, which is a
+ * confusing way for an unrelated test to fail - so the name is checked.
  */
 export async function createUserWithRole(
   orgId: string,
-  roleName: keyof typeof LEGACY_ROLE | string,
+  roleName: string,
   opts: { name?: string; email?: string; password?: string } = {},
 ): Promise<TestUser> {
   const { hashPassword } = await import("../lib/auth/password");
@@ -74,12 +66,19 @@ export async function createUserWithRole(
       "SELECT id FROM roles WHERE org_id = $1 AND lower(name) = lower($2)",
       [orgId, roleName],
     );
-    const roleId = rows[0]?.id ?? null;
+    const roleId = rows[0]?.id;
+    if (!roleId) {
+      throw new Error(
+        `No role named "${roleName}" in this organisation. A user without a ` +
+          "role has no permissions, and every assertion in the test would " +
+          "fail for that reason rather than the one being tested.",
+      );
+    }
 
     const inserted = await c.query<{ id: string }>(
-      `INSERT INTO users (org_id, email, password_hash, name, role, role_id)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-      [orgId, email, passwordHash, name, LEGACY_ROLE[roleName] ?? "viewer", roleId],
+      `INSERT INTO users (org_id, email, password_hash, name, role_id)
+       VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+      [orgId, email, passwordHash, name, roleId],
     );
     return inserted.rows[0].id;
   });

@@ -4,6 +4,7 @@ import {
   type OpenApiDocument, type ReferenceGroup, type ReferenceOperation,
 } from "../../api/developers";
 import Prose from "../../components/developers/Prose";
+import TryIt from "../../components/developers/TryIt";
 
 /**
  * The API reference, rendered from the document the server publishes.
@@ -96,6 +97,12 @@ function Operation({ operation }: { operation: ReferenceOperation }) {
               ))}
             </ul>
           </div>
+
+          <TryIt
+            method={operation.method}
+            path={operation.path}
+            parameters={parameters}
+          />
         </div>
       )}
     </li>

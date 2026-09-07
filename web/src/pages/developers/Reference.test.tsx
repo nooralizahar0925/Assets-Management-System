@@ -127,7 +127,9 @@ describe("the API reference", () => {
     const user = userEvent.setup();
     await user.click(await screen.findByRole("button", { name: /List assets/ }));
     expect(await screen.findByText("A page of assets")).toBeInTheDocument();
-    expect(screen.getByText("page")).toBeInTheDocument();
+    // Named twice now: in the parameter list, and as the field that fills it
+    // in for a real request.
+    expect(screen.getAllByText("page").length).toBeGreaterThan(0);
   });
 
   it("links to the raw document, which is what a generator consumes", async () => {
@@ -140,5 +142,32 @@ describe("the API reference", () => {
     vi.mocked(developersApi.openapi).mockRejectedValue(new Error("offline"));
     renderReference();
     expect(await screen.findByText(/could not be loaded/i)).toBeInTheDocument();
+  });
+});
+
+describe("trying an operation from the page", () => {
+  it("offers a request runner once an operation is open", async () => {
+    // The gap the plan left when Scalar turned out not to exist. It is on the
+    // operation rather than the page, so the key and the parameters belong to
+    // the call being made.
+    renderReference();
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: /List assets/ }));
+
+    expect(await screen.findByText("Try it")).toBeInTheDocument();
+    expect(screen.getByLabelText(/api key/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /send get/i })).toBeInTheDocument();
+  });
+
+  it("builds the URL from the document, not from a field somebody types", async () => {
+    // A public page that sends an arbitrary request anywhere is an open
+    // redirect with extra steps.
+    renderReference();
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: /Run a report/ }));
+
+    // Once in the operation header, once as the URL the runner will call.
+    expect((await screen.findAllByText("/api/v1/reports/{key}")).length)
+      .toBeGreaterThan(1);
   });
 });

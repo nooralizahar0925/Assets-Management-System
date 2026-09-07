@@ -63,22 +63,7 @@ export async function seedRolesForOrg(client: Client, orgId: string): Promise<vo
     }
   }
 
-  // Backfill: give every user without a role_id the role matching the enum
-  // column they already carry. users.role stays for one release, per the
-  // additive-migration constraint - add, backfill, switch, drop later.
-  await client.query(
-    `UPDATE users u
-        SET role_id = r.id
-       FROM roles r
-      WHERE u.org_id = $1
-        AND r.org_id = $1
-        AND u.role_id IS NULL
-        AND lower(r.name) = CASE u.role
-                              WHEN 'admin'      THEN 'administrator'
-                              WHEN 'manager'    THEN 'manager'
-                              WHEN 'technician' THEN 'technician'
-                              ELSE 'viewer'
-                            END`,
-    [orgId],
-  );
+  // No backfill here any more: migration 021 dropped users.role after doing
+  // the last one. A user without a role_id now has no permissions, which is
+  // the safe failure - the alternative is guessing what they were allowed.
 }

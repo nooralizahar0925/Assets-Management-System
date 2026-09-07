@@ -23,8 +23,8 @@ beforeAll(async () => {
   email = `user-${orgId}@login.test`;
   await withTenant(orgId, async (c) => {
     await c.query(
-      `INSERT INTO users (org_id, email, password_hash, name, role)
-       VALUES ($1, $2, $3, 'Login User', 'admin')`,
+      `INSERT INTO users (org_id, email, password_hash, name)
+       VALUES ($1, $2, $3, 'Login User')`,
       [orgId, email, await hashPassword(PASSWORD)],
     );
   });
@@ -51,9 +51,12 @@ describe("POST /api/admin/auth/login", () => {
     expect(cookie).toContain("HttpOnly");
     expect(cookie).toContain("SameSite=Lax");
 
-    const body = (await res.json()) as { org_id: string; role: string };
+    const body = (await res.json()) as { org_id: string; role?: string };
     expect(body.org_id).toBe(orgId);
-    expect(body.role).toBe("admin");
+    // No role in the response: permissions come from /auth/me, resolved from
+    // role_id per request. Publishing a role name here would be a second
+    // source of truth for what somebody may do.
+    expect(body.role).toBeUndefined();
   });
 
   it("refuses the wrong password without saying the account exists", async () => {

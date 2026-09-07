@@ -78,7 +78,7 @@ export const POST = safe(async (req: Request) => {
 
   const sid = await createSession(user.id, user.org_id);
   return Response.json(
-    { id: user.id, name: user.name, role: user.role, org_id: user.org_id },
+    { id: user.id, name: user.name, org_id: user.org_id },
     { headers: { "set-cookie": sessionCookie(sid) } },
   );
 });

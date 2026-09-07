@@ -119,13 +119,6 @@ async function discardOrganisation(orgId: string): Promise<void> {
   }
 }
 
-const LEGACY_ROLE: Record<string, string> = {
-  Administrator: "admin",
-  Manager: "manager",
-  Technician: "technician",
-  Viewer: "viewer",
-};
-
 async function createUser(
   orgId: string, roleName: string, name: string, email: string,
 ): Promise<string> {
@@ -138,9 +131,9 @@ async function createUser(
       [orgId, roleName],
     );
     const inserted = await c.query<{ id: string }>(
-      `INSERT INTO users (org_id, email, password_hash, name, role, role_id)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-      [orgId, email, hash, name, LEGACY_ROLE[roleName] ?? "viewer", rows[0]?.id ?? null],
+      `INSERT INTO users (org_id, email, password_hash, name, role_id)
+       VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+      [orgId, email, hash, name, rows[0]?.id ?? null],
     );
     return inserted.rows[0].id;
   });

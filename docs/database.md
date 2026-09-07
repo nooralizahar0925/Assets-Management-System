@@ -63,9 +63,13 @@ Add a column, backfill it, switch the code to it, and drop the old one **a
 release later**. Never all four in one migration.
 
 This is what makes a rollback survivable: redeploying the previous image runs
-against the newer schema. It is also why `users.role` and the `user_role` enum
-still exist — unread since roles became rows, and waiting on a later release to
-drop.
+against the newer schema.
+
+Migration 021 is the cycle finishing: `users.role` and the `user_role` enum were
+added in 001, superseded by `role_id` in 008, written-but-never-read since, and
+dropped once nothing depended on them. A column nothing reads is not harmless —
+the next person to see it writes to it, and then two places disagree about what
+a user is.
 
 ## Indexes worth knowing about
 

@@ -99,80 +99,45 @@ describe("roles are tenant data", () => {
   });
 });
 
-describe("the users.role backfill", () => {
-  it("gives a user carrying only the legacy enum a role_id when it runs", async () => {
-    // The real scenario: users existed before 008, holding users.role and no
-    // role_id. The backfill is part of seedRolesForOrg and is idempotent, so
-    // running it again after inserting such a user reproduces the migration.
-    const email = `backfill-${orgA}@roles.test`;
-
-    await withTenant(orgA, (c) =>
-      c.query(
-        `INSERT INTO users (org_id, email, password_hash, name, role)
-         VALUES ($1, $2, 'x', 'Backfilled', 'technician')`,
-        [orgA, email],
-      ),
-    );
-
-    const before = await withTenant(orgA, async (c) =>
-      (await c.query<{ role_id: string | null }>(
-        "SELECT role_id FROM users WHERE email = $1", [email],
-      )).rows[0],
-    );
-    expect(before.role_id).toBeNull();
-
+describe("the retired users.role column", () => {
+  it("is gone, along with the type it used", async () => {
+    // Migration 021 completed the add-backfill-switch-drop cycle that 008
+    // started. A column nothing reads is not harmless: the next person to see
+    // it writes to it, and then two places disagree about what a user is.
     const owner = new Client({ connectionString: process.env.MIGRATION_DATABASE_URL });
     await owner.connect();
     try {
-      await seedRolesForOrg(owner, orgA);
+      const column = await owner.query(
+        `SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'users' AND column_name = 'role'`,
+      );
+      expect(column.rowCount).toBe(0);
+
+      const type = await owner.query(
+        "SELECT 1 FROM pg_type WHERE typname = 'user_role'",
+      );
+      expect(type.rowCount).toBe(0);
     } finally {
       await owner.end();
     }
-
-    const after = await withTenant(orgA, async (c) =>
-      (await c.query<{ name: string | null }>(
-        `SELECT r.name FROM users u LEFT JOIN roles r ON r.id = u.role_id
-          WHERE u.email = $1`,
-        [email],
-      )).rows[0],
-    );
-    expect(after.name).toBe("Technician");
   });
 
-  it("does not overwrite a role_id that is already set", async () => {
-    // The backfill runs on every migrate, so it must never undo an assignment
-    // an administrator made through the API.
-    const email = `assigned-${orgA}@roles.test`;
-    const viewerId = await withTenant(orgA, async (c) =>
+  it("leaves a user with no role holding no permissions at all", async () => {
+    // The safe failure. Nothing now infers a permission from anywhere but
+    // role_id, so an unassigned user can do nothing rather than quietly
+    // inheriting whatever the enum used to say.
+    const email = `roleless-${orgA}@roles.test`;
+    const id = await withTenant(orgA, async (c) =>
       (await c.query<{ id: string }>(
-        "SELECT id FROM roles WHERE org_id = $1 AND name = 'Viewer'", [orgA],
+        `INSERT INTO users (org_id, email, password_hash, name)
+         VALUES ($1, $2, 'x', 'Roleless') RETURNING id`,
+        [orgA, email],
       )).rows[0].id,
     );
 
-    await withTenant(orgA, (c) =>
-      c.query(
-        `INSERT INTO users (org_id, email, password_hash, name, role, role_id)
-         VALUES ($1, $2, 'x', 'Assigned', 'admin', $3)`,
-        [orgA, email, viewerId],
-      ),
+    const permissions = await withTenant(orgA, async (c) =>
+      (await c.query("SELECT * FROM auth_lookup_permissions($1)", [id])).rows,
     );
-
-    const owner = new Client({ connectionString: process.env.MIGRATION_DATABASE_URL });
-    await owner.connect();
-    try {
-      await seedRolesForOrg(owner, orgA);
-    } finally {
-      await owner.end();
-    }
-
-    const after = await withTenant(orgA, async (c) =>
-      (await c.query<{ name: string }>(
-        `SELECT r.name FROM users u JOIN roles r ON r.id = u.role_id
-          WHERE u.email = $1`,
-        [email],
-      )).rows[0],
-    );
-    // The enum says admin; the explicit assignment says Viewer and must win.
-    expect(after.name).toBe("Viewer");
+    expect(permissions).toEqual([]);
   });
 });

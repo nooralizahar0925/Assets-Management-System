@@ -29,8 +29,8 @@ beforeAll(async () => {
   );
   const userId = await withTenant(orgId, async (c) =>
     (await c.query<{ id: string }>(
-      `INSERT INTO users (org_id, email, password_hash, name, role, role_id)
-       VALUES ($1,$2,$3,'Admin','admin',$4) RETURNING id`,
+      `INSERT INTO users (org_id, email, password_hash, name, role_id)
+       VALUES ($1,$2,$3,'Admin',$4) RETURNING id`,
       [orgId, `admin-${orgId}@roles.test`, await hashPassword("pw"), adminRole],
     )).rows[0].id,
   );
@@ -95,8 +95,8 @@ describe("deleteRole", () => {
     const role = await createRole(ctx, { name: "Held", permissions: ["assets:read"] });
     const userId = await withTenant(orgId, async (c) =>
       (await c.query<{ id: string }>(
-        `INSERT INTO users (org_id, email, password_hash, name, role, role_id)
-         VALUES ($1,$2,'x','Holder','viewer',$3) RETURNING id`,
+        `INSERT INTO users (org_id, email, password_hash, name, role_id)
+         VALUES ($1,$2,'x','Holder',$3) RETURNING id`,
         [orgId, `holder-${orgId}@roles.test`, role.id],
       )).rows[0].id,
     );
@@ -118,8 +118,8 @@ describe("assignRole", () => {
         "INSERT INTO locations (org_id, name) VALUES ($1,'Site A') RETURNING id", [orgId],
       )).rows[0].id;
       const u = (await c.query<{ id: string }>(
-        `INSERT INTO users (org_id, email, password_hash, name, role, role_id)
-         VALUES ($1,$2,'x','Sited User','viewer',$3) RETURNING id`,
+        `INSERT INTO users (org_id, email, password_hash, name, role_id)
+         VALUES ($1,$2,'x','Sited User',$3) RETURNING id`,
         [orgId, `sited-${orgId}@roles.test`, role.id],
       )).rows[0].id;
       return { userId: u, locationId: loc };
@@ -133,8 +133,8 @@ describe("assignRole", () => {
     const role = await createRole(ctx, { name: "Unsited", permissions: ["assets:read"] });
     const userId = await withTenant(orgId, async (c) =>
       (await c.query<{ id: string }>(
-        `INSERT INTO users (org_id, email, password_hash, name, role, role_id)
-         VALUES ($1,$2,'x','Unsited','viewer',$3) RETURNING id`,
+        `INSERT INTO users (org_id, email, password_hash, name, role_id)
+         VALUES ($1,$2,'x','Unsited',$3) RETURNING id`,
         [orgId, `unsited-${orgId}@roles.test`, role.id],
       )).rows[0].id,
     );

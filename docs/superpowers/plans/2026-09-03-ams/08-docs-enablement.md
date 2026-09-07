@@ -297,11 +297,14 @@ runtime, a chat agent and a second HTTP client into a React application whose
 trade for one page, so the reference is rendered from `/api/v1/openapi.json` by
 `Reference.tsx` instead.
 
-**What this costs:** the spec's "Try it" request runner is *not* built. A reader
-gets the operations, parameters and responses, and the raw document to point a
-generator at, but cannot fire a request from the page. Closing that gap means
-either building a small request form against the same document, or accepting
-Scalar's weight — a decision for a later task, not a silent omission.
+**What this costs:** the spec's "Try it" request runner is not built *by this
+task*. **Closed on 2026-09-08** by `web/src/components/developers/TryIt.tsx`:
+each operation gets a small runner that fills the path and query parameters,
+takes a key, sends one real request to this deployment and shows the status,
+timing, request id and body. The URL is built from the document rather than
+typed, so the page cannot be pointed at another host, and the key lives in
+component state only. A write asks for confirmation first, because it really
+writes.
 
 **Also moved here from Task 52:** the Errors page. The shell's sidebar links to
 it, and shipping a nav entry that 404s until the next task is worse than a small
