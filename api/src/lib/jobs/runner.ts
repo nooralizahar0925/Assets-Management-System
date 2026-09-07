@@ -1,5 +1,6 @@
 import { query } from "../db";
 import type { Ctx } from "../http/handler";
+import { systemCtx } from "./context";
 import { PERMISSIONS, type PermissionKey } from "../auth/permissions";
 import { processOutbox, } from "../email/outbox";
 import { purgeRateLimitEvents } from "../auth/apikey";
@@ -9,25 +10,6 @@ import { runExpiryJobs } from "./expiring";
 import { runDueSchedules } from "../reports/schedules";
 import { logError } from "../http/logger";
 
-/**
- * The scheduler acts as the organisation itself, not as a person.
- *
- * It holds every permission because it is not subject to authorization - there
- * is no user to authorize - and no branch scope, because a nightly overdue
- * sweep must see the whole register regardless of who happens to be limited to
- * which site.
- */
-const systemCtx = (orgId: string): Ctx => ({
-  orgId,
-  actor: {
-    type: "system",
-    id: orgId,
-    label: "Scheduler",
-    scopes: ["admin"],
-    permissions: PERMISSIONS.map((p) => p.key) as PermissionKey[],
-    locationScope: null,
-  },
-});
 
 export interface JobRunSummary {
   scheduled_reports?: number;
