@@ -87,6 +87,12 @@ export interface PermissionDef {
   description?: string;
 }
 
+/** /api/admin/permissions returns the catalogue already grouped for display. */
+export interface PermissionGroup {
+  group: string;
+  permissions: PermissionDef[];
+}
+
 export interface Assignment {
   id: string;
   asset_id: string;

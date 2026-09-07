@@ -1,5 +1,5 @@
 import { api } from "./client";
-import type { OrgMember, PermissionDef, Role } from "./types";
+import type { OrgMember, PermissionGroup, Role } from "./types";
 
 export interface ApiKey {
   id: string;
@@ -36,7 +36,7 @@ export const membersApi = {
 
 export const rolesApi = {
   list: () => api.get<Role[]>("/api/admin/roles"),
-  permissions: () => api.get<PermissionDef[]>("/api/admin/permissions"),
+  permissions: () => api.get<PermissionGroup[]>("/api/admin/permissions"),
   create: (input: { name: string; description?: string | null; permissions: string[] }) =>
     api.post<Role>("/api/admin/roles", input),
   update: (
