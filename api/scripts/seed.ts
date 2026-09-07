@@ -167,13 +167,31 @@ function adminCtx(orgId: string, userId: string): Ctx {
   };
 }
 
-async function main() {
+/** The demo accounts, by the role each one holds. */
+export const SEED_USERS = {
+  admin: "admin@demo.local",
+  manager: "manager@demo.local",
+  technician: "technician@demo.local",
+  viewer: "viewer@demo.local",
+} as const;
+
+export interface SeedResult {
+  orgId: string;
+  users: Record<string, string>;
+  /** False when the organisation was already there and nothing was written. */
+  seeded: boolean;
+}
+
+/**
+ * Seeds the demo organisation, or reports that it is already seeded.
+ *
+ * Exported so the test suite can drive it. Running it on import instead - as
+ * this script used to - is why proving it worked needed a second script run by
+ * hand, and a check nobody runs is a check that quietly stops being true.
+ */
+export async function seed(): Promise<SeedResult> {
   const { orgId, needsSeeding, createdHere } = await provision("Demo Logistics");
-  if (!needsSeeding) {
-    process.stdout.write(`"${SLUG}" is already seeded. Nothing to do.
-`);
-    return;
-  }
+  if (!needsSeeding) return { orgId, users: { ...SEED_USERS }, seeded: false };
 
   try {
     await seedInto(orgId);
@@ -182,6 +200,15 @@ async function main() {
     // next run would find it, see no users, and build on the leftovers.
     if (createdHere) await discardOrganisation(orgId);
     throw err;
+  }
+
+  return { orgId, users: { ...SEED_USERS }, seeded: true };
+}
+
+async function main() {
+  const { seeded } = await seed();
+  if (!seeded) {
+    process.stdout.write(`"${SLUG}" is already seeded. Nothing to do.\n`);
   }
 }
 
@@ -233,7 +260,9 @@ async function seedInto(orgId: string) {
     },
   });
 
-  const laptop = (n: number, status: "available" | "in_use" | "maintenance") =>
+  type SeedStatus = "available" | "in_use" | "maintenance" | "retired" | "lost";
+
+  const laptop = (n: number, status: SeedStatus) =>
     createAsset(ctx, {
       name: `ThinkPad T14 #${n}`,
       category_id: laptops.id,
@@ -242,24 +271,51 @@ async function seedInto(orgId: string) {
       status,
       purchase_date: "2026-01-15",
       purchase_cost: 18_500_000,
-      custom: { os: "Windows 11", ram_gb: 16, warranty_end: "2029-01-15" },
+      // A warranty inside the warning window, so the expiring-soon panel and
+      // the warranty notification have something real to work on.
+      custom: {
+        os: "Windows 11", ram_gb: 16,
+        warranty_end: n % 4 === 0 ? "2026-10-15" : "2029-01-15",
+      },
     });
 
+  /**
+   * Sixteen laptops across every status.
+   *
+   * The count and the spread both matter: the status donut with three slices
+   * and eleven assets looks like a broken dashboard rather than a small one,
+   * and retired and lost are exactly the states a customer asks about first -
+   * a demo that never shows them cannot answer the question.
+   */
+  const LAPTOP_STATUSES: SeedStatus[] = [
+    "available", "available", "available", "available", "available",
+    "available", "available", "available",
+    "maintenance", "maintenance",
+    "in_use", "in_use", "in_use",
+    "retired", "retired",
+    "lost",
+  ];
+
   const created = [];
-  for (let n = 1; n <= 8; n += 1) {
-    created.push(await laptop(n, n <= 5 ? "available" : "maintenance"));
+  for (const [index, status] of LAPTOP_STATUSES.entries()) {
+    created.push(await laptop(index + 1, status));
   }
 
-  for (let n = 1; n <= 3; n += 1) {
+  for (let n = 1; n <= 6; n += 1) {
     created.push(await createAsset(ctx, {
       name: `Toyota 8FG25 forklift #${n}`,
       category_id: forklifts.id,
       location_id: warehouse.id,
       serial_no: `FL-${String(n).padStart(3, "0")}`,
-      status: "available",
+      status: n === 6 ? "maintenance" : "available",
       purchase_date: "2025-06-01",
       purchase_cost: 425_000_000,
-      custom: { hours: 1200 + n * 130, next_service_at: "2026-10-01" },
+      // One service already inside the warning window, so the maintenance
+      // panel is not empty on the first screen anybody sees.
+      custom: {
+        hours: 1200 + n * 130,
+        next_service_at: n === 1 ? "2026-09-20" : "2026-12-01",
+      },
     }));
   }
 
@@ -292,10 +348,14 @@ async function seedInto(orgId: string) {
   );
 }
 
-main().then(
-  () => process.exit(0),
-  (err: unknown) => {
-    process.stderr.write(`${String(err)}\n`);
-    process.exit(1);
-  },
-);
+// Only when run as a script. Importing this from a test must not seed, and
+// must certainly not call process.exit in the middle of a suite.
+if (process.argv[1]?.endsWith("seed.ts")) {
+  main().then(
+    () => process.exit(0),
+    (err: unknown) => {
+      process.stderr.write(`${String(err)}\n`);
+      process.exit(1);
+    },
+  );
+}

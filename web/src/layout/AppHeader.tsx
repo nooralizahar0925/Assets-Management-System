@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { useSidebar } from "../context/SidebarContext";
 import { ThemeToggleButton } from "../components/common/ThemeToggleButton";
 import UserDropdown from "../components/header/UserDropdown";
@@ -9,6 +9,25 @@ import HelpButton from "../components/help/HelpButton";
 
 const AppHeader: React.FC = () => {
   const [isApplicationMenuOpen, setApplicationMenuOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const navigate = useNavigate();
+
+  /**
+   * The register's own search, reachable from every screen.
+   *
+   * This field was template decoration: an uncontrolled input in a form with
+   * no handler, so typing did nothing and pressing Enter reloaded the page.
+   * The register already searches names, asset tags and serial numbers, so
+   * the field only ever needed to point at it.
+   */
+  const submitSearch = (event: React.FormEvent) => {
+    event.preventDefault();
+    const value = search.trim();
+    if (!value) return;
+    navigate(`/assets?q=${encodeURIComponent(value)}`);
+    setSearch("");
+    inputRef.current?.blur();
+  };
 
   const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
 
@@ -112,7 +131,7 @@ const AppHeader: React.FC = () => {
           </button>
 
           <div className="hidden lg:block">
-            <form>
+            <form onSubmit={submitSearch} role="search">
               <div className="relative">
                 <span className="absolute -translate-y-1/2 pointer-events-none left-4 top-1/2">
                   <svg
@@ -133,12 +152,20 @@ const AppHeader: React.FC = () => {
                 </span>
                 <input
                   ref={inputRef}
-                  type="text"
-                  placeholder="Search or type command..."
+                  type="search"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  aria-label="Search assets"
+                  placeholder="Search assets by name, tag or serial"
                   className="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-200 bg-transparent py-2.5 pl-12 pr-14 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 xl:w-[430px]"
                 />
 
-                <button className="absolute right-2.5 top-1/2 inline-flex -translate-y-1/2 items-center gap-0.5 rounded-lg border border-gray-200 bg-gray-50 px-[7px] py-[4.5px] text-xs -tracking-[0.2px] text-gray-500 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400">
+                <button
+                  type="button"
+                  onClick={() => inputRef.current?.focus()}
+                  aria-hidden="true"
+                  tabIndex={-1}
+                  className="absolute right-2.5 top-1/2 inline-flex -translate-y-1/2 items-center gap-0.5 rounded-lg border border-gray-200 bg-gray-50 px-[7px] py-[4.5px] text-xs -tracking-[0.2px] text-gray-500 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400">
                   <span> ⌘ </span>
                   <span> K </span>
                 </button>
