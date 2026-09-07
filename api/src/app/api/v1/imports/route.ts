@@ -83,11 +83,18 @@ export const POST = safe(async (req: Request) => {
       assetId: null,
       importId: result.job_id,
       actorId: ctx.actor.type === "user" ? ctx.actor.id : null,
-      filename: file.name,
-      total: result.total,
-      created: result.created,
-      updated: result.updated,
-      skipped: result.skipped,
+      // Nested under `import`, because that is what the email template reads:
+      // {{import.filename}}, {{import.total}} and the three counts. Passing
+      // them flat renders an email announcing an import of nothing, from
+      // nowhere - which is worse than sending none at all.
+      import: {
+        id: result.job_id,
+        filename: file.name,
+        total: result.total,
+        created: result.created,
+        updated: result.updated,
+        skipped: result.skipped,
+      },
     });
   }
 

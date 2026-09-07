@@ -224,6 +224,53 @@ describe("announcing a finished import", () => {
         "SELECT payload FROM webhook_deliveries LIMIT 1",
       )).rows[0].payload,
     );
-    expect(payload).toMatchObject({ total: 2, filename: "assets.csv" });
+    expect(payload).toMatchObject({
+      import: { total: 2, filename: "assets.csv" },
+    });
+  });
+});
+
+describe("the email a finished import sends", () => {
+  const mapping = JSON.stringify({
+    "Asset Name": "name", "Serial Number": "serial_no", "Status": "status",
+  });
+
+  const queuedEmails = () =>
+    withTenant(orgId, async (c) =>
+      (await c.query<{ subject: string; text_body: string }>(
+        `SELECT subject, text_body FROM email_messages
+          WHERE event = 'import.completed' ORDER BY created_at DESC`,
+      )).rows,
+    );
+
+  beforeEach(() =>
+    withTenant(orgId, (c) =>
+      c.query("DELETE FROM email_messages WHERE event = 'import.completed'"),
+    ),
+  );
+
+  it("names the file and the counts rather than leaving blanks", async () => {
+    // The template reads {{import.filename}} and {{import.total}}. Handing it
+    // those values flat renders "Import finished:" with nothing after it, and
+    // an email that says nothing is worse than no email.
+    await POST(upload(managerSession, {
+      mapping, category_id: categoryId, dry_run: "false",
+    }));
+
+    const [email] = await queuedEmails();
+    expect(email).toBeDefined();
+    expect(email.subject).toContain("assets.csv");
+    expect(email.text_body).toContain("2 rows");
+    expect(email.text_body).not.toContain("{{");
+  });
+
+  it("links to a page that exists", async () => {
+    // /import/<id> is a real route; it was not until the result page was built.
+    await POST(upload(managerSession, {
+      mapping, category_id: categoryId, dry_run: "false",
+    }));
+
+    const [email] = await queuedEmails();
+    expect(email.text_body).toMatch(/\/import\/[0-9a-f-]{36}/);
   });
 });

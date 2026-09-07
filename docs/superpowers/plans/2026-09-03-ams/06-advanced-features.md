@@ -1443,3 +1443,5 @@ when its charge exceeded it. The corrected algorithm passes all 23 assertions. E
 other task's tests still have to be written first and watched to fail — the Phase 5
 experience was that the plan was wrong in some way on every single task, and this plan
 is no more trustworthy for having been written more recently.
+
+Continue to [Phase 7 — Integration and release](./07-integration-and-release.md).

@@ -1,5 +1,6 @@
 import type { Client } from "pg";
 import { PERMISSIONS, SYSTEM_ROLES } from "../src/lib/auth/permissions";
+import { seedDefaultRulesWithClient } from "../src/lib/notify/rules";
 
 /**
  * Reconciles the permissions table and every organisation's system roles with
@@ -38,6 +39,9 @@ export async function seedPermissions(client: Client): Promise<void> {
  */
 export async function seedRolesForOrg(client: Client, orgId: string): Promise<void> {
   await client.query("SELECT seed_system_roles($1)", [orgId]);
+
+  // An organisation with no notification rules sends no mail whatever happens.
+  await seedDefaultRulesWithClient(client, orgId);
 
   for (const [name, role] of Object.entries(SYSTEM_ROLES)) {
     const { rows } = await client.query<{ id: string }>(

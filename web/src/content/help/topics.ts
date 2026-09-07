@@ -238,4 +238,13 @@ export const HELP_TOPICS: Record<string, HelpTopic> = {
       { kind: "p", text: "One guide, in full. The ? on any screen brings you to the guide covering what is in front of you." },
     ],
   },
+  "/import/:id": {
+    title: "What an import did",
+    article: "importing",
+    blocks: [
+      { kind: "p", text: "The record of one past import: how many assets it created, how many it updated, and every row it could not use." },
+      { kind: "p", text: "Rejected rows were skipped; everything else went in. Correct them in the spreadsheet and import that file again - matching rows update rather than duplicate." },
+      { kind: "note", text: "A run marked as a preview wrote nothing at all. Re-run the same file and mapping with the preview turned off to commit it." },
+    ],
+  },
 };

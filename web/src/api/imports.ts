@@ -16,6 +16,18 @@ export interface ImportResult {
   errors: { row: number; field: string; message: string }[];
 }
 
+export interface ImportJob {
+  id: string;
+  filename: string;
+  status: string;
+  dry_run: boolean;
+  total: number;
+  created: number;
+  updated: number;
+  errors: { row: number; field: string; message: string }[];
+  created_at: string;
+}
+
 export const importsApi = {
   /** No mapping sent means "read the file and tell me what you found". */
   inspect: (file: File, categoryId: string) => {
@@ -39,5 +51,12 @@ export const importsApi = {
     return api.postForm<ImportResult>("/api/v1/imports", form);
   },
 
-  job: (id: string) => api.get<ImportResult>(`/api/v1/imports/${id}`),
+  /**
+   * One past import, by id.
+   *
+   * Deliberately not `ImportResult`: the stored job carries its filename,
+   * status and timestamp and calls its id `id`, not `job_id`. Typing it as the
+   * run result would have made `job.job_id` compile and be undefined.
+   */
+  job: (id: string) => api.get<ImportJob>(`/api/v1/imports/${id}`),
 };

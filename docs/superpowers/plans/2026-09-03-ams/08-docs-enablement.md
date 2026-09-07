@@ -3619,13 +3619,13 @@ Then open http://localhost:3000 and sign in as `admin@demo.test` / `demo1234`.
 
 | Document | Covers |
 |---|---|
-| [docs/architecture.md](docs/architecture.md) | Services, data flow, the tenant isolation model |
-| [docs/database.md](docs/database.md) | Schema reference and entity diagram |
-| [docs/deployment.md](docs/deployment.md) | Environment variables, production deployment, backups |
-| [docs/operations.md](docs/operations.md) | Runbook: restore, rotate secrets, diagnose a slow query |
-| [docs/development.md](docs/development.md) | Local setup, test strategy, conventions |
-| [docs/user-guide.md](docs/user-guide.md) | The in-app help centre as one printable document |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Branching, commit conventions, releases |
+| `docs/architecture.md` | Services, data flow, the tenant isolation model |
+| `docs/database.md` | Schema reference and entity diagram |
+| `docs/deployment.md` | Environment variables, production deployment, backups |
+| `docs/operations.md` | Runbook: restore, rotate secrets, diagnose a slow query |
+| `docs/development.md` | Local setup, test strategy, conventions |
+| `docs/user-guide.md` | The in-app help centre as one printable document |
+| `CONTRIBUTING.md` | Branching, commit conventions, releases |
 ```
 
 `docs/architecture.md` must contain: the three services and what each is responsible for;
