@@ -18,6 +18,10 @@ import ReportGallery from "./pages/Reports/ReportGallery";
 import ReportViewer from "./pages/Reports/ReportViewer";
 import EmailSettings from "./pages/Settings/EmailSettings";
 import NotificationSettings from "./pages/Settings/NotificationSettings";
+import Categories from "./pages/Catalog/Categories";
+import Locations from "./pages/Catalog/Locations";
+import Users from "./pages/Settings/Users";
+import ApiKeys from "./pages/Settings/ApiKeys";
 
 /**
  * The whole route table exists from this task onward. Screens a later task
@@ -47,12 +51,12 @@ export default function App() {
               <Route path="/reports" element={<ReportGallery />} />
               <Route path="/reports/:key" element={<ReportViewer />} />
 
-              <Route path="/categories" element={<ComingSoon title="Categories" />} />
-              <Route path="/locations" element={<ComingSoon title="Locations" />} />
+              <Route path="/categories" element={<Categories />} />
+              <Route path="/locations" element={<Locations />} />
 
-              <Route path="/settings/users" element={<ComingSoon title="People" />} />
+              <Route path="/settings/users" element={<Users />} />
               <Route path="/settings/roles" element={<ComingSoon title="Roles" />} />
-              <Route path="/settings/api-keys" element={<ComingSoon title="API keys" />} />
+              <Route path="/settings/api-keys" element={<ApiKeys />} />
               <Route path="/settings/email" element={<EmailSettings />} />
               <Route path="/settings/notifications" element={<NotificationSettings />} />
 

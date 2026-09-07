@@ -12,8 +12,8 @@ vi.mock("../../api/assets");
 vi.mock("../../api/catalog");
 
 const users = [
-  { id: "u1", name: "Rina", email: "rina@example.com", role: "technician" as const },
-  { id: "u2", name: "Budi", email: "budi@example.com", role: "manager" as const },
+  { id: "u1", name: "Rina" },
+  { id: "u2", name: "Budi" },
 ];
 const locations = [
   { id: "l1", name: "Site B", parent_id: null, address: null, depth: 0,

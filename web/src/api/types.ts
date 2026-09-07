@@ -48,12 +48,43 @@ export interface LocationNode {
   asset_count: number;
 }
 
+/**
+ * A person as the check-out picker sees them. /api/v1/users is guarded by
+ * assets:read so a technician can choose an assignee, and for that reason it
+ * returns no email address and no role. The People page uses OrgMember.
+ */
 export interface OrgUser {
   id: string;
   name: string;
-  email: string;
-  role: "admin" | "manager" | "technician" | "viewer";
   assigned_count?: number;
+}
+
+/** A person as an administrator sees them, from /api/admin/users. */
+export interface OrgMember {
+  id: string;
+  name: string;
+  email: string;
+  role_id: string | null;
+  role_name: string | null;
+  /** Empty means organisation-wide. */
+  location_ids: string[];
+  assigned_count: number;
+}
+
+export interface Role {
+  id: string;
+  name: string;
+  description: string | null;
+  is_system: boolean;
+  permissions: string[];
+  user_count: number;
+}
+
+export interface PermissionDef {
+  key: string;
+  group: string;
+  label: string;
+  description?: string;
 }
 
 export interface Assignment {
