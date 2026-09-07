@@ -153,14 +153,14 @@ describe("running the import", () => {
       mapping, category_id: categoryId, dry_run: "false",
     }));
     expect(res.status).toBe(201);
-    const body = (await res.json()) as { created: number; jobId: string };
+    const body = (await res.json()) as { created: number; job_id: string };
     expect(body.created).toBe(2);
 
     const job = await GET_JOB(
-      new Request(`http://api.test/api/v1/imports/${body.jobId}`, {
+      new Request(`http://api.test/api/v1/imports/${body.job_id}`, {
         headers: { cookie: `ams_session=${managerSession}` },
       }),
-      { params: Promise.resolve({ id: body.jobId }) },
+      { params: Promise.resolve({ id: body.job_id }) },
     );
     expect(job.status).toBe(200);
     expect((await job.json()) as { dry_run: boolean }).toMatchObject({ dry_run: false });
