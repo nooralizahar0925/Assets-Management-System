@@ -1,0 +1,11 @@
+-- Lets the application read which migrations have been applied.
+--
+-- 004 revoked ALL on this table to stop a bug re-running or skipping a
+-- migration - that concern is about writing. Reading the filenames leaks
+-- nothing: they are in the image, and every tenant shares them.
+--
+-- The health check needs it. Without this, a container running code that
+-- expects migration 017 against a database still on 015 reports itself healthy,
+-- and the load balancer keeps sending it traffic that will fail on a missing
+-- column.
+GRANT SELECT ON schema_migrations TO ams_app;
