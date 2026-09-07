@@ -41,13 +41,41 @@ const JOBS = [
   { field: "next_service_at", event: "maintenance.due", key: "maintenance" },
 ] as const;
 
+/** Drops assets that have an active maintenance schedule of their own. */
+async function withoutScheduledAssets<T extends { id: string }>(
+  ctx: Ctx,
+  rows: T[],
+): Promise<T[]> {
+  if (rows.length === 0) return rows;
+
+  const scheduled = await withTenant(ctx.orgId, async (c) =>
+    (await c.query<{ asset_id: string }>(
+      `SELECT DISTINCT asset_id FROM maintenance_schedules
+        WHERE active AND asset_id = ANY($1::uuid[])`,
+      [rows.map((r) => r.id)],
+    )).rows.map((r) => r.asset_id),
+  );
+
+  const has = new Set(scheduled);
+  return rows.filter((r) => !has.has(r.id));
+}
+
 export async function runExpiryJobs(
   ctx: Ctx,
 ): Promise<{ warranty: number; licence: number; maintenance: number }> {
   const counts = { warranty: 0, licence: 0, maintenance: 0 };
 
   for (const job of JOBS) {
-    const rows = await findExpiring(ctx, job.field, WINDOW_DAYS);
+    let rows = await findExpiring(ctx, job.field, WINDOW_DAYS);
+
+    // A recurring schedule supersedes the one-off `next_service_at` field: it
+    // knows when the service was last done and when the next is due, which a
+    // single date cannot. Without this both would chase the same asset, and
+    // the field would keep pointing at a date in the past after each service.
+    if (job.key === "maintenance") {
+      rows = await withoutScheduledAssets(ctx, rows);
+    }
+
     for (const row of rows) {
       const marker = `${job.event}.notified`;
       // Once per asset per window, not once per day — an expiry notice repeated

@@ -8,6 +8,7 @@ import { purgeOldLoginAttempts } from "../auth/loginThrottle";
 import { runOverdueJob } from "./overdue";
 import { runExpiryJobs } from "./expiring";
 import { runDepreciationJob } from "./depreciation";
+import { runMaintenanceJob } from "./maintenance";
 import { runDueSchedules } from "../reports/schedules";
 import { logError } from "../http/logger";
 
@@ -18,6 +19,8 @@ export interface JobRunSummary {
   overdue: number;
   /** Book-value rows written. Zero for most of the month, by design. */
   depreciation: number;
+  /** Service reminders sent from recurring schedules. */
+  servicing: number;
   warranty: number;
   licence: number;
   maintenance: number;
@@ -51,10 +54,15 @@ export async function runAllJobs(): Promise<JobRunSummary[]> {
       // month; the first run after a month closes records that month.
       const depreciation = await runDepreciationJob(ctx);
 
+      // Recurring service schedules. The expiry sweep above still covers
+      // assets that carry only the one-off next_service_at field.
+      const servicing = await runMaintenanceJob(ctx);
+
       summaries.push({
         org_id: org.id,
         overdue: overdue.notified,
         depreciation: depreciation.periods,
+        servicing: servicing.notified,
         ...expiry,
         sent: mail.sent,
         failed: mail.failed,
