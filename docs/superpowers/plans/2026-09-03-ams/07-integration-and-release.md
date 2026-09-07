@@ -1,8 +1,8 @@
-# Phase 6 — Integration & release
+# Phase 7 — Integration & release
 
 > Part of the [Assets Management System plan](./00-overview.md). Read `00-overview.md` first — its Global Constraints apply to every task here.
 
-**Tasks 33–36.** Idempotency, webhooks, the OpenAPI document, and the versioning and release pipeline.
+**Tasks 45–49.** Idempotency, webhooks, the OpenAPI document, and the versioning and release pipeline.
 
 **Spec sections:** §5 (public API conventions), §11 (versioning and release management).
 
@@ -15,7 +15,7 @@
 
 ---
 
-### Task 33: Idempotency and webhooks
+### Task 45: Idempotency and webhooks
 
 **Files:**
 - Create: `api/src/lib/http/idempotency.ts`, `api/src/lib/domain/webhooks.ts`
@@ -680,7 +680,7 @@ git commit -m "feat: idempotency keys and signed webhooks with retry and backoff
 
 ---
 
-### Task 34: The OpenAPI document
+### Task 46: The OpenAPI document
 
 **Files:**
 - Create: `api/src/lib/openapi/document.ts`, `api/src/lib/openapi/schemas.ts`
@@ -1319,7 +1319,7 @@ git commit -m "feat: openapi 3.1 document generated from the zod input schemas"
 
 ---
 
-### Task 35: Version endpoint, build provenance and the release-notes API
+### Task 47: Version endpoint, build provenance and the release-notes API
 
 **Files:**
 - Create: `api/migrations/010_releases.sql`
@@ -1747,7 +1747,313 @@ git commit -m "feat: version endpoint, build provenance and release notes api"
 
 ---
 
-### Task 36: CI pipeline, changelog generation and the release runbook
+### Task 48: "What's new" release-notes panel
+
+**Files:**
+- Create: `web/src/api/releases.ts`, `web/src/pages/WhatsNew.tsx`
+- Modify: `web/src/layout/AppSidebar.tsx` (unseen indicator and version footer)
+- Test: `web/src/pages/WhatsNew.test.tsx`
+
+**Interfaces:**
+- Consumes: `GET /api/releases`, `GET /api/version`, `POST /api/admin/releases/seen` (all built in Task 47).
+- Produces:
+  - `releasesApi.list()`, `.version()`, `.markSeen(version)`
+  - `<WhatsNew />` — the user-facing changelog
+  - `useUnseenReleases()` — the sidebar dot
+
+**Design note (spec §11.5):** users of an asset system notice when a screen changes and
+are unsettled when nobody told them. Entries are written for users, not from commit
+subjects. Task 47 builds the API side; this task builds the page against it, and both
+degrade quietly to an empty state if no releases have been published.
+
+- [ ] **Step 1: Write the failing test**
+
+`web/src/pages/WhatsNew.test.tsx`:
+
+```tsx
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router";
+import WhatsNew from "./WhatsNew";
+import { releasesApi } from "../api/releases";
+
+vi.mock("../api/releases");
+
+const releases = [
+  {
+    version: "1.2.0", title: "Scanning and labels", released_at: "2026-09-01",
+    entries: [
+      { type: "feature", summary: "Scan a QR code to open an asset instantly." },
+      { type: "fix", summary: "Overdue reminders no longer send twice in a day." },
+    ],
+  },
+  {
+    version: "1.1.0", title: "Reporting", released_at: "2026-08-15",
+    entries: [{ type: "improvement", summary: "Reports now export to PDF." }],
+  },
+];
+
+beforeEach(() => {
+  vi.mocked(releasesApi.list).mockResolvedValue(releases);
+  vi.mocked(releasesApi.markSeen).mockResolvedValue(undefined as never);
+});
+
+const setup = () => render(<MemoryRouter><WhatsNew /></MemoryRouter>);
+
+describe("WhatsNew", () => {
+  it("lists releases newest first", async () => {
+    setup();
+    await waitFor(() => expect(screen.getByText("Scanning and labels")).toBeInTheDocument());
+    const headings = screen.getAllByRole("heading", { level: 2 });
+    expect(headings[0]).toHaveTextContent("Scanning and labels");
+  });
+
+  it("shows the version and date for each release", async () => {
+    setup();
+    await waitFor(() => expect(screen.getByText("1.2.0")).toBeInTheDocument());
+    expect(screen.getByText(/1 Sep 2026/)).toBeInTheDocument();
+  });
+
+  it("renders every entry with its type", async () => {
+    setup();
+    await waitFor(() =>
+      expect(screen.getByText(/Scan a QR code/)).toBeInTheDocument());
+    expect(screen.getByText("feature")).toBeInTheDocument();
+    expect(screen.getByText("fix")).toBeInTheDocument();
+  });
+
+  it("marks the newest version as seen once viewed", async () => {
+    setup();
+    await waitFor(() => expect(releasesApi.markSeen).toHaveBeenCalledWith("1.2.0"));
+  });
+
+  it("shows an empty state when nothing has been published", async () => {
+    vi.mocked(releasesApi.list).mockResolvedValue([]);
+    setup();
+    await waitFor(() =>
+      expect(screen.getByText(/No release notes yet/i)).toBeInTheDocument());
+  });
+
+  it("does not crash when the release endpoint is unavailable", async () => {
+    vi.mocked(releasesApi.list).mockRejectedValue(new Error("offline"));
+    setup();
+    await waitFor(() =>
+      expect(screen.getByText(/No release notes yet/i)).toBeInTheDocument());
+  });
+});
+```
+
+- [ ] **Step 2: Run to verify it fails**
+
+Run: `cd web && npx vitest run src/pages/WhatsNew.test.tsx`
+Expected: FAIL — module not found.
+
+- [ ] **Step 3: Implement the releases API module and page**
+
+`web/src/api/releases.ts`:
+
+```ts
+import { api } from "./client";
+
+export type EntryType = "feature" | "improvement" | "fix" | "breaking";
+
+export interface ReleaseEntry {
+  type: EntryType;
+  summary: string;
+  help_url?: string | null;
+  api_affecting?: boolean;
+}
+
+export interface Release {
+  version: string;
+  title: string;
+  released_at: string;
+  entries: ReleaseEntry[];
+}
+
+export interface VersionInfo {
+  version: string;
+  git_sha: string;
+  built_at: string;
+  api_version: string;
+  migration_head: string;
+  environment: string;
+}
+
+export const releasesApi = {
+  list: () => api.get<Release[]>("/api/releases"),
+  version: () => api.get<VersionInfo>("/api/version"),
+  markSeen: (version: string) =>
+    api.post("/api/admin/releases/seen", { version }),
+  unseenCount: () => api.get<{ count: number }>("/api/admin/releases/unseen"),
+};
+```
+
+`web/src/pages/WhatsNew.tsx`:
+
+```tsx
+import { useEffect, useState } from "react";
+import PageMeta from "../components/common/PageMeta";
+import PageBreadcrumb from "../components/common/PageBreadCrumb";
+import Badge from "../components/ui/badge/Badge";
+import { releasesApi, type Release, type EntryType } from "../api/releases";
+
+const TYPE_COLOR: Record<EntryType, "success" | "info" | "warning" | "error"> = {
+  feature: "success",
+  improvement: "info",
+  fix: "warning",
+  breaking: "error",
+};
+
+const asDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-GB", {
+    day: "numeric", month: "short", year: "numeric",
+  });
+
+export default function WhatsNew() {
+  const [releases, setReleases] = useState<Release[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    releasesApi.list()
+      .then((list) => {
+        setReleases(list);
+        // Opening the page is the acknowledgement — it clears the sidebar dot.
+        if (list[0]) void releasesApi.markSeen(list[0].version).catch(() => undefined);
+      })
+      .catch(() => setReleases([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  return (
+    <>
+      <PageMeta title="What's new | AMS" description="Release notes" />
+      <PageBreadcrumb pageTitle="What's new" />
+
+      {loading ? (
+        <p className="text-sm text-gray-500">Loading release notes…</p>
+      ) : releases.length === 0 ? (
+        <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center dark:border-gray-800 dark:bg-white/[0.03]">
+          <h3 className="text-base font-medium text-gray-800 dark:text-white/90">
+            No release notes yet
+          </h3>
+          <p className="mx-auto mt-2 max-w-md text-sm text-gray-500 dark:text-gray-400">
+            When a new version ships, what changed will appear here.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-5">
+          {releases.map((release) => (
+            <article
+              key={release.version}
+              className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]"
+            >
+              <div className="flex flex-wrap items-baseline gap-3">
+                <h2 className="text-lg font-medium text-gray-800 dark:text-white/90">
+                  {release.title}
+                </h2>
+                <Badge color="light" size="sm">{release.version}</Badge>
+                <time
+                  className="ml-auto text-theme-xs text-gray-400"
+                  dateTime={release.released_at}
+                >
+                  {asDate(release.released_at)}
+                </time>
+              </div>
+
+              <ul className="mt-4 space-y-3">
+                {release.entries.map((entry, index) => (
+                  <li key={index} className="flex flex-wrap items-baseline gap-2">
+                    <Badge color={TYPE_COLOR[entry.type]} size="sm">{entry.type}</Badge>
+                    <span className="flex-1 text-sm text-gray-700 dark:text-gray-300">
+                      {entry.summary}
+                      {entry.help_url && (
+                        <>
+                          {" "}
+                          <a
+                            href={entry.help_url}
+                            className="text-brand-500 hover:text-brand-600"
+                          >
+                            Learn more
+                          </a>
+                        </>
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </article>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+```
+
+- [ ] **Step 4: Add the sidebar indicator and version footer**
+
+In `web/src/layout/AppSidebar.tsx`, replace the template's `SidebarWidget` with a version
+footer, and mark the "What's new" nav item when there are unseen releases:
+
+```tsx
+import { useEffect, useState } from "react";
+import { releasesApi, type VersionInfo } from "../api/releases";
+
+function SidebarFooter() {
+  const [version, setVersion] = useState<VersionInfo | null>(null);
+  const [unseen, setUnseen] = useState(0);
+
+  useEffect(() => {
+    void releasesApi.version().then(setVersion).catch(() => undefined);
+    void releasesApi.unseenCount()
+      .then((r) => setUnseen(r.count))
+      .catch(() => undefined);
+  }, []);
+
+  if (!version) return null;
+
+  return (
+    <div className="mt-auto px-5 py-4 text-theme-xs text-gray-400">
+      <a href="/whats-new" className="flex items-center gap-2 hover:text-brand-500">
+        <span>v{version.version}</span>
+        {unseen > 0 && (
+          <span
+            aria-label={`${unseen} unread release notes`}
+            className="h-2 w-2 rounded-full bg-brand-500"
+          />
+        )}
+      </a>
+      <span className="mt-1 block font-mono">{version.git_sha}</span>
+    </div>
+  );
+}
+```
+
+Render `<SidebarFooter />` where `SidebarWidget` was, and delete
+`web/src/layout/SidebarWidget.tsx`.
+
+- [ ] **Step 5: Run the tests to verify they pass**
+
+Run: `cd web && npx vitest run src/pages/WhatsNew.test.tsx`
+Expected: PASS, 6 tests.
+
+- [ ] **Step 6: Run the whole web suite**
+
+Run: `cd web && npm test`
+Expected: PASS — every suite from Tasks 21–48 green.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add web/src/api/releases.ts web/src/pages/WhatsNew.tsx web/src/layout
+git commit -m "feat: what's new release notes panel with unseen indicator"
+```
+
+---
+
+
+### Task 49: CI pipeline, changelog generation and the release runbook
 
 **Files:**
 - Create: `.github/workflows/ci.yml`, `.github/workflows/release.yml`
@@ -1757,7 +2063,7 @@ git commit -m "feat: version endpoint, build provenance and release notes api"
 - Test: `api/scripts/changelog.test.ts`
 
 **Interfaces:**
-- Consumes: `git log`, Conventional Commits, `publishRelease` (Task 35).
+- Consumes: `git log`, Conventional Commits, `publishRelease` (Task 47).
 - Produces:
   - `parseCommits(log): ParsedCommit[]`
   - `groupForChangelog(commits): { features, fixes, other, breaking }`
@@ -2286,7 +2592,7 @@ git commit -m "chore: ci pipeline, changelog generation and release runbook"
 
 ---
 
-**Phase 6 complete.** The API is documented, integrable and releasable: idempotent
+**Phase 7 complete.** The API is documented, integrable and releasable: idempotent
 writes, signed webhooks, a generated OpenAPI contract, build provenance, and a release
 pipeline that produces both a technical changelog and user-facing release notes.
-Continue to [Phase 7 — Docs & enablement](./07-docs-enablement.md).
+Continue to [Phase 8 — Docs & enablement](./08-docs-enablement.md).

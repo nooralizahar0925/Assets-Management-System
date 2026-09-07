@@ -1924,9 +1924,9 @@ discovered late:
 | **Phase 4, Task 19–20** | Label printing uses `labels:print`. |
 | **Phase 5, Task 31** | The users page gains a role column and a branch-scope editor. |
 | **Phase 5, new Task 31a** | The role editor: list roles, create, tick permissions by group, see how many people hold each. |
-| **Phase 6, Task 34** | The OpenAPI document gains the four role endpoints. |
-| **Phase 7, Task 41** | The `users-and-roles` help article currently describes four fixed roles and must be rewritten around custom roles and branch scoping. |
-| **Phase 7, Task 42** | The seed script gives its demo users the seeded system roles, and should demonstrate one branch-scoped user. |
+| **Phase 6, Task 46** | The OpenAPI document gains the four role endpoints. |
+| **Phase 7, Task 54** | The `users-and-roles` help article currently describes four fixed roles and must be rewritten around custom roles and branch scoping. |
+| **Phase 7, Task 55** | The seed script gives its demo users the seeded system roles, and should demonstrate one branch-scoped user. |
 | **A later release** | Drop `users.role` and the `user_role` enum, once nothing reads them. |
 
 ## Phase 1b self-review

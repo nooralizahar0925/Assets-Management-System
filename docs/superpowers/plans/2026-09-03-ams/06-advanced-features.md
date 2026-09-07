@@ -1,10 +1,10 @@
-# Phase 8 — Advanced features
+# Phase 6 — Advanced features
 
 > Part of the [Assets Management System plan](./00-overview.md). Read `00-overview.md` first — its Global Constraints apply to every task here.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Tasks 43–55.** Depreciation and book value, stock-take sessions, preventive
+**Tasks 32–44.** Depreciation and book value, stock-take sessions, preventive
 maintenance schedules, and the operational hardening the spec marks "do not skip".
 
 **Goal:** close the gap between a working asset register and one a finance team, a
@@ -23,9 +23,9 @@ route handlers, React 19, Vitest.
 
 **Spec:** [../../specs/2026-09-03-assets-management-system.md](../../specs/2026-09-03-assets-management-system.md)
 
-## Why this phase runs before Phases 6 and 7
+## Why this phase runs before integration and documentation
 
-Phases 6 and 7 are release engineering and documentation. Documenting a feature set
+Phases 7 and 8 are release engineering and documentation. Documenting a feature set
 that is about to grow means writing the developer portal, the OpenAPI document and the
 printable user guide twice. This phase therefore lands first, and Phases 6 and 7 close
 the whole product rather than two thirds of it.
@@ -40,7 +40,7 @@ the whole product rather than two thirds of it.
 
 **One convention is assumed rather than asked:** depreciation charges a **whole month
 in the month of acquisition** and none in the month of disposal. Pro-rata by day is a
-one-line change in `chargeForPeriod` if finance wants it, and Task 43's schema carries
+one-line change in `chargeForPeriod` if finance wants it, and Task 32's schema carries
 `depreciation_start` per asset so the start can be moved without touching the purchase
 date. Confirm with the customer before go-live.
 
@@ -88,7 +88,7 @@ pure function is testable exhaustively without fixtures.
 
 ---
 
-## Task 43: Depreciation schema and policy resolution
+## Task 32: Depreciation schema and policy resolution
 
 **Files:**
 - Create: `api/migrations/014_depreciation.sql`
@@ -453,14 +453,14 @@ EOF
 
 ---
 
-## Task 44: The depreciation calculation engine
+## Task 33: The depreciation calculation engine
 
 **Files:**
 - Create: `api/src/lib/domain/depreciation.ts`
 - Test: `api/src/lib/domain/depreciation.test.ts`
 
 **Interfaces:**
-- Consumes: `DepreciationPolicy` from Task 43.
+- Consumes: `DepreciationPolicy` from Task 32.
 - Produces:
   - `buildSchedule(cost, start, policy, until)` — every period from start to `until`
   - `bookValueAt(cost, start, policy, on)` — the live figure the interface shows
@@ -771,7 +771,7 @@ EOF
 
 ---
 
-## Task 45: Month-end snapshots and the live book value
+## Task 34: Month-end snapshots and the live book value
 
 **Files:**
 - Create: `api/src/lib/jobs/depreciation.ts`
@@ -780,7 +780,7 @@ EOF
 - Test: `api/src/lib/jobs/depreciation.test.ts`
 
 **Interfaces:**
-- Consumes: `buildSchedule` (Task 44), `listDepreciableAssets` (Task 43), `systemCtx`.
+- Consumes: `buildSchedule` (Task 33), `listDepreciableAssets` (Task 32), `systemCtx`.
 - Produces:
   - `runDepreciationJob(ctx, asOf)` → `{ assets: number; periods: number }`
   - `saveSnapshots(ctx, assetId, method, periods)` — idempotent per `(asset_id, period_end)`
@@ -1059,7 +1059,7 @@ EOF
 
 ---
 
-## Task 46: The book-value report and the dashboard figure
+## Task 35: The book-value report and the dashboard figure
 
 **Files:**
 - Create: `api/src/lib/reports/definitions/book-value.ts`
@@ -1166,7 +1166,7 @@ Run: `cd api && npx vitest run`, then
 
 ---
 
-## Task 47: Depreciation settings in the interface
+## Task 36: Depreciation settings in the interface
 
 **Files:**
 - Create: `web/src/components/catalog/DepreciationFields.tsx`
@@ -1196,7 +1196,7 @@ schema is the readable error.
 
 ---
 
-## Task 48: Stock-take schema and domain
+## Task 37: Stock-take schema and domain
 
 **Files:**
 - Create: `api/migrations/015_stocktake.sql`, `api/src/lib/domain/stocktake.ts`
@@ -1258,7 +1258,7 @@ session refuses further counting.
 
 ---
 
-## Task 49: Stock-take API
+## Task 38: Stock-take API
 
 **Files:**
 - Create: `api/src/app/api/v1/stocktakes/route.ts`, `[id]/route.ts`,
@@ -1275,7 +1275,7 @@ session: closing an already-closed session returns `409` rather than adjusting t
 
 ---
 
-## Task 50: Stock-take screens
+## Task 39: Stock-take screens
 
 **Files:**
 - Create: `web/src/pages/Stocktake/StocktakeList.tsx`, `StocktakeSession.tsx`
@@ -1295,7 +1295,7 @@ entry on `stocktake:read`.
 
 ---
 
-## Task 51: Maintenance schedules
+## Task 40: Maintenance schedules
 
 **Files:**
 - Create: `api/migrations/016_maintenance.sql`, `api/src/lib/domain/maintenance.ts`,
@@ -1326,7 +1326,7 @@ than once per night per schedule.
 
 ---
 
-## Task 52: Maintenance screens
+## Task 41: Maintenance screens
 
 **Files:**
 - Create: `web/src/pages/Maintenance/MaintenanceList.tsx`, `web/src/api/maintenance.ts`
@@ -1340,7 +1340,7 @@ like every other list.
 
 ---
 
-## Task 53: Request identity and structured logs
+## Task 42: Request identity and structured logs
 
 **Files:**
 - Create: `api/src/lib/http/logging.ts`
@@ -1364,7 +1364,7 @@ serialised output rather than by inspecting fields.
 
 ---
 
-## Task 54: A health check that means something
+## Task 43: A health check that means something
 
 **Files:**
 - Modify: `api/src/app/api/health/route.ts`
@@ -1382,7 +1382,7 @@ entry, not by mocking the query.
 
 ---
 
-## Task 55: Backups, and a restore that has actually been run
+## Task 44: Backups, and a restore that has actually been run
 
 **Files:**
 - Create: `api/scripts/backup.ts`, `api/scripts/restore.ts`, `docs/runbooks/restore.md`
@@ -1426,17 +1426,17 @@ Slack needs an integration nobody has asked for. Purchase orders, SSO/SAML, nati
 mobile, multi-currency conversion and approval workflows all remain out of scope per
 spec §15.
 
-**Type consistency:** `DepreciationPolicy` is defined once in Task 43 and consumed
-unchanged by Tasks 44, 45, 46 and 47. `Period` is defined in Task 44 and consumed by 45.
+**Type consistency:** `DepreciationPolicy` is defined once in Task 32 and consumed
+unchanged by Tasks 33, 34, 35 and 36. `Period` is defined in Task 33 and consumed by Task 34.
 `Method` is the database enum, spelled identically in the migration, the repository and
 the snapshot table.
 
-**Known risk carried forward.** Tasks 46 to 52 are specified at interface level rather
+**Known risk carried forward.** Tasks 35 to 41 are specified at interface level rather
 than as complete code, because they repeat patterns this codebase has now established
 five or six times — a report definition, a guarded route, a permission-gated page. Tasks
-43 to 45 and 55 carry full code because they are new ground.
+32 to 34 and 44 carry full code because they are new ground.
 
-The depreciation engine in Task 44 was **run against its own assertions before this plan
+The depreciation engine in Task 33 was **run against its own assertions before this plan
 was finished**, and the first draft failed: rounding each period to two decimals left the
 schedule 12 cents short of cost, because the final period only absorbed the remainder
 when its charge exceeded it. The corrected algorithm passes all 23 assertions. Every

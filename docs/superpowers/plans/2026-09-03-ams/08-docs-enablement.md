@@ -1,8 +1,8 @@
-# Phase 7 — Documentation & enablement
+# Phase 8 — Documentation & enablement
 
 > Part of the [Assets Management System plan](./00-overview.md). Read `00-overview.md` first — its Global Constraints apply to every task here.
 
-**Tasks 37–42.** The developer portal, the in-app tour and contextual help, the help centre, the project documentation, seed data and the end-to-end smoke suite.
+**Tasks 50–55.** The developer portal, the in-app tour and contextual help, the help centre, the project documentation, seed data and the end-to-end smoke suite.
 
 **Spec sections:** §10.1, §10.2, §10.3, and the operational items in §14.
 
@@ -12,10 +12,10 @@ nobody updates.
 
 ## Why this phase splits into six tasks, not four
 
-`00-overview.md` originally indexed this phase as Tasks 37–40. Writing it out showed
+`00-overview.md` originally indexed this phase as Tasks 50–53. Writing it out showed
 four boundaries too coarse to review: the developer portal alone is nine pages plus an
 API endpoint, and a reviewer could reasonably accept the portal shell while rejecting
-the recipe renderers. The phase is therefore Tasks 37–42, and the overview's task index
+the recipe renderers. The phase is therefore Tasks 50–55, and the overview's task index
 is updated to match.
 
 ## The single-source rule for this phase
@@ -31,11 +31,11 @@ Three deliverables in the spec describe the same material for three audiences:
 Writing those three by hand guarantees they disagree within a month. In this phase the
 help content is **one typed data module**, rendered by a shared block renderer into the
 panel and the help centre, and emitted by a build script into the printable guide. Task
-41 builds all three from that one source, and its test asserts the guide contains every
+54 builds all three from that one source, and its test asserts the guide contains every
 article.
 
 The same principle governs the developer portal: the API reference is rendered from
-`/api/v1/openapi.json` (Task 34) rather than written out, the error catalogue is served
+`/api/v1/openapi.json` (Task 46) rather than written out, the error catalogue is served
 by the API and its test fails if a handler ever returns an uncatalogued error type, and
 the code recipes are rendered from one request description per flow into four languages
 rather than hand-written thirty-two times.
@@ -53,7 +53,7 @@ rather than hand-written thirty-two times.
 
 ---
 
-### Task 37: The error catalogue and its anti-drift test
+### Task 50: The error catalogue and its anti-drift test
 
 **Files:**
 - Create: `api/src/lib/http/catalog.ts`
@@ -273,7 +273,7 @@ MSG
 
 ---
 
-### Task 38: Developer portal — shell, API reference, overview, authentication, conventions
+### Task 51: Developer portal — shell, API reference, overview, authentication, conventions
 
 **Files:**
 - Create: `web/src/pages/developers/DevelopersLayout.tsx`, `Overview.tsx`, `Authentication.tsx`, `Reference.tsx`, `Conventions.tsx`
@@ -282,7 +282,7 @@ MSG
 - Test: `web/src/pages/developers/DevelopersLayout.test.tsx`, `web/src/pages/developers/Reference.test.tsx`
 
 **Interfaces:**
-- Consumes: `GET /api/v1/openapi.json` (Task 34), `api` client and `useAuth` (Task 21).
+- Consumes: `GET /api/v1/openapi.json` (Task 46), `api` client and `useAuth` (Task 21).
 - Produces:
   - `<DevelopersLayout />` — sidebar nav + `<Outlet />`, no auth required
   - `<CodeBlock language={string} code={string} />` — syntax-neutral block with a copy button
@@ -784,7 +784,7 @@ MSG
 
 ---
 
-### Task 39: Recipes in four languages, webhooks, errors and changelog
+### Task 52: Recipes in four languages, webhooks, errors and changelog
 
 **Files:**
 - Create: `web/src/content/recipes.ts`, `web/src/content/renderers.ts`
@@ -794,7 +794,7 @@ MSG
 - Test: `web/src/content/renderers.test.ts`, `web/src/pages/developers/Errors.test.tsx`
 
 **Interfaces:**
-- Consumes: `CodeBlock`, `Prose` (Task 38); `GET /api/v1/errors.json` (Task 37); `GET /api/releases` (Task 35).
+- Consumes: `CodeBlock`, `Prose` (Task 51); `GET /api/v1/errors.json` (Task 50); `GET /api/releases` (Task 47).
 - Produces:
   - `interface HttpRequest { method: "GET"|"POST"|"PATCH"|"DELETE"; path: string; query?: Record<string,string>; body?: unknown }`
   - `interface Recipe { id: string; title: string; blurb: string; request: HttpRequest; note?: string }`
@@ -1543,7 +1543,7 @@ In `web/src/App.tsx`, inside the existing `/developers` route:
 - [ ] **Step 7: Run to verify it passes**
 
 Run: `cd web && npx vitest run src/content src/pages/developers`
-Expected: PASS — 15 renderer tests, 1 errors-page test, 3 from Task 38.
+Expected: PASS — 15 renderer tests, 1 errors-page test, 3 from Task 51.
 
 - [ ] **Step 8: Commit**
 
@@ -1568,7 +1568,7 @@ release-note: The developer portal now carries copy-paste examples in four langu
 
 ---
 
-### Task 40: First-run tour, contextual help, teaching empty states and onboarding checklists
+### Task 53: First-run tour, contextual help, teaching empty states and onboarding checklists
 
 **Files:**
 - Create: `web/src/content/help/blocks.tsx` (block types + renderer)
@@ -1591,8 +1591,8 @@ release-note: The developer portal now carries copy-paste examples in four langu
   - `<EmptyState title description actionLabel onAction icon />`
   - `<OnboardingChecklist />`
 
-**Design note (spec §10.2):** the panel, the help centre (Task 41) and the printable
-guide (Task 41) are three renderings of one content module. `Block` is a small closed
+**Design note (spec §10.2):** the panel, the help centre (Task 54) and the printable
+guide (Task 54) are three renderings of one content module. `Block` is a small closed
 union rather than Markdown because it needs no parser, cannot inject HTML, and is
 type-checked — a typo in a block kind fails the build instead of rendering as literal
 asterisks in front of a customer.
@@ -1808,7 +1808,7 @@ import type { Block } from "./blocks";
 export interface HelpTopic {
   title: string;
   blocks: Block[];
-  /** Slug of the fuller help-centre article, linked from the panel (Task 41). */
+  /** Slug of the fuller help-centre article, linked from the panel (Task 54). */
   article?: string;
 }
 
@@ -2363,14 +2363,14 @@ checklist whose completion is derived from the register, so it cannot claim
 work is done that is not.
 
 Help content is one typed data module rendered by a shared block renderer,
-which Task 41 also renders into the help centre and the printable guide.
+which Task 54 also renders into the help centre and the printable guide.
 
 release-note: New users now get a guided tour, and every page has a ? that explains what it does.
 ```
 
 ---
 
-### Task 41: Help centre and the generated printable user guide
+### Task 54: Help centre and the generated printable user guide
 
 **Files:**
 - Create: `web/src/content/help/articles.ts`
@@ -2380,7 +2380,7 @@ release-note: New users now get a guided tour, and every page has a ? that expla
 - Test: `web/src/content/help/articles.test.ts`, `web/src/pages/Help.test.tsx`, `web/scripts/build-user-guide.test.ts`
 
 **Interfaces:**
-- Consumes: `Block`, `Blocks` and `HELP_TOPICS` (Task 40); `useTour` (Task 40).
+- Consumes: `Block`, `Blocks` and `HELP_TOPICS` (Task 53); `useTour` (Task 53).
 - Produces:
   - `interface Article { slug: string; title: string; section: string; summary: string; keywords: string[]; blocks: Block[] }`
   - `ARTICLES: Article[]`, `SECTIONS: string[]`
@@ -2970,7 +2970,7 @@ release-note: A searchable help centre is now built into the dashboard, covering
 
 ---
 
-### Task 42: Project documentation, seed data and the end-to-end smoke suite
+### Task 55: Project documentation, seed data and the end-to-end smoke suite
 
 **Files:**
 - Create: `README.md`, `docs/architecture.md`, `docs/database.md`, `docs/deployment.md`, `docs/operations.md`, `docs/development.md`
@@ -3585,28 +3585,28 @@ release-note: A demo dataset and a five-minute quickstart make it possible to ev
 
 ---
 
-## Phase 7 self-review
+## Phase 8 self-review
 
 **Spec coverage.** §10.1's ten portal rows: Overview, Authentication and Reference in
-Task 38; Try it via Scalar's request client in Task 38; Recipes, Pagination/sorting/
-filtering, Rate limits & idempotency, Webhooks, Errors and Changelog in Tasks 37 and 39.
+Task 51; Try it via Scalar's request client in Task 51; Recipes, Pagination/sorting/
+filtering, Rate limits & idempotency, Webhooks, Errors and Changelog in Tasks 50 and 52.
 §10.2's five bullets: first-run tour, per-page help, empty states and onboarding
-checklists in Task 40; the help centre in Task 41. §10.3's eight documents: `user-guide.md`
-generated in Task 41, the remaining seven in Task 42, with `CONTRIBUTING.md` already
+checklists in Task 53; the help centre in Task 54. §10.3's eight documents: `user-guide.md`
+generated in Task 54, the remaining seven in Task 55, with `CONTRIBUTING.md` already
 written during Phase 1. §14's operational items appear in `docs/operations.md` and
 `docs/deployment.md` (backup and tested restore, request ids, health deep check, pool
 sizing). Playwright, `seed.ts`, Scalar and driver.js — the four dependencies named in the
 overview's tech stack that no earlier task uses — are all consumed here.
 
-**Type consistency.** `Block` is defined once in Task 40 and consumed unchanged by Tasks
-40, 41 and 42's generator. `HttpRequest` is defined in Task 39's `renderers.ts` and
+**Type consistency.** `Block` is defined once in Task 53 and consumed unchanged by Tasks
+53, 54 and 55's generator. `HttpRequest` is defined in Task 52's `renderers.ts` and
 imported by `recipes.ts` and `CodeTabs`. `HELP_TOPICS[route].article` is asserted against
-`ARTICLES` slugs by a test in Task 41, so the two modules cannot drift apart.
+`ARTICLES` slugs by a test in Task 54, so the two modules cannot drift apart.
 
-**Known gaps, deliberately left.** Task 40's `invite-team` checklist item points at
+**Known gaps, deliberately left.** Task 53's `invite-team` checklist item points at
 `/settings/users`, which Task 31 builds; its `done` predicate is hard-coded `false`
 because no user-count endpoint exists in the MVP — wire it up if Task 31 adds one.
-Task 42's seed generates its 40 asset rows from a deterministic sequence rather than
+Task 55's seed generates its 40 asset rows from a deterministic sequence rather than
 listing them, so the fixture is stable across runs and there is one place to edit. If
 Task 5 changes the seeded categories' field schemas, the three `custom` shapes in the
 generator must change with them.

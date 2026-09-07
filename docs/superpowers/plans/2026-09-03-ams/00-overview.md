@@ -23,21 +23,26 @@ Every one of these is pure JavaScript or ships a prebuilt binary — the Docker 
 | 2 — Core registry | [`02-core-registry.md`](./02-core-registry.md) | 5–9 | Categories with custom field schemas, asset CRUD, search/filter, check-in/out, audit trail |
 | 3 — Data & delivery | [`03-data-and-delivery.md`](./03-data-and-delivery.md) | 10–18 | Import/export, attachments, multi-provider email, notification rules, scheduled jobs, dashboard, multi-format report engine, scheduled reports |
 | 4 — Identification | [`04-identification.md`](./04-identification.md) | 19–20 | QR/Code128 generation, label sheets, tag lookup |
-| 5 — Frontend | [`05-frontend.md`](./05-frontend.md) | 21–32 | The full dashboard, including scanning, report builder, email settings and "What's new" |
-| 6 — Integration & release | [`06-integration-and-release.md`](./06-integration-and-release.md) | 33–36 | Webhooks, idempotency, OpenAPI document, versioning and the release pipeline |
-| 7 — Docs & enablement | [`07-docs-enablement.md`](./07-docs-enablement.md) | 37–42 | Developer portal, in-app tour, help centre, project docs, seed data, E2E smoke suite |
-| 8 — Advanced features | [`08-advanced-features.md`](./08-advanced-features.md) | 43–55 | Depreciation and book value, stock-take sessions, maintenance schedules, backups and observability |
+| 5 — Frontend | [`05-frontend.md`](./05-frontend.md) | 21–31 | The full dashboard, including scanning, report builder, email settings and the catalogue screens |
+| 6 — Advanced features | [`06-advanced-features.md`](./06-advanced-features.md) | 32–44 | Depreciation and book value, stock-take sessions, maintenance schedules, backups and observability |
+| 7 — Integration & release | [`07-integration-and-release.md`](./07-integration-and-release.md) | 45–49 | Webhooks, idempotency, OpenAPI document, versioning, "What's new" and the release pipeline |
+| 8 — Docs & enablement | [`08-docs-enablement.md`](./08-docs-enablement.md) | 50–55 | Developer portal, in-app tour, help centre, project docs, seed data, E2E smoke suite |
 
-Each task ends with a committable, independently testable deliverable.
+Phases run in order. Within a phase, tasks run in order. Each task ends with a
+committable, independently testable deliverable.
 
-**Phase 8 runs before Phases 6 and 7**, at the customer's direction. Phases 6 and 7 are
-release engineering and documentation; running them before the feature set stops growing
-means writing the OpenAPI document, the developer portal and the printable user guide
-twice. The build order is therefore 1 → 5, then 8, then 6 and 7.
+**Phase 6 is the advanced feature set**, added at the customer's direction after the
+MVP was working. It comes before integration and documentation deliberately: those two
+phases describe the product, and describing a feature set that is still growing means
+writing the OpenAPI document, the developer portal and the printable user guide twice.
 
-**Rental is now Phase 9**, still deliberately *not* planned here. Spec §13 calls it
-"Phase 8+" because it was written before this phase existed; the number moved, the
-content did not. Spec §13 records what the MVP schema prepares for it (assignment
+The "What's new" panel moved from Phase 5 into Phase 7 for the same reason — it reads
+the release-notes API built two tasks earlier, and shipping the page first would have
+meant a screen with nothing behind it.
+
+**Rental is Phase 9**, still deliberately *not* planned here. Spec §13 calls it
+"Phase 8+", written before the advanced phase existed; the number moved, the content did
+not. Spec §13 records what the MVP schema prepares for it (assignment
 `kind`, `parties`, range-typed `reservations` with a no-double-book exclusion
 constraint, currency-explicit money) so that phase adds tables and UI rather than
 migrating live data.
@@ -182,27 +187,27 @@ AssetsManagementSystem/
 | 29 | Report gallery, viewer and scheduling UI | 5 |
 | 30 | Settings — email providers, templates, notification rules | 5 |
 | 31 | Categories, locations, users and API-key pages | 5 |
-| 32 | "What's new" release-notes panel | 5 |
-| 33 | Idempotency and webhooks | 6 |
-| 34 | OpenAPI document | 6 |
-| 35 | Version endpoint, build provenance and release-notes API | 6 |
-| 36 | CI pipeline, changelog generation and the release runbook | 6 |
-| 37 | Error catalogue endpoint with an anti-drift test | 7 |
-| 38 | Developer portal — shell, reference, overview, auth, conventions | 7 |
-| 39 | Recipes in four languages, webhooks, errors, changelog | 7 |
-| 40 | First-run tour, contextual help, empty states, onboarding checklists | 7 |
-| 41 | Help centre and the generated printable user guide | 7 |
-| 42 | Project documentation, seed data and E2E smoke suite | 7 |
-| 43 | Depreciation schema and policy resolution | 8 |
-| 44 | Depreciation calculation engine | 8 |
-| 45 | Month-end book value snapshots | 8 |
-| 46 | Book-value report and dashboard figure | 8 |
-| 47 | Depreciation settings in the interface | 8 |
-| 48 | Stock-take schema and domain | 8 |
-| 49 | Stock-take API | 8 |
-| 50 | Stock-take screens | 8 |
-| 51 | Maintenance schedules | 8 |
-| 52 | Maintenance screens | 8 |
-| 53 | Request identity and structured logs | 8 |
-| 54 | Deep health check | 8 |
-| 55 | Backups and a tested restore | 8 |
+| 32 | Depreciation schema and policy resolution | 6 |
+| 33 | Depreciation calculation engine | 6 |
+| 34 | Month-end book value snapshots | 6 |
+| 35 | Book-value report and dashboard figure | 6 |
+| 36 | Depreciation settings in the interface | 6 |
+| 37 | Stock-take schema and domain | 6 |
+| 38 | Stock-take API | 6 |
+| 39 | Stock-take screens | 6 |
+| 40 | Maintenance schedules | 6 |
+| 41 | Maintenance screens | 6 |
+| 42 | Request identity and structured logs | 6 |
+| 43 | Deep health check | 6 |
+| 44 | Backups and a tested restore | 6 |
+| 45 | Idempotency and webhooks | 7 |
+| 46 | OpenAPI document | 7 |
+| 47 | Version endpoint, build provenance and release-notes API | 7 |
+| 48 | "What's new" release-notes panel | 7 |
+| 49 | CI pipeline, changelog generation and the release runbook | 7 |
+| 50 | Error catalogue endpoint with an anti-drift test | 8 |
+| 51 | Developer portal — shell, reference, overview, auth, conventions | 8 |
+| 52 | Recipes in four languages, webhooks, errors, changelog | 8 |
+| 53 | First-run tour, contextual help, empty states, onboarding checklists | 8 |
+| 54 | Help centre and the generated printable user guide | 8 |
+| 55 | Project documentation, seed data and E2E smoke suite | 8 |
