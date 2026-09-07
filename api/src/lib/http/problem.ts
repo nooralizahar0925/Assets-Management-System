@@ -1,6 +1,8 @@
 import type { ZodError } from "zod";
 
-const BASE = "https://ams.dev/errors/";
+/** Exported so the error catalogue builds the same URIs the API emits. */
+export const ERROR_BASE = "https://ams.dev/errors/";
+const BASE = ERROR_BASE;
 
 export function problem(
   status: number,
