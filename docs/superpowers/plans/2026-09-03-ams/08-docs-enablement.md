@@ -2491,7 +2491,39 @@ help-centre content as one printable document". It is therefore *generated* by
 test asserts every article appears in the output. Writing the guide by hand would give
 two documents that agree on the day they are written and never again.
 
-- [ ] **Step 1: Write the failing tests**
+
+**Corrections made during execution (2026-09-07).**
+
+- The plan's `users-and-roles` article describes **four fixed roles** (Admin,
+  Manager, Technician, Viewer) and states that "roles apply across the whole
+  organisation, not per location... per-resource permissions are on the
+  roadmap". Both claims are false: Phase 1b shipped tenant-owned, renameable
+  roles built from permissions, *and* branch scoping. Publishing that would
+  have been customer-facing documentation for a product we deliberately do not
+  ship. Rewritten as "Who can do what", with tests asserting it does not
+  describe a fixed list and does mention branches.
+- The plan's nine sections predate Phase 6. Stock-takes, maintenance and
+  depreciation had no article at all, and the Task 53 help panels link to
+  `stock-takes`, `maintenance`, `roles-and-access`, `integrations` and
+  `notifications` — none of which existed in the plan's `ARTICLES`. Thirteen
+  sections now, one article each, and a test resolves every panel link.
+- The plan asserts `SECTIONS` equals its nine strings. That test would have
+  frozen the help centre to the product as it was planned rather than as it is;
+  replaced with two that hold regardless of the list: every article sits in a
+  declared section, and every declared section has an article.
+- `web` had no `tsx` and `tsconfig.node.json` did not include `scripts/`, so
+  the generator would not have run and would never have been typechecked. Both
+  fixed; `jsx` added there because the script imports the help content.
+- The plan puts the anchor after the heading, which breaks the contents links
+  under any renderer that generates its own heading ids. Anchor first, and a
+  test resolves every contents link against an anchor that exists.
+- Added a test that `docs/user-guide.md` matches what the articles generate.
+  Generating it is worthless if nobody remembers to regenerate it; CI runs the
+  web suite, so now the build remembers. Red-green verified.
+- `/help` and `/help/:slug` are themselves routes, so Task 53's own guard
+  demanded help topics for them. It caught that immediately.
+
+- [x] **Step 1: Write the failing tests**
 
 `web/src/content/help/articles.test.ts`:
 
@@ -2632,12 +2664,12 @@ describe("help centre", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify they fail**
+- [x] **Step 2: Run to verify they fail**
 
 Run: `cd web && npx vitest run src/content/help/articles src/pages/Help scripts/build-user-guide`
 Expected: FAIL — `Cannot find module './articles'`.
 
-- [ ] **Step 3: Write the articles**
+- [x] **Step 3: Write the articles**
 
 `web/src/content/help/articles.ts`:
 
@@ -2845,7 +2877,7 @@ export function searchArticles(query: string): Article[] {
 }
 ```
 
-- [ ] **Step 4: Build the help centre page**
+- [x] **Step 4: Build the help centre page**
 
 `web/src/pages/Help.tsx`:
 
@@ -2950,7 +2982,7 @@ export default function Help() {
 Register `/help` and `/help/:slug` inside the authenticated routes, and add a Help item
 to `AppSidebar.tsx`.
 
-- [ ] **Step 5: Build the user-guide generator**
+- [x] **Step 5: Build the user-guide generator**
 
 `web/scripts/build-user-guide.ts`:
 
@@ -3030,7 +3062,7 @@ Add to `web/package.json`:
 "docs:guide": "tsx scripts/build-user-guide.ts"
 ```
 
-- [ ] **Step 6: Run to verify it passes, then generate the guide**
+- [x] **Step 6: Run to verify it passes, then generate the guide**
 
 ```bash
 cd web
@@ -3041,7 +3073,7 @@ npm run docs:guide
 Expected: PASS — 9 article tests, 5 guide tests, 3 help-centre tests. `docs/user-guide.md`
 is written and contains all nine articles.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```
 git add web/src/content/help/articles.ts web/src/pages/Help.tsx \

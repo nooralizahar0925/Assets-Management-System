@@ -223,4 +223,19 @@ export const HELP_TOPICS: Record<string, HelpTopic> = {
       { kind: "note", text: "Turning a rule off stops the email but never stops the event being recorded. The history is always complete." },
     ],
   },
+  "/help": {
+    title: "The help centre",
+    article: "getting-started",
+    blocks: [
+      { kind: "p", text: "Every guide to using the system, searchable by whatever word you would use for the thing you are looking for." },
+      { kind: "note", text: "The same guides are available as one printable document, so a new colleague can be handed a manual rather than a login." },
+    ],
+  },
+
+  "/help/:slug": {
+    title: "Reading a guide",
+    blocks: [
+      { kind: "p", text: "One guide, in full. The ? on any screen brings you to the guide covering what is in front of you." },
+    ],
+  },
 };

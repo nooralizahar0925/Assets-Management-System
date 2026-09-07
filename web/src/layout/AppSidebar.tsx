@@ -8,6 +8,7 @@ import {
   DocsIcon,
   GridIcon,
   HorizontaLDots,
+  InfoIcon,
   ListIcon,
   PieChartIcon,
   PlugInIcon,
@@ -33,6 +34,7 @@ const navItems: NavItem[] = [
   { icon: <PlugInIcon />, name: "Maintenance", path: "/maintenance" },
   { icon: <DocsIcon />, name: "What's new", path: "/whats-new" },
   { icon: <TableIcon />, name: "Reports", path: "/reports" },
+  { icon: <InfoIcon />, name: "Help", path: "/help" },
 ];
 
 const othersItems: NavItem[] = [

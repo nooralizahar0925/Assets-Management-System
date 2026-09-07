@@ -16,6 +16,7 @@ import AssetForm from "./pages/Assets/AssetForm";
 import ImportWizard from "./pages/Import/ImportWizard";
 import MaintenanceList from "./pages/Maintenance/MaintenanceList";
 import WhatsNew from "./pages/WhatsNew";
+import Help from "./pages/Help";
 import StocktakeList from "./pages/Stocktake/StocktakeList";
 import StocktakeSession from "./pages/Stocktake/StocktakeSession";
 import ReportGallery from "./pages/Reports/ReportGallery";
@@ -95,6 +96,8 @@ export default function App() {
               <Route path="/import" element={<ImportWizard />} />
               <Route path="/maintenance" element={<MaintenanceList />} />
               <Route path="/whats-new" element={<WhatsNew />} />
+              <Route path="/help" element={<Help />} />
+              <Route path="/help/:slug" element={<Help />} />
               <Route path="/stocktakes" element={<StocktakeList />} />
               <Route path="/stocktakes/:id" element={<StocktakeSession />} />
               <Route path="/reports" element={<ReportGallery />} />
