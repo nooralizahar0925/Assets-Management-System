@@ -289,6 +289,24 @@ MSG
   - `<Prose>` — typographic wrapper matching the dashboard's dark/light theme
   - Routes `/developers`, `/developers/authentication`, `/developers/reference`, `/developers/conventions`
 
+**Deviation, recorded during execution (2026-09-07):** the package this task
+named, `@scalar/api-reference-react`, does not exist on npm — the install returns
+404. The surviving `@scalar/api-reference` is 40.7 MB unpacked and pulls the Vue
+runtime, a chat agent and a second HTTP client into a React application whose
+590 kB chart library is already lazy-loaded to protect page weight. That is a bad
+trade for one page, so the reference is rendered from `/api/v1/openapi.json` by
+`Reference.tsx` instead.
+
+**What this costs:** the spec's "Try it" request runner is *not* built. A reader
+gets the operations, parameters and responses, and the raw document to point a
+generator at, but cannot fire a request from the page. Closing that gap means
+either building a small request form against the same document, or accepting
+Scalar's weight — a decision for a later task, not a silent omission.
+
+**Also moved here from Task 52:** the Errors page. The shell's sidebar links to
+it, and shipping a nav entry that 404s until the next task is worse than a small
+reordering. Task 52 keeps the recipes, webhooks and changelog pages.
+
 **Design note (spec §10.1):** the reference is rendered by Scalar from the live
 `/api/v1/openapi.json`, never transcribed. Scalar also supplies the "Try it" runner the
 spec asks for — a request client with an auth field — so that row of the spec table is
@@ -299,14 +317,14 @@ browser.
 before anyone has issued them a credential. These routes therefore sit outside
 `<RequireAuth>`, and nothing on them calls a tenant-scoped endpoint.
 
-- [ ] **Step 1: Install Scalar**
+- [x] **Step 1: Install Scalar**
 
 ```bash
 cd web
 npm install @scalar/api-reference-react
 ```
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 `web/src/pages/developers/DevelopersLayout.test.tsx`:
 
@@ -370,12 +388,12 @@ describe("api reference", () => {
 });
 ```
 
-- [ ] **Step 3: Run to verify they fail**
+- [x] **Step 3: Run to verify they fail**
 
 Run: `cd web && npx vitest run src/pages/developers`
 Expected: FAIL — `Cannot find module './DevelopersLayout'`.
 
-- [ ] **Step 4: Build the shared presentation components**
+- [x] **Step 4: Build the shared presentation components**
 
 `web/src/components/developers/CodeBlock.tsx`:
 
@@ -432,7 +450,7 @@ export default function Prose({ children }: { children: ReactNode }) {
 }
 ```
 
-- [ ] **Step 5: Build the portal shell**
+- [x] **Step 5: Build the portal shell**
 
 `web/src/pages/developers/DevelopersLayout.tsx`:
 
@@ -496,7 +514,7 @@ export default function DevelopersLayout() {
 }
 ```
 
-- [ ] **Step 6: Build the Reference, Overview, Authentication and Conventions pages**
+- [x] **Step 6: Build the Reference, Overview, Authentication and Conventions pages**
 
 `web/src/pages/developers/Reference.tsx`:
 
@@ -747,7 +765,7 @@ export default function Conventions() {
 }
 ```
 
-- [ ] **Step 7: Register the public routes**
+- [x] **Step 7: Register the public routes**
 
 In `web/src/App.tsx`, add these **outside** `<RequireAuth>`, alongside `/signin`:
 
@@ -760,12 +778,12 @@ In `web/src/App.tsx`, add these **outside** `<RequireAuth>`, alongside `/signin`
 </Route>
 ```
 
-- [ ] **Step 8: Run to verify it passes**
+- [x] **Step 8: Run to verify it passes**
 
 Run: `cd web && npx vitest run src/pages/developers`
 Expected: PASS, 3 tests.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add web/src/pages/developers web/src/components/developers web/src/App.tsx \
