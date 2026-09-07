@@ -1,6 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 import { render, type RenderResult } from "@testing-library/react";
-import { MemoryRouter } from "react-router";
+import { MemoryRouter, Route, Routes } from "react-router";
 import { AppWrapper } from "../components/common/PageMeta";
 import { AuthProvider } from "../context/AuthContext";
 
@@ -14,12 +14,18 @@ import { AuthProvider } from "../context/AuthContext";
  */
 export function renderPage(
   ui: ReactElement,
-  { route = "/" }: { route?: string } = {},
+  { route = "/", path }: { route?: string; path?: string } = {},
 ): RenderResult {
+  // `path` is needed only by a page that reads useParams: without a matching
+  // Route the parameters come back empty and the page fetches undefined.
+  const body = path
+    ? <Routes><Route path={path} element={ui} /></Routes>
+    : ui;
+
   return render(
     <AppWrapper>
       <MemoryRouter initialEntries={[route]}>
-        <AuthProvider>{ui}</AuthProvider>
+        <AuthProvider>{body}</AuthProvider>
       </MemoryRouter>
     </AppWrapper>,
   );

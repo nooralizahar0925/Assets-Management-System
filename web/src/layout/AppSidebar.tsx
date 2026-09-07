@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router";
 
 import {
   BoxCubeIcon,
+  BoxIcon,
   ChevronDownIcon,
   DocsIcon,
   GridIcon,
@@ -27,6 +28,7 @@ const navItems: NavItem[] = [
   { icon: <BoxCubeIcon />, name: "Categories", path: "/categories" },
   { icon: <PieChartIcon />, name: "Locations", path: "/locations" },
   { icon: <DocsIcon />, name: "Import", path: "/import" },
+  { icon: <BoxIcon />, name: "Stock-takes", path: "/stocktakes" },
   { icon: <TableIcon />, name: "Reports", path: "/reports" },
 ];
 
