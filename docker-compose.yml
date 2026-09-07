@@ -5,7 +5,11 @@ services:
       POSTGRES_DB: ams
       POSTGRES_USER: ams
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ams}
-    ports: ["5432:5432"]
+    # Published port is configurable: a machine with PostgreSQL already
+    # installed is listening on 5432, and connections then reach that one
+    # instead of this container - which fails as a password error and looks
+    # like a wrong credential rather than a wrong server.
+    ports: ["${DB_PORT:-5432}:5432"]
     volumes: ["db_data:/var/lib/postgresql/data"]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ams -d ams"]
@@ -59,7 +63,7 @@ services:
       # Vite inlines the API base at build time, so it is a build arg rather
       # than a runtime environment variable.
       args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:4000}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL-}
     ports: ["3000:80"]
     depends_on: [api]
 

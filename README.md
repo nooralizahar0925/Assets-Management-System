@@ -13,12 +13,19 @@ running system.
 You need Docker and Node 22.
 
 ```bash
+cp .env.example .env              # then set APP_ENCRYPTION_KEY
+cp api/.env.example api/.env      # local development only; Docker uses compose
 docker compose up -d db minio     # Postgres and object storage
 cd api
 npm install
 npm run migrate                   # schema, roles and the permission catalogue
 npm run seed                      # an organisation you can sign in to
 ```
+
+The database is published on **5442**, not 5432, because a machine with
+PostgreSQL already installed is listening on 5432 — connections then reach that
+one instead of the container, and the failure looks like a wrong password rather
+than a wrong server. Change `DB_PORT` if 5442 is taken too.
 
 The seed prints four sign-in addresses and their shared password. It is
 idempotent — running it twice does nothing the second time — and it refuses to
@@ -34,6 +41,11 @@ cd web && npm run dev             # http://localhost:5173
 
 Or run everything in containers with `docker compose up --build`, which serves
 the web app on <http://localhost:3000>.
+
+Both the Vite dev server and the container's nginx proxy `/api` to the API, so
+the browser only ever talks to one origin. That is deliberate: cross-origin
+would need CORS on the API and would fail its CSRF origin check on every write.
+`VITE_API_BASE_URL` stays empty unless the API genuinely lives on another host.
 
 ### Signing in
 
