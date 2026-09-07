@@ -16,6 +16,8 @@ import AssetForm from "./pages/Assets/AssetForm";
 import ImportWizard from "./pages/Import/ImportWizard";
 import ReportGallery from "./pages/Reports/ReportGallery";
 import ReportViewer from "./pages/Reports/ReportViewer";
+import EmailSettings from "./pages/Settings/EmailSettings";
+import NotificationSettings from "./pages/Settings/NotificationSettings";
 
 /**
  * The whole route table exists from this task onward. Screens a later task
@@ -51,11 +53,8 @@ export default function App() {
               <Route path="/settings/users" element={<ComingSoon title="People" />} />
               <Route path="/settings/roles" element={<ComingSoon title="Roles" />} />
               <Route path="/settings/api-keys" element={<ComingSoon title="API keys" />} />
-              <Route path="/settings/email" element={<ComingSoon title="Email" />} />
-              <Route
-                path="/settings/notifications"
-                element={<ComingSoon title="Notifications" />}
-              />
+              <Route path="/settings/email" element={<EmailSettings />} />
+              <Route path="/settings/notifications" element={<NotificationSettings />} />
 
               <Route path="/whats-new" element={<ComingSoon title="What's new" />} />
               <Route path="/help" element={<ComingSoon title="Help" />} />
