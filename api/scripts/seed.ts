@@ -238,6 +238,14 @@ async function seedInto(orgId: string) {
   const bekasi = await createLocation(ctx, {
     name: "Bekasi Plant", address: "Kawasan Industri MM2100, Bekasi",
   });
+  // Two levels, because a flat list of sites demonstrates nothing: the tree is
+  // what the location filter, the branch scoping and the stock-take by
+  // location are all built on.
+  const serverRoom = await createLocation(ctx, {
+    name: "Server room", parent_id: jakarta.id,
+  });
+  await createLocation(ctx, { name: "Workshop", parent_id: bekasi.id });
+  await createLocation(ctx, { name: "Yard", parent_id: bekasi.id });
 
   const laptops = await createCategory(ctx, {
     name: "Laptops", kind: "it",
@@ -256,6 +264,21 @@ async function seedInto(orgId: string) {
       fields: [
         { key: "hours", label: "Running hours", type: "number", required: false },
         { key: "next_service_at", label: "Next service", type: "date", required: false },
+      ],
+    },
+  });
+
+  // A third category, and the only one whose assets carry no serial number:
+  // it is what makes the by-category chart worth looking at, and it is how a
+  // customer sees that "asset" here does not have to mean a physical object.
+  const licences = await createCategory(ctx, {
+    name: "Software licences", kind: "media",
+    field_schema: {
+      fields: [
+        { key: "seats", label: "Seats", type: "number", required: false },
+        { key: "license_expiry", label: "Licence expires", type: "date",
+          required: false },
+        { key: "vendor", label: "Vendor", type: "string", required: false },
       ],
     },
   });
@@ -315,6 +338,27 @@ async function seedInto(orgId: string) {
       custom: {
         hours: 1200 + n * 130,
         next_service_at: n === 1 ? "2026-09-20" : "2026-12-01",
+      },
+    }));
+  }
+
+  const LICENCES = [
+    { name: "AutoCAD 2026", seats: 12, vendor: "Autodesk", expiry: "2026-09-25" },
+    { name: "Microsoft 365 E3", seats: 80, vendor: "Microsoft", expiry: "2027-03-31" },
+    { name: "Adobe Creative Cloud", seats: 6, vendor: "Adobe", expiry: "2027-01-14" },
+  ];
+
+  for (const [index, licence] of LICENCES.entries()) {
+    created.push(await createAsset(ctx, {
+      name: licence.name,
+      category_id: licences.id,
+      location_id: index === 0 ? serverRoom.id : jakarta.id,
+      status: "in_use",
+      purchase_date: "2026-01-05",
+      purchase_cost: 24_000_000 + index * 8_000_000,
+      custom: {
+        seats: licence.seats, vendor: licence.vendor,
+        license_expiry: licence.expiry,
       },
     }));
   }

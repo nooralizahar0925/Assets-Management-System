@@ -3126,7 +3126,40 @@ did not run. That is what this suite exists to catch, and why it runs against
 the e2e suite. Re-running must converge on the same demo org rather than accumulating a
 second copy, so every insert is an upsert keyed on a stable slug.
 
-- [ ] **Step 1: Write the failing seed test**
+
+**Corrections made during execution (2026-09-08).**
+
+- `npm run migrate`, `npm run seed` and the other scripts did not read
+  `api/.env`. Only `next dev` did, because Next loads it itself. Following the
+  README exactly therefore failed with `SASL: client password must be a
+  string`, which reads as a wrong credential rather than an unset one. The
+  scripts now pass `--env-file-if-exists=.env`. The dev database turned out to
+  be three migrations behind because of it.
+- `discardOrganisation` - the seed's own rollback for a failed first run - could
+  never work: deleting an organisation cascades into `roles`, and a trigger
+  refused to delete a system role. The path that exists so a half-seeded tenant
+  is discarded threw, leaving exactly the half-seeded tenant it was written to
+  prevent. Migration 020 lets a system role go when its organisation is going.
+- The seed produced 11 assets in 3 statuses, so the status donut had three
+  slices and retired and lost - the two states a customer asks about first -
+  never appeared. Now 25 assets across all five, a third category, a two-level
+  location tree, and a warranty and a service inside their warning windows so
+  the dashboard's panels are not empty.
+- `seed.ts` ran `main()` on import, so it could not be tested; proving it worked
+  needed `seed:check`, run by hand. It now exports `seed()` and the suite drives
+  it.
+- The API reference printed the bare OpenAPI path - `/assets` - beside each
+  method. Paths are relative to the server URL, so the one document a reader
+  copies from was showing URLs that do not exist. Found by the smoke suite.
+- `AppLayout` had no `<main>` landmark, so a screen-reader user walked the
+  sidebar and header again on every page. Also found by the smoke suite, which
+  could not scope a query to the page content.
+
+**On the smoke suite:** it was run for real against the dev stack - 12 tests,
+all passing - and every failure along the way was a genuine defect or a genuinely
+wrong assertion, not a flake.
+
+- [x] **Step 1: Write the failing seed test**
 
 `api/scripts/seed.test.ts`:
 
@@ -3192,12 +3225,12 @@ describe("seed", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd api && npx vitest run scripts/seed.test.ts`
 Expected: FAIL — `Cannot find module './seed'`.
 
-- [ ] **Step 3: Implement the seed script**
+- [x] **Step 3: Implement the seed script**
 
 `api/scripts/seed.ts` — the shape to build. Every write is an upsert on a stable key,
 which is what makes re-running converge:
@@ -3437,7 +3470,7 @@ Two schema additions this needs, added as migration `api/migrations/011_seed_sup
 CREATE UNIQUE INDEX IF NOT EXISTS locations_org_name_idx ON locations (org_id, name);
 ```
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 ```bash
 cd api
@@ -3447,7 +3480,7 @@ npx vitest run scripts/seed.test.ts
 
 Expected: PASS, 4 tests.
 
-- [ ] **Step 5: Write the Playwright smoke suite**
+- [x] **Step 5: Write the Playwright smoke suite**
 
 ```bash
 mkdir e2e && cd e2e
@@ -3576,7 +3609,7 @@ Root `package.json` script:
 "e2e": "playwright test --config e2e/playwright.config.ts"
 ```
 
-- [ ] **Step 6: Run the suite against the real stack**
+- [x] **Step 6: Run the suite against the real stack**
 
 ```bash
 docker compose up -d --build
@@ -3588,7 +3621,7 @@ npm run e2e
 Expected: PASS, 8 tests. A failure here is an integration fault — a service address, a
 cookie, a migration that did not run — not a unit-level bug.
 
-- [ ] **Step 7: Write the project documentation**
+- [x] **Step 7: Write the project documentation**
 
 `README.md` — quickstart in under five minutes:
 
@@ -3662,7 +3695,7 @@ commands, the RLS testing pattern (`createOrg` over the owner connection), the f
 layout, and the rule that route handlers contain no SQL and domain modules build no
 `Response`.
 
-- [ ] **Step 8: Wire the e2e job into CI**
+- [x] **Step 8: Wire the e2e job into CI**
 
 In `.github/workflows/ci.yml`, after the unit-test job:
 
@@ -3686,7 +3719,7 @@ In `.github/workflows/ci.yml`, after the unit-test job:
           path: test-results/
 ```
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```
 git add README.md docs/ api/scripts/seed.ts api/scripts/seed.test.ts \

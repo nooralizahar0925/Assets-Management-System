@@ -80,11 +80,18 @@ export interface ReferenceGroup {
  * uses is dropped rather than rendered as an empty heading.
  */
 export function groupByTag(doc: OpenApiDocument): ReferenceGroup[] {
+  // OpenAPI paths are relative to the server URL, and ours is "/api/v1".
+  // Printing the bare path puts "/assets" next to a GET - a URL that does not
+  // exist - in the one document a reader is meant to copy from.
+  const prefix = (doc.servers?.[0]?.url ?? "").replace(/\/$/, "");
+
   const operations: ReferenceOperation[] = [];
   for (const [path, item] of Object.entries(doc.paths ?? {})) {
     for (const method of METHODS) {
       const operation = item[method];
-      if (operation) operations.push({ ...operation, path, method });
+      if (operation) {
+        operations.push({ ...operation, path: `${prefix}${path}`, method });
+      }
     }
   }
 

@@ -124,6 +124,73 @@ jobs:
         run: npm run build
         working-directory: web
 
+  e2e:
+    name: Smoke
+    runs-on: ubuntu-latest
+    # Only once both halves are known good: a smoke failure caused by a broken
+    # unit is noise, and this job is slow enough to be worth protecting.
+    needs: [api, web]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+
+      - run: npm ci
+        working-directory: e2e
+
+      - name: Install the browser
+        run: npx playwright install --with-deps chromium
+        working-directory: e2e
+
+      - name: Start the stack
+        run: docker compose up -d --build
+        env:
+          # Deliberately not the defaults: a compose file that only works with
+          # its own fallbacks hides a missing variable until deployment.
+          APP_ENCRYPTION_KEY: 0000000000000000000000000000000000000000000000000000000000000001
+          SESSION_SECRET: ci-session-secret-not-a-real-one
+          APP_BASE_URL: http://localhost:3000
+
+      - name: Wait for the API to report healthy
+        # Polling the endpoint rather than sleeping: the wait is as long as it
+        # needs to be, and the failure says what was wrong.
+        run: |
+          for i in $(seq 1 60); do
+            body=$(curl -fsS http://localhost:3000/api/health || true)
+            echo "$body" | grep -q '"status":"ok"' && exit 0
+            sleep 2
+          done
+          echo "API never became healthy. Last response:"
+          echo "$body"
+          docker compose logs --tail=50 api
+          exit 1
+
+      - name: Seed the demo organisation
+        run: docker compose exec -T api npm run seed
+
+      - name: Smoke
+        run: npm test
+        working-directory: e2e
+        env:
+          BASE_URL: http://localhost:3000
+
+      - name: Keep the trace of a failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-trace
+          path: e2e/test-results/
+          retention-days: 7
+
+      - name: What the stack was doing
+        if: failure()
+        run: docker compose logs --tail=200
+
   commits:
     name: Commit messages
     runs-on: ubuntu-latest

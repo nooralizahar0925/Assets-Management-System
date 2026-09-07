@@ -20,14 +20,14 @@ const { developersApi } = await import("../../api/developers");
 const DOC: OpenApiDocument = {
   openapi: "3.1.0",
   info: { title: "AMS", version: "1.0.0", description: "The register" },
-  servers: [{ url: "https://your-host", description: "Your deployment" }],
+  servers: [{ url: "/api/v1", description: "This deployment." }],
   tags: [
     { name: "Assets", description: "The register itself" },
     { name: "Reports", description: "Running and downloading reports" },
     { name: "Unused", description: "Declared but never applied" },
   ],
   paths: {
-    "/api/v1/assets": {
+    "/assets": {
       get: {
         operationId: "listAssets", summary: "List assets", tags: ["Assets"],
         parameters: [{ name: "page", in: "query", description: "Page number" }],
@@ -38,7 +38,7 @@ const DOC: OpenApiDocument = {
         responses: { 201: { description: "The new asset" } },
       },
     },
-    "/api/v1/reports/{key}": {
+    "/reports/{key}": {
       get: {
         operationId: "runReport", summary: "Run a report", tags: ["Reports"],
         responses: { 200: { description: "The report" } },

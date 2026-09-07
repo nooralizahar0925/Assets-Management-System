@@ -5,8 +5,8 @@ and what it is worth. Rented to companies, so every tenant's data is isolated in
 the database by row-level security rather than by application code remembering
 to filter.
 
-Full project documentation arrives with Task 42; this is the short path to a
-running system.
+This is the short path to a running system. The full documentation is in
+[`docs/`](docs/) — see the table at the bottom.
 
 ## Getting started
 
@@ -74,9 +74,23 @@ cd api && npm run seed:check      # signs in as all four and reads the dashboard
 | --- | --- |
 | `api/` | Next.js route handlers, domain logic, migrations, background jobs |
 | `web/` | React SPA (Vite, react-router, Tailwind) |
+| `docs/` | Architecture, database, deployment, operations, development, the user guide |
 | `docs/superpowers/plans/` | The spec and the phase-by-phase implementation plan |
-| `docs/accepted-risks.md` | Known trade-offs and why they were accepted |
 | `CONTRIBUTING.md` | Branching, commit format, and how release notes are generated |
+
+## Documentation
+
+| Document | For |
+| --- | --- |
+| [Architecture](docs/architecture.md) | How the pieces fit, and how tenants are kept apart |
+| [Database](docs/database.md) | Schema, the rules that hold everywhere, migrations |
+| [Deployment](docs/deployment.md) | Environment variables, deploy order, rollback |
+| [Operations](docs/operations.md) | Diagnosing a problem, routine work, rotating secrets |
+| [Development](docs/development.md) | Local setup, how tests are written here, conventions |
+| [User guide](docs/user-guide.md) | The in-app help centre as one printable document |
+| [Accepted risks](docs/accepted-risks.md) | Known trade-offs and why they were accepted |
+| [Restore runbook](docs/runbooks/restore.md) | Restoring from a backup, and the trap in it |
+| [Release runbook](docs/runbooks/release.md) | Cutting and publishing a release |
 
 ## Tests
 
@@ -87,3 +101,16 @@ cd web && npm test
 
 Both workspaces also have `npm run typecheck` and `npm run build`. All three
 matter: each has caught failures the other two missed.
+
+There is also a smoke suite that drives a real browser against a running stack:
+
+```bash
+docker compose up -d --build
+cd e2e && npm install && npx playwright install chromium && npm test
+```
+
+It is deliberately shallow — one path through the product. Everything it can
+catch is something no unit test can: a web build pointing at the wrong API, a
+cookie the browser refuses because `APP_BASE_URL` disagrees with how the page is
+served, an nginx that does not proxy `/api`, a migration that did not run. Point
+it at the dev servers instead with `BASE_URL=http://localhost:5173 npm test`.
