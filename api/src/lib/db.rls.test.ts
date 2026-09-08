@@ -200,10 +200,28 @@ describe("every tenant table is protected", () => {
                  AND col.table_name = c.relname
                  AND col.column_name = 'org_id'
             )
+            -- ...and that the tenant application can actually reach.
+            --
+            -- Row-level security exists here to stop ams_app reading a tenant
+            -- table without a filter. A table it holds no privilege on has
+            -- nothing to protect against: platform_audit records which
+            -- customer an operator's action touched, so it carries an org_id,
+            -- but it is the operator's trail and the tenant application is
+            -- refused it outright. Adding a policy there would imply the
+            -- protection came from RLS when it comes from the grant.
+            --
+            -- Checked against the database rather than kept as a list of
+            -- exceptions, so a table that quietly becomes reachable is caught.
+            AND has_table_privilege('ams_app', c.oid, 'SELECT')
           ORDER BY c.relname`,
       );
 
       expect(rows.length).toBeGreaterThan(5);
+      // The privilege filter above must never be what makes this pass. If it
+      // ever excluded the register itself, every assertion below would hold
+      // while protecting nothing.
+      expect(rows.map((r) => r.table_name)).toContain("assets");
+      expect(rows.map((r) => r.table_name)).toContain("org_entitlements");
 
       const unprotected = rows.filter(
         (r) => !r.enabled || !r.forced || r.policies === 0,

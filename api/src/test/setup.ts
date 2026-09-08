@@ -12,6 +12,13 @@ process.env.DATABASE_URL ??=
 process.env.MIGRATION_DATABASE_URL ??=
   `postgres://ams:ams@localhost:${port}/ams_test`;
 
+// The platform connection: a separate role holding BYPASSRLS, because reading
+// across tenants is the console's whole job. Separate from the tenant URL so a
+// test that reaches for the wrong one fails loudly rather than quietly seeing
+// everything.
+process.env.PLATFORM_DATABASE_URL ??=
+  `postgres://ams_platform:ams_platform@localhost:${port}/ams_test`;
+
 // MinIO from docker-compose.yml, for the attachment tests. Start it with
 // `docker compose up -d minio`.
 process.env.S3_ENDPOINT ??= "http://localhost:9000";

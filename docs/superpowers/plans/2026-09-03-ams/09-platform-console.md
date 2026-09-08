@@ -117,7 +117,24 @@ Write the migration and the runner change together, in this task, and apply them
 to a database before committing. `git log --diff-filter=D -- api/migrations/022_platform.sql`
 finds the draft if it is useful.
 
-- [ ] **Step 1: Write the failing test**
+
+**Executed 2026-09-08.** One correction to the plan: it says to exclude `plans`
+from the RLS suite by whatever mechanism `permissions` uses. There is no such
+mechanism - the guard finds tenant tables by looking for an `org_id` column, so
+`plans` is passed over automatically.
+
+`platform_audit` did need a decision, though, and not the one the plan
+anticipated: it records which customer an operator's action touched, so it
+*has* an `org_id`, and the guard demanded a policy for it. It is not a tenant
+table - the tenant application is refused it outright - so the guard now also
+requires that `ams_app` actually hold a privilege on the table. RLS exists to
+stop that role reading a tenant table without a filter; where it cannot read at
+all there is nothing to protect against, and a policy there would imply the
+protection came from RLS when it comes from the grant. That is checked against
+the database rather than kept as a list of exceptions, and two assertions were
+added so the new filter can never be what makes the suite pass.
+
+- [x] **Step 1: Write the failing test**
 
 `api/src/lib/platform/db.test.ts`:
 
@@ -156,12 +173,12 @@ describe("the platform connection", () => {
 });
 ```
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 Run: `cd api && npx vitest run src/lib/platform/db.test.ts`
 Expected: FAIL — `Cannot find module './db'`.
 
-- [ ] **Step 3: Finish the migration**
+- [x] **Step 3: Finish the migration**
 
 Extend the existing draft with the commercial and entitlement tables. The draft
 already has `platform_admins`, `platform_sessions`, `platform_audit`,
@@ -234,7 +251,7 @@ CREATE POLICY tenant_isolation ON org_entitlements
 `permissions` is excluded from the RLS suite and exclude `plans` the same way,
 **with a comment saying why**.
 
-- [ ] **Step 4: Write the platform pool**
+- [x] **Step 4: Write the platform pool**
 
 `api/src/lib/platform/db.ts`:
 
@@ -273,7 +290,7 @@ export async function withPlatform<T>(
 }
 ```
 
-- [ ] **Step 5: Set the role's password in the migration runner**
+- [x] **Step 5: Set the role's password in the migration runner**
 
 `scripts/migrate.ts` already has `setAppRolePassword`. Add
 `setPlatformRolePassword` beside it, reading `PLATFORM_DB_PASSWORD`, refusing a
@@ -282,7 +299,7 @@ exist yet** — it runs before migration 022 on a fresh database.
 
 This has already been written in the working tree; verify it, do not rewrite it.
 
-- [ ] **Step 6: Add the variables**
+- [x] **Step 6: Add the variables**
 
 `.env.example`:
 
@@ -297,12 +314,12 @@ Add both to the `api` service in `docker-compose.yml`, and `test/setup.ts` must
 default `PLATFORM_DATABASE_URL` to the test database exactly as it does
 `DATABASE_URL`.
 
-- [ ] **Step 7: Run the tests**
+- [x] **Step 7: Run the tests**
 
 Run: `cd api && npm run migrate:test && npx vitest run src/lib/platform src/lib/db.rls.test.ts`
 Expected: PASS, including the RLS suite with `org_entitlements` now covered.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```
 feat(api): the platform plane's schema, role and connection

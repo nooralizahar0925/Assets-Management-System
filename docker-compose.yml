@@ -32,6 +32,10 @@ services:
       # password. Migration 004 creates ams_app with no password precisely so
       # that this value, and not a literal in the SQL, is the credential.
       APP_DB_PASSWORD: ${APP_DB_PASSWORD:-ams_app}
+      # The platform console's connection. Deliberately absent from the jobs
+      # service: the scheduler has no business reading across tenants.
+      PLATFORM_DATABASE_URL: postgres://ams_platform:${PLATFORM_DB_PASSWORD:-ams_platform}@db:5432/ams
+      PLATFORM_DB_PASSWORD: ${PLATFORM_DB_PASSWORD:-ams_platform}
       SESSION_SECRET: ${SESSION_SECRET:-dev-secret-change-me}
       APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY:?APP_ENCRYPTION_KEY must be set - see .env.example}
       APP_BASE_URL: ${APP_BASE_URL:-http://localhost:3000}
