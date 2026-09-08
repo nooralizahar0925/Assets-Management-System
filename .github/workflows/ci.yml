@@ -30,17 +30,6 @@ jobs:
           --health-cmd "pg_isready -U ams -d ams_test"
           --health-interval 5s --health-timeout 3s --health-retries 20
 
-      # Attachments and backups both need object storage.
-      minio:
-        image: bitnami/minio:latest
-        env:
-          MINIO_ROOT_USER: ams
-          MINIO_ROOT_PASSWORD: ams-secret
-        ports: ["9000:9000"]
-        options: >-
-          --health-cmd "curl -f http://localhost:9000/minio/health/live || exit 1"
-          --health-interval 5s --health-timeout 3s --health-retries 20
-
     env:
       DATABASE_URL: postgres://ams_app:ams_app@localhost:5433/ams_test
       MIGRATION_DATABASE_URL: postgres://ams:ams@localhost:5433/ams_test
@@ -55,6 +44,28 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      # Object storage for attachments and backups.
+      #
+      # A step rather than a `services:` entry, because a service container
+      # cannot be given a command and minio/minio needs `server /data`. This
+      # used to be bitnami/minio, whose only virtue was starting the server by
+      # itself - and which was withdrawn, taking this job with it. Running the
+      # same image docker-compose runs means CI and everybody's laptop now
+      # exercise the same object store, which they did not before.
+      - name: Start object storage
+        run: |
+          docker run -d --name minio -p 9000:9000 -e MINIO_ROOT_USER=ams -e MINIO_ROOT_PASSWORD=ams-secret minio/minio:RELEASE.2025-09-07T16-13-09Z server /data
+
+      - name: Wait for object storage
+        run: |
+          for i in $(seq 1 30); do
+            curl -fsS http://localhost:9000/minio/health/live && exit 0
+            sleep 2
+          done
+          echo "MinIO never became ready."
+          docker logs minio
+          exit 1
 
       - uses: actions/setup-node@v4
         with:
