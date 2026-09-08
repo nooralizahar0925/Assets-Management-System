@@ -28,6 +28,10 @@ process.env.APP_ENCRYPTION_KEY ??=
 // keeps stdin open so an archive can be piped back in for a restore.
 const container = process.env.TEST_DB_CONTAINER ?? "assetsmanagementsystem-db-test-1";
 process.env.PG_DUMP_COMMAND ??= `docker exec -i ${container} pg_dump`;
+// pg_dump runs inside that container, so it reaches the server on the
+// container's own port, not the one published to this host. Set this wherever
+// PG_DUMP_COMMAND is set - the address and the command are one decision.
+process.env.PG_DUMP_DATABASE_URL ??= "postgres://ams:ams@localhost:5432/ams_test";
 process.env.PG_RESTORE_COMMAND ??= `docker exec -i ${container} pg_restore`;
 
 // Backups go to their own bucket, never the attachment one.

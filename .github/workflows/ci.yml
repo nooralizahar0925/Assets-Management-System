@@ -38,9 +38,12 @@ jobs:
       S3_SECRET_KEY: ams-secret
       APP_ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000001"
       # The suite reaches pg_dump through the database container; on a runner
-      # the client is installed directly, so the plain binaries are correct.
+      # the client is installed directly, so the plain binaries are correct -
+      # and the address changes with them. Inside the container the server is
+      # on 5432; from the runner it is the published 5433.
       PG_DUMP_COMMAND: pg_dump
       PG_RESTORE_COMMAND: pg_restore
+      PG_DUMP_DATABASE_URL: postgres://ams:ams@localhost:5433/ams_test
 
     steps:
       - uses: actions/checkout@v4

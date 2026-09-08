@@ -9,11 +9,27 @@ import { backupKey, putBackup, getBackup, listBackups, pruneBackups } from "./st
 import type { Ctx } from "@/lib/http/handler";
 
 /**
- * The database as the client container sees itself. pg_dump runs inside that
- * container - the host has no PostgreSQL client - so the connection string has
- * to be the one that works there, not the published port.
+ * The database *as pg_dump sees it*, which is not always as this process sees
+ * it.
+ *
+ * On a developer machine pg_dump runs inside the database container, because
+ * the host has no PostgreSQL client - so it must be given the container's own
+ * address, not the published port. On CI the client is installed on the runner
+ * and the published port is the only one that works.
+ *
+ * This used to be a hard-coded internal address, which meant the command was
+ * configurable and the address it should use was not. The two are one decision
+ * and now travel together: whoever sets PG_DUMP_COMMAND sets this too.
  */
-const INTERNAL_URL = "postgres://ams:ams@localhost:5432/ams_test";
+const DUMP_URL = process.env.PG_DUMP_DATABASE_URL
+  ?? "postgres://ams:ams@localhost:5432/ams_test";
+
+/** The same address, pointed at another database on the same server. */
+function databaseNamed(name: string): string {
+  const url = new URL(DUMP_URL);
+  url.pathname = `/${name}`;
+  return url.toString();
+}
 
 let ctx: Ctx;
 let assetId: string;
@@ -92,9 +108,9 @@ describe("the restore drill", () => {
     const scratch = "ams_restore_drill";
     const adminUrl = "postgres://ams:ams@localhost:5433/ams_test";
     const scratchUrl = `postgres://ams:ams@localhost:5433/${scratch}`;
-    const scratchInternal = `postgres://ams:ams@localhost:5432/${scratch}`;
+    const scratchDumpUrl = databaseNamed(scratch);
 
-    const archive = await dumpDatabase(INTERNAL_URL);
+    const archive = await dumpDatabase(DUMP_URL);
     expect(archive.length).toBeGreaterThan(1000);
 
     const key = backupKey();
@@ -108,7 +124,7 @@ describe("the restore drill", () => {
 
     const restored = new Client({ connectionString: scratchUrl });
     try {
-      await restoreDatabase(scratchInternal, await getBackup(key));
+      await restoreDatabase(scratchDumpUrl, await getBackup(key));
       await restored.connect();
 
       const asset = await restored.query<{ name: string }>(
