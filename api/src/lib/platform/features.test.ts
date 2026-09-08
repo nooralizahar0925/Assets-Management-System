@@ -1,0 +1,68 @@
+import { describe, it, expect } from "vitest";
+import { readdir, readFile } from "node:fs/promises";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { FEATURES, FEATURE_KEYS, ALWAYS_ON, isFeatureKey } from "./features";
+
+const SRC = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+
+async function sourceFiles(dir: string): Promise<string[]> {
+  const entries = await readdir(dir, { withFileTypes: true });
+  const out: string[] = [];
+  for (const entry of entries) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...(await sourceFiles(full)));
+    else if (entry.name.endsWith(".ts") && !entry.name.endsWith(".test.ts")) {
+      out.push(full);
+    }
+  }
+  return out;
+}
+
+describe("the feature catalogue", () => {
+  it("has no duplicate keys", () => {
+    expect(new Set(FEATURE_KEYS).size).toBe(FEATURE_KEYS.length);
+  });
+
+  it("describes every feature in terms a customer would recognise", () => {
+    // These strings end up on a price list and in the console beside a switch
+    // somebody is about to flip for a paying customer. "misc flag" will not do.
+    for (const feature of FEATURES) {
+      expect(feature.label.length, feature.key).toBeGreaterThan(3);
+      expect(feature.description.length, feature.key).toBeGreaterThan(40);
+      expect(feature.group.length, feature.key).toBeGreaterThan(2);
+    }
+  });
+
+  it("keeps the register on, whatever else is sold", () => {
+    expect(ALWAYS_ON).toContain("core");
+  });
+
+  it("recognises its own keys and nothing else", () => {
+    expect(isFeatureKey("stocktake")).toBe(true);
+    expect(isFeatureKey("stocktakes")).toBe(false);
+    expect(isFeatureKey("")).toBe(false);
+  });
+
+  it.todo(
+    "gates only features that something actually checks — turned on in Task 61, "
+    + "which adds the gates. See the failing-by-design test below.",
+  );
+
+  it("names every feature that is already gated", async () => {
+    // The other half of Task 61's guard, and safe to run now: a gate for a
+    // feature the catalogue does not list would be a check nobody can satisfy.
+    const gated = new Set<string>();
+    for (const file of await sourceFiles(SRC)) {
+      const text = await readFile(file, "utf8");
+      for (const match of text.matchAll(
+        /(?:hasFeature|requireFeature)\(\s*\w+\s*,\s*"([a-z_]+)"/g,
+      )) {
+        gated.add(match[1]);
+      }
+    }
+
+    const unknown = [...gated].filter((key) => !isFeatureKey(key));
+    expect(unknown, `gated but not in the catalogue: ${unknown.join(", ")}`).toEqual([]);
+  });
+});

@@ -1,6 +1,7 @@
 import type { Client } from "pg";
 import { PERMISSIONS, SYSTEM_ROLES } from "../src/lib/auth/permissions";
 import { seedDefaultRulesWithClient } from "../src/lib/notify/rules";
+import { seedPlansWithClient } from "../src/lib/platform/seedPlans";
 
 /**
  * Reconciles the permissions table and every organisation's system roles with
@@ -23,6 +24,13 @@ export async function seedPermissions(client: Client): Promise<void> {
       [p.key, p.label, p.description, p.group],
     );
   }
+
+  // Only on a deployment that has the platform tables. Runs before every
+  // organisation, so a brand-new deployment has plans to put them on.
+  const hasPlans = await client.query(
+    "SELECT 1 FROM information_schema.tables WHERE table_name = 'plans'",
+  );
+  if (hasPlans.rowCount) await seedPlansWithClient(client);
 
   const { rows: orgs } = await client.query<{ id: string }>(
     "SELECT id FROM organizations",

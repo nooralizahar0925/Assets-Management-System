@@ -637,7 +637,26 @@ release-note: none
   - `interface Limits { max_assets?: number; max_users?: number; max_storage_mb?: number }`
   - `effectiveEntitlements(orgId: string): Promise<{ features: string[]; limits: Limits; plan_code: string | null }>`
 
-- [ ] **Step 1: Define the catalogue**
+
+**Executed 2026-09-08.** Notes for whoever reads this next:
+
+- The plan's "gates only features that something checks" test is present as
+  `it.todo`, naming Task 61. Its other half - that nothing is gated on a key
+  the catalogue does not list - runs now, since that direction is already
+  meaningful.
+- `price_minor` is required rather than defaulted. A plan with no price is a
+  billing question nobody meant to answer, and defaulting it to zero answers it
+  wrongly and silently. Two route tests were written without one and got a
+  validation failure instead of the assertion they meant; the tests were wrong,
+  not the schema.
+- `PATCH` merges onto the stored plan and takes the code from the URL, never
+  the body. Renaming a code would leave every customer on the old plan pointing
+  at nothing.
+- The starting plans are seeded `ON CONFLICT DO NOTHING` on every migrate. An
+  update would mean a deploy resetting a customer's price to whatever was last
+  committed, which is a billing incident caused by a code change.
+
+- [x] **Step 1: Define the catalogue**
 
 `api/src/lib/platform/features.ts`. Modelled on `src/lib/auth/permissions.ts`,
 which is the pattern that has held up best in this codebase: named in code,
@@ -681,7 +700,7 @@ export type FeatureKey = (typeof FEATURES)[number]["key"];
 export const ALWAYS_ON: FeatureKey[] = ["core"];
 ```
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 `api/src/lib/platform/features.test.ts`:
 
@@ -715,7 +734,7 @@ is the point — but it means Task 58 cannot be committed green on its own. Writ
 the test in Task 58, mark it `it.todo` with a comment naming Task 61, and turn
 it on there. Do not delete it and mean to come back.
 
-- [ ] **Step 3: Implement plan storage and resolution**
+- [x] **Step 3: Implement plan storage and resolution**
 
 `api/src/lib/platform/plans.ts`:
 
@@ -796,7 +815,7 @@ plan; an override adding; an override removing; an override removing `core`
 (refused); a limit override replacing the plan's; a limit the plan omits
 (unlimited).
 
-- [ ] **Step 4: Seed the starting plans**
+- [x] **Step 4: Seed the starting plans**
 
 In `scripts/seed-permissions.ts` — which already runs after every migration —
 upsert three plans, `ON CONFLICT (code) DO NOTHING` so an operator's edits are
@@ -808,13 +827,13 @@ never overwritten by a deploy:
 | `professional` | Professional | + stocktake, maintenance, depreciation, reports_scheduled, api | max_assets 5000, max_users 50 |
 | `enterprise` | Enterprise | all | none |
 
-- [ ] **Step 5: Plan endpoints**
+- [x] **Step 5: Plan endpoints**
 
 `GET /api/platform/plans` (list), `POST` (create), `PATCH /api/platform/plans/[code]`,
 `DELETE` (refuse with 409 when an organisation is on it — name the count in the
 detail).
 
-- [ ] **Step 6: Run, then commit**
+- [x] **Step 6: Run, then commit**
 
 ```
 feat(api): features, plans and what each customer is entitled to
