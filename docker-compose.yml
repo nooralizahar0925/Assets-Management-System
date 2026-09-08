@@ -5,7 +5,11 @@ services:
       POSTGRES_DB: ams
       POSTGRES_USER: ams
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ams}
-    ports: ["5432:5432"]
+    # Published port is configurable: a machine with PostgreSQL already
+    # installed is listening on 5432, and connections then reach that one
+    # instead of this container - which fails as a password error and looks
+    # like a wrong credential rather than a wrong server.
+    ports: ["${DB_PORT:-5432}:5432"]
     volumes: ["db_data:/var/lib/postgresql/data"]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ams -d ams"]
@@ -14,7 +18,13 @@ services:
       retries: 10
 
   api:
-    build: ./api
+    build:
+      context: ./api
+      args:
+        # Stamped by the release pipeline; "unknown" locally, which is honest.
+        APP_VERSION: ${APP_VERSION:-unknown}
+        GIT_SHA: ${GIT_SHA:-unknown}
+        BUILD_TIME: ${BUILD_TIME:-unknown}
     environment:
       DATABASE_URL: postgres://ams_app:${APP_DB_PASSWORD:-ams_app}@db:5432/ams
       MIGRATION_DATABASE_URL: postgres://ams:${POSTGRES_PASSWORD:-ams}@db:5432/ams
@@ -29,6 +39,10 @@ services:
       S3_BUCKET: ams-attachments
       S3_ACCESS_KEY: ${MINIO_ROOT_USER:-ams}
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-ams-secret}
+      # Database archives live apart from customer attachments: different
+      # retention, different access, different blast radius.
+      S3_BACKUP_BUCKET: ${S3_BACKUP_BUCKET:-ams-backups}
+      BACKUP_KEEP: ${BACKUP_KEEP:-14}
     ports: ["4000:4000"]
     depends_on:
       db: { condition: service_healthy }
@@ -53,17 +67,13 @@ services:
       db: { condition: service_healthy }
     restart: unless-stopped
 
-  # Built from Task 21 onward, when the TailAdmin template is copied to web/.
-  # Until it exists, `docker compose up` would fail on a missing build context,
-  # so the service sits behind a profile and is opted into explicitly:
-  #   docker compose --profile web up
-  # Delete the profile line once web/ exists, so the default up brings up
-  # everything as the global constraints require.
   web:
-    profiles: ["web"]
-    build: ./web
-    environment:
-      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:4000}
+    build:
+      context: ./web
+      # Vite inlines the API base at build time, so it is a build arg rather
+      # than a runtime environment variable.
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL-}
     ports: ["3000:80"]
     depends_on: [api]
 

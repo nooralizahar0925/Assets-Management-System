@@ -235,4 +235,35 @@ describe("runAllJobs", () => {
     expect(Array.isArray(summaries)).toBe(true);
     for (const s of summaries) expect(s).toHaveProperty("org_id");
   });
+
+  it("records month-end book values as part of the sweep", { timeout: 60_000 }, async () => {
+    // The sweep is where depreciation actually happens in production. Without
+    // this the job could be unwired from the runner and every other test would
+    // still pass.
+    const cat = await createCategory(ctx, {
+      name: "Depreciating kit", kind: "it", field_schema: { fields: [] },
+    });
+    await withTenant(orgId, (c) =>
+      c.query(
+        `UPDATE categories SET depreciation_method = 'straight_line',
+                useful_life_months = 24 WHERE id = $1`,
+        [cat.id],
+      ),
+    );
+    const asset = await createAsset(ctx, {
+      name: "Depreciating laptop", category_id: cat.id,
+      purchase_cost: 24_000_000, purchase_date: "2020-01-15",
+    });
+
+    await runAllJobs();
+
+    const written = await withTenant(orgId, async (c) =>
+      (await c.query<{ n: string }>(
+        "SELECT count(*) AS n FROM asset_book_values WHERE asset_id = $1",
+        [asset.id],
+      )).rows[0],
+    );
+    // A 24-month life bought in 2020 is fully depreciated by now.
+    expect(Number(written.n)).toBe(24);
+  });
 });

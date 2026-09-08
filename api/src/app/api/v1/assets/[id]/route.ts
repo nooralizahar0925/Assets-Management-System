@@ -1,6 +1,7 @@
 import {
   requireAuth, isResponse, withinLocationScope, branchForbidden,
 } from "@/lib/auth/guard";
+import { dispatch } from "@/lib/notify/dispatch";
 import { validationProblem, notFound, problem } from "@/lib/http/problem";
 import { safe } from "@/lib/http/handler";
 import {
@@ -43,7 +44,13 @@ export const PATCH = safe(async (req: Request, { params }: Params) => {
 
   try {
     const asset = await updateAsset(ctx, id, parsed.data);
-    return asset ? Response.json(asset) : notFound("asset");
+    if (!asset) return notFound("asset");
+    await dispatch(ctx, "asset.updated", {
+      assetId: asset.id,
+      actorId: ctx.actor.type === "user" ? ctx.actor.id : null,
+      asset: { name: asset.name, asset_tag: asset.asset_tag, status: asset.status },
+    });
+    return Response.json(asset);
   } catch (err) {
     if (err instanceof CustomFieldError) {
       return problem(422, "validation", "Validation failed", { detail: err.message });
@@ -66,5 +73,15 @@ export const DELETE = safe(async (req: Request, { params }: Params) => {
   if (!withinLocationScope(ctx, existing.location_id)) return branchForbidden();
 
   const done = await softDeleteAsset(ctx, id);
-  return done ? new Response(null, { status: 204 }) : notFound("asset");
+  if (!done) return notFound("asset");
+  // The asset is read before the delete, so the payload can still say which
+  // one it was - a subscriber receiving only an id could no longer look it up.
+  await dispatch(ctx, "asset.deleted", {
+    assetId: id,
+    actorId: ctx.actor.type === "user" ? ctx.actor.id : null,
+    asset: {
+      name: existing.name, asset_tag: existing.asset_tag, status: existing.status,
+    },
+  });
+  return new Response(null, { status: 204 });
 });

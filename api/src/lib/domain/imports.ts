@@ -98,7 +98,8 @@ export interface ImportError {
   message: string;
 }
 export interface ImportResult {
-  jobId: string;
+  /** snake_case on the wire, like every other field the v1 API returns. */
+  job_id: string;
   total: number;
   created: number;
   updated: number;
@@ -243,7 +244,7 @@ export async function runImport(ctx: Ctx, input: RunInput): Promise<ImportResult
     ),
   );
 
-  return { jobId, total: input.rows.length, created, updated, skipped, errors };
+  return { job_id: jobId, total: input.rows.length, created, updated, skipped, errors };
 }
 
 export const getImportJob = (ctx: Ctx, id: string) =>

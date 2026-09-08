@@ -22,3 +22,13 @@ process.env.S3_SECRET_KEY ??= "ams-secret";
 // A fixed key for tests only. Production refuses to start without a real one.
 process.env.APP_ENCRYPTION_KEY ??=
   "0000000000000000000000000000000000000000000000000000000000000001";
+
+// pg_dump and pg_restore run inside the database container: this host has no
+// PostgreSQL client, and the versions have to match the server anyway. `-i`
+// keeps stdin open so an archive can be piped back in for a restore.
+const container = process.env.TEST_DB_CONTAINER ?? "assetsmanagementsystem-db-test-1";
+process.env.PG_DUMP_COMMAND ??= `docker exec -i ${container} pg_dump`;
+process.env.PG_RESTORE_COMMAND ??= `docker exec -i ${container} pg_restore`;
+
+// Backups go to their own bucket, never the attachment one.
+process.env.S3_BACKUP_BUCKET ??= "ams-backups-test";

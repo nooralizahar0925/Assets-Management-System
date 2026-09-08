@@ -3,6 +3,8 @@ import {
 } from "@/lib/auth/guard";
 import { validationProblem, problem } from "@/lib/http/problem";
 import { safe } from "@/lib/http/handler";
+import { withIdempotency } from "@/lib/http/idempotency";
+import { dispatch } from "@/lib/notify/dispatch";
 import { parsePagination, parseSort, paginated } from "@/lib/http/pagination";
 import {
   AssetInput, STATUSES, SORTABLE, listAssets, createAsset, CustomFieldError,
@@ -59,17 +61,32 @@ export const POST = safe(async (req: Request) => {
     return branchForbidden();
   }
 
-  try {
-    return Response.json(await createAsset(ctx, parsed.data), { status: 201 });
-  } catch (err) {
-    if (err instanceof CustomFieldError) {
-      return problem(422, "validation", "Validation failed", { detail: err.message });
-    }
-    if ((err as { code?: string }).code === "23505") {
-      return problem(409, "conflict", "Duplicate value", {
-        detail: "An asset with that tag or serial number already exists.",
+  // Creating an asset is the write integrators retry most: a timeout leaves
+  // them unable to tell whether it happened, and retrying without this makes
+  // two.
+  return withIdempotency(req, ctx, async () => {
+    try {
+      const asset = await createAsset(ctx, parsed.data);
+      // Dispatched here rather than inside createAsset: an import calls that
+      // function once per row, and a thousand-row spreadsheet should announce
+      // itself as one import.completed, not a thousand deliveries. A replayed
+      // idempotent request never reaches this line, so a retry cannot double.
+      await dispatch(ctx, "asset.created", {
+        assetId: asset.id,
+        actorId: ctx.actor.type === "user" ? ctx.actor.id : null,
+        asset: { name: asset.name, asset_tag: asset.asset_tag, status: asset.status },
       });
+      return Response.json(asset, { status: 201 });
+    } catch (err) {
+      if (err instanceof CustomFieldError) {
+        return problem(422, "validation", "Validation failed", { detail: err.message });
+      }
+      if ((err as { code?: string }).code === "23505") {
+        return problem(409, "conflict", "Duplicate value", {
+          detail: "An asset with that tag or serial number already exists.",
+        });
+      }
+      throw err;
     }
-    throw err;
-  }
+  });
 });

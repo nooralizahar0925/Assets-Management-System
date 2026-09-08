@@ -1749,4 +1749,4 @@ git commit -m "feat: audit trail endpoint, location tree and assignable users"
 
 **Phase 2 complete.** The registry is functional through the API: categories with custom
 schemas, assets with generated tags, search and filter, custody tracking, and a complete
-audit trail. Continue to [Phase 3 — Data movement](./03-data-movement.md).
+audit trail. Continue to [Phase 3 — Data and delivery](./03-data-and-delivery.md).

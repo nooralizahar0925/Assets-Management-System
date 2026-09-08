@@ -3,6 +3,7 @@ import {
 } from "@/lib/auth/guard";
 import { validationProblem, problem, notFound } from "@/lib/http/problem";
 import { safe } from "@/lib/http/handler";
+import { withIdempotency } from "@/lib/http/idempotency";
 import { getAsset } from "@/lib/domain/assets";
 import {
   checkOut, CheckOutInput, TransitionError, AssetNotFoundError,
@@ -31,15 +32,19 @@ export const POST = safe(async (
     return branchForbidden();
   }
 
-  try {
-    return Response.json(await checkOut(ctx, id, parsed.data), { status: 201 });
-  } catch (err) {
-    if (err instanceof AssetNotFoundError) return notFound("asset");
-    if (err instanceof TransitionError) {
-      return problem(409, "invalid-transition", "Invalid status transition", {
-        detail: err.message,
-      });
+  // A retried check-out would otherwise open a second assignment, and the
+  // asset would read as issued twice to the same person.
+  return withIdempotency(req, ctx, async () => {
+    try {
+      return Response.json(await checkOut(ctx, id, parsed.data), { status: 201 });
+    } catch (err) {
+      if (err instanceof AssetNotFoundError) return notFound("asset");
+      if (err instanceof TransitionError) {
+        return problem(409, "invalid-transition", "Invalid status transition", {
+          detail: err.message,
+        });
+      }
+      throw err;
     }
-    throw err;
-  }
+  });
 });

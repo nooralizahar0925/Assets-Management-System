@@ -48,6 +48,20 @@ export const PERMISSIONS = [
   { key: "labels:print", group: "Labels", label: "Print labels",
     description: "Generate QR and barcode labels and label sheets." },
 
+  // Stock-take
+  { key: "stocktake:read", group: "Stock-take", label: "View stock-takes",
+    description: "See counting sessions and what they found." },
+  { key: "stocktake:write", group: "Stock-take", label: "Run stock-takes",
+    description:
+      "Open a counting session, scan items into it, and close it - optionally " +
+      "marking whatever was not found as lost." },
+
+  // Maintenance
+  { key: "maintenance:read", group: "Maintenance", label: "View service schedules",
+    description: "See what is due for service and what has been done." },
+  { key: "maintenance:write", group: "Maintenance", label: "Manage service schedules",
+    description: "Create service schedules and record completed services." },
+
   // Reports
   { key: "reports:read", group: "Reports", label: "Run reports",
     description: "Run reports and download them in any format." },
@@ -101,6 +115,8 @@ export const SYSTEM_ROLES: Record<
       "categories:read", "categories:write",
       "locations:read", "locations:write",
       "labels:print",
+      "stocktake:read", "stocktake:write",
+      "maintenance:read", "maintenance:write",
       "reports:read", "reports:schedule",
       "users:read", "audit:read",
     ],
@@ -113,6 +129,10 @@ export const SYSTEM_ROLES: Record<
       "custody:write",
       "categories:read", "locations:read",
       "labels:print",
+      // Counting the shelves is the technician's job more than anyone's, and
+      // so is servicing the machines.
+      "stocktake:read", "stocktake:write",
+      "maintenance:read", "maintenance:write",
       "reports:read",
     ],
   },

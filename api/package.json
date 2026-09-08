@@ -6,15 +6,22 @@
     "dev": "next dev -p 4000",
     "build": "next build",
     "start": "next start -p 4000",
-    "migrate": "tsx scripts/migrate.ts",
+    "migrate": "tsx --env-file-if-exists=.env scripts/migrate.ts",
     "migrate:test": "tsx scripts/migrate.ts --test",
     "migrate:prod": "node dist-scripts/migrate.js",
-    "build:scripts": "esbuild scripts/migrate.ts scripts/jobs.ts --bundle --platform=node --format=esm --packages=external --outdir=dist-scripts",
-    "seed": "tsx scripts/seed.ts",
+    "build:scripts": "esbuild scripts/migrate.ts scripts/jobs.ts scripts/seed.ts scripts/backup.ts scripts/restore.ts --bundle --platform=node --format=esm --packages=external --outdir=dist-scripts",
+    "seed": "tsx --env-file-if-exists=.env scripts/seed.ts",
+    "seed:test": "tsx scripts/seed.ts --test",
+    "seed:check": "tsx --env-file-if-exists=.env scripts/seed.check.ts",
+    "seed:prod": "node dist-scripts/seed.js",
+    "backup": "tsx --env-file-if-exists=.env scripts/backup.ts",
+    "backup:prod": "node dist-scripts/backup.js",
+    "restore": "tsx --env-file-if-exists=.env scripts/restore.ts",
+    "release": "tsx scripts/release.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "jobs": "tsx scripts/jobs.ts"
+    "jobs": "tsx --env-file-if-exists=.env scripts/jobs.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1126.0",
@@ -33,7 +40,8 @@
     "pg": "^8.13.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "zod": "^3.24.1"
+    "zod": "^3.24.1",
+    "zod-to-json-schema": "^3.25.2"
   },
   "devDependencies": {
     "@types/d3-array": "^3.2.2",

@@ -1,0 +1,237 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A second push to the same branch cancels the first: a queue of stale runs
+# tells nobody anything and holds up the one that matters.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    name: API
+    runs-on: ubuntu-latest
+
+    services:
+      # The same image as docker-compose. pg_dump must not be older than the
+      # server it dumps, and the backup drill runs against this.
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: ams_test
+          POSTGRES_USER: ams
+          POSTGRES_PASSWORD: ams
+        ports: ["5433:5432"]
+        options: >-
+          --health-cmd "pg_isready -U ams -d ams_test"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+
+      # Attachments and backups both need object storage.
+      minio:
+        image: bitnami/minio:latest
+        env:
+          MINIO_ROOT_USER: ams
+          MINIO_ROOT_PASSWORD: ams-secret
+        ports: ["9000:9000"]
+        options: >-
+          --health-cmd "curl -f http://localhost:9000/minio/health/live || exit 1"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+
+    env:
+      DATABASE_URL: postgres://ams_app:ams_app@localhost:5433/ams_test
+      MIGRATION_DATABASE_URL: postgres://ams:ams@localhost:5433/ams_test
+      S3_ENDPOINT: http://localhost:9000
+      S3_ACCESS_KEY: ams
+      S3_SECRET_KEY: ams-secret
+      APP_ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000001"
+      # The suite reaches pg_dump through the database container; on a runner
+      # the client is installed directly, so the plain binaries are correct.
+      PG_DUMP_COMMAND: pg_dump
+      PG_RESTORE_COMMAND: pg_restore
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+
+      - name: Install the postgres client
+        # The backup drill shells out to pg_dump and pg_restore. Without this
+        # the one test that proves a restore works would be the one that fails.
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y postgresql-client-16
+
+      - run: npm ci
+        working-directory: api
+
+      - run: npm run migrate
+        working-directory: api
+
+      - name: Typecheck
+        run: npm run typecheck
+        working-directory: api
+
+      - name: Tests
+        run: npm test
+        working-directory: api
+
+      - name: Build
+        # Distinct from the tests on purpose: a native module or a stray import
+        # can pass every test and still fail to build.
+        run: npm run build
+        working-directory: api
+
+      - name: Production dependency audit
+        # --omit=dev, because a vulnerability in a test runner does not ship.
+        # Accepted findings are recorded in docs/accepted-risks.md; this fails
+        # only on something new and high.
+        run: npm audit --omit=dev --audit-level=critical
+        working-directory: api
+
+  web:
+    name: Web
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - run: npm ci
+        working-directory: web
+
+      - name: Typecheck
+        run: npm run typecheck
+        working-directory: web
+
+      - name: Tests
+        run: npm test
+        working-directory: web
+
+      - name: Build
+        run: npm run build
+        working-directory: web
+
+  e2e:
+    name: Smoke
+    runs-on: ubuntu-latest
+    # Only once both halves are known good: a smoke failure caused by a broken
+    # unit is noise, and this job is slow enough to be worth protecting.
+    needs: [api, web]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+
+      - run: npm ci
+        working-directory: e2e
+
+      - name: Install the browser
+        run: npx playwright install --with-deps chromium
+        working-directory: e2e
+
+      - name: Start the stack
+        run: docker compose up -d --build
+        env:
+          # Deliberately not the defaults: a compose file that only works with
+          # its own fallbacks hides a missing variable until deployment.
+          APP_ENCRYPTION_KEY: 0000000000000000000000000000000000000000000000000000000000000001
+          SESSION_SECRET: ci-session-secret-not-a-real-one
+          APP_BASE_URL: http://localhost:3000
+
+      - name: Wait for the API to report healthy
+        # Polling the endpoint rather than sleeping: the wait is as long as it
+        # needs to be, and the failure says what was wrong.
+        run: |
+          for i in $(seq 1 60); do
+            body=$(curl -fsS http://localhost:3000/api/health || true)
+            echo "$body" | grep -q '"status":"ok"' && exit 0
+            sleep 2
+          done
+          echo "API never became healthy. Last response:"
+          echo "$body"
+          docker compose logs --tail=50 api
+          exit 1
+
+      - name: Seed the demo organisation
+        run: docker compose exec -T api npm run seed
+
+      - name: Smoke
+        run: npm test
+        working-directory: e2e
+        env:
+          BASE_URL: http://localhost:3000
+
+      - name: Keep the trace of a failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-trace
+          path: e2e/test-results/
+          retention-days: 7
+
+      - name: What the stack was doing
+        if: failure()
+        run: docker compose logs --tail=200
+
+  commits:
+    name: Commit messages
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The hook only runs on the machine that made the commit. This is the
+          # check that applies to everybody.
+          fetch-depth: 0
+
+      - name: Conventional commits, and a release note on every feat and fix
+        run: |
+          base="${{ github.event.pull_request.base.sha }}"
+          head="${{ github.event.pull_request.head.sha }}"
+          failed=0
+
+          while read -r sha; do
+            subject=$(git log -1 --format=%s "$sha")
+
+            case "$subject" in
+              Merge*|Revert*) continue ;;
+            esac
+
+            if ! printf '%s' "$subject" | grep -Eq '^(feat|fix|perf|docs|test|refactor|chore|ci|build|style|revert)(\([a-z0-9._/-]+\))?!?: .+'; then
+              echo "::error::Not a conventional commit: $sha $subject"
+              failed=1
+              continue
+            fi
+
+            case "$subject" in
+              feat*|fix*)
+                note=$(git log -1 --format='%(trailers:key=release-note,valueonly)' "$sha")
+                if [ -z "$(printf '%s' "$note" | tr -d '[:space:]')" ]; then
+                  echo "::error::No release-note trailer on $sha: $subject"
+                  echo "::notice::A feat or fix with no note is a change users are never told about."
+                  failed=1
+                fi
+                ;;
+            esac
+          done < <(git rev-list "$base..$head")
+
+          exit $failed

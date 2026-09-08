@@ -158,3 +158,64 @@ describe("a forgotten tenant guard", () => {
     ).rejects.toThrow(GUARD_MISSING);
   });
 });
+
+/**
+ * An anti-drift guard rather than a test of any one table.
+ *
+ * Every table carrying org_id is tenant data, and each needs three separate
+ * things: row-level security enabled, FORCE so the owner cannot bypass it, and
+ * a policy. Miss any one and that table leaks across tenants - silently, and
+ * only in production, because a single-tenant test sees nothing wrong.
+ *
+ * Written when migration 014 added asset_book_values and it turned out nothing
+ * would have noticed if its policy had been forgotten.
+ */
+describe("every tenant table is protected", () => {
+  it("has row-level security enabled, forced, and a policy", async () => {
+    const owner = new Client({
+      connectionString:
+        process.env.MIGRATION_DATABASE_URL ??
+        "postgres://ams:ams@localhost:5433/ams_test",
+    });
+    await owner.connect();
+    try {
+      const { rows } = await owner.query<{
+        table_name: string;
+        enabled: boolean;
+        forced: boolean;
+        policies: number;
+      }>(
+        `SELECT c.relname AS table_name,
+                c.relrowsecurity      AS enabled,
+                c.relforcerowsecurity AS forced,
+                (SELECT count(*)::int FROM pg_policy p WHERE p.polrelid = c.oid)
+                  AS policies
+           FROM pg_class c
+           JOIN pg_namespace n ON n.oid = c.relnamespace
+          WHERE n.nspname = 'public'
+            AND c.relkind = 'r'
+            AND EXISTS (
+              SELECT 1 FROM information_schema.columns col
+               WHERE col.table_schema = 'public'
+                 AND col.table_name = c.relname
+                 AND col.column_name = 'org_id'
+            )
+          ORDER BY c.relname`,
+      );
+
+      expect(rows.length).toBeGreaterThan(5);
+
+      const unprotected = rows.filter(
+        (r) => !r.enabled || !r.forced || r.policies === 0,
+      );
+      expect(
+        unprotected.map(
+          (r) =>
+            `${r.table_name} (enabled=${r.enabled} forced=${r.forced} policies=${r.policies})`,
+        ),
+      ).toEqual([]);
+    } finally {
+      await owner.end();
+    }
+  });
+});

@@ -23,8 +23,8 @@ async function createUser(org: string, name: string, role: string): Promise<stri
   const rid = await roleId(org, role);
   return withTenant(org, async (c) =>
     (await c.query<{ id: string }>(
-      `INSERT INTO users (org_id, email, password_hash, name, role, role_id)
-       VALUES ($1, $2, $3, $4, 'viewer', $5) RETURNING id`,
+      `INSERT INTO users (org_id, email, password_hash, name, role_id)
+       VALUES ($1, $2, $3, $4, $5) RETURNING id`,
       [org, `${name}-${org}@resolve.test`, await hashPassword("pw"), name, rid],
     )).rows[0].id,
   );
@@ -90,8 +90,8 @@ describe("permissionsForUser", () => {
   it("resolves a user with no role to no permissions at all", async () => {
     const orphan = await withTenant(orgId, async (c) =>
       (await c.query<{ id: string }>(
-        `INSERT INTO users (org_id, email, password_hash, name, role)
-         VALUES ($1, $2, 'x', 'Orphan', 'viewer') RETURNING id`,
+        `INSERT INTO users (org_id, email, password_hash, name)
+         VALUES ($1, $2, 'x', 'Orphan') RETURNING id`,
         [orgId, `orphan-${orgId}@resolve.test`],
       )).rows[0].id,
     );

@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { query, withTenant } from "../db";
 import type { Ctx } from "../http/handler";
+import { systemCtx } from "../jobs/context";
 import { PERMISSIONS, type PermissionKey } from "../auth/permissions";
 import { putObject } from "../storage/s3";
 import { enqueueTemplated } from "../email/outbox";
@@ -150,19 +151,6 @@ async function renderTo(
   };
 }
 
-/**
- * The scheduler acts as the organisation. No branch scope: a scheduled report
- * is addressed to named recipients rather than run on behalf of one person, so
- * it covers the whole register.
- */
-const systemCtx = (orgId: string, name: string): Ctx => ({
-  orgId,
-  actor: {
-    type: "system", id: orgId, label: name, scopes: ["admin"],
-    permissions: PERMISSIONS.map((p) => p.key) as PermissionKey[],
-    locationScope: null,
-  },
-});
 
 /** Runs every organisation's due schedules and queues them for delivery. */
 export async function runDueSchedules(now = new Date()): Promise<{ delivered: number }> {

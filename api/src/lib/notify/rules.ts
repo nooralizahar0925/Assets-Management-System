@@ -116,3 +116,31 @@ const DEFAULTS: RuleInput[] = [
 export async function seedDefaultRules(ctx: Ctx): Promise<void> {
   for (const rule of DEFAULTS) await createRule(ctx, rule);
 }
+
+/**
+ * The same defaults, written with the owner connection.
+ *
+ * Role seeding runs after every migration, holding an owner client and no
+ * tenant context, and that is where these belong: an organisation without
+ * rules sends no mail at all, so a customer who never opens the notifications
+ * screen silently receives no overdue reminder, no maintenance warning and no
+ * import summary. Seeding on every deploy also repairs the organisations
+ * created before anything called this.
+ */
+export async function seedDefaultRulesWithClient(
+  client: { query: (text: string, values: unknown[]) => Promise<unknown> },
+  orgId: string,
+): Promise<void> {
+  for (const rule of DEFAULTS) {
+    await client.query(
+      `INSERT INTO notification_rules
+         (org_id, event, channel, template_key, recipient_spec, active)
+       VALUES ($1,$2,$3,$4,$5,$6)
+       ON CONFLICT (org_id, event, channel, template_key) DO NOTHING`,
+      [
+        orgId, rule.event, rule.channel ?? "email", rule.template_key,
+        JSON.stringify(rule.recipient_spec), rule.active ?? true,
+      ],
+    );
+  }
+}

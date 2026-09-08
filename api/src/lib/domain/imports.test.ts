@@ -200,7 +200,7 @@ Bad One,BD-002,teleported
     });
     const job = await withTenant(orgId, async (c) =>
       (await c.query<{ filename: string; dry_run: boolean; total: number }>(
-        "SELECT filename, dry_run, total FROM import_jobs WHERE id = $1", [result.jobId],
+        "SELECT filename, dry_run, total FROM import_jobs WHERE id = $1", [result.job_id],
       )).rows[0],
     );
     expect(job).toMatchObject({ filename: "e.csv", dry_run: true, total: 2 });

@@ -3,6 +3,7 @@ import { readApiKey, checkRateLimit } from "./apikey";
 import { unauthorized, forbidden, problem } from "../http/problem";
 import type { Ctx } from "../http/handler";
 import type { PermissionKey } from "./permissions";
+import { setRequestActor } from "../http/logging";
 
 const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
@@ -88,6 +89,11 @@ export async function requireAuth(
 ): Promise<Ctx | Response> {
   const ctx = (await readApiKey(req)) ?? (await readSession(req));
   if (!ctx) return unauthorized();
+
+  // Whose request this turned out to be, for the log line. Recorded as soon as
+  // it is known rather than on the way out, so a refusal below is attributed
+  // too - a 403 nobody can trace to a tenant is the hardest kind to answer.
+  setRequestActor({ orgId: ctx.orgId, actorType: ctx.actor.type });
 
   const crossOrigin = assertSameOrigin(req, ctx);
   if (crossOrigin) return crossOrigin;

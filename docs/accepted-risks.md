@@ -91,3 +91,30 @@ of its own dashboard in every practical sense.
 
 **Consequence to document.** The help centre article on users and roles should
 say that an API key is not a substitute for an administrator.
+
+## `uuid` bounds-check advisory reachable through `exceljs`
+
+**Accepted on 2026-09-07.**
+
+`npm audit` reports GHSA-w5hq-g745-h8pq: `uuid` below 11.1.1 misses a buffer
+bounds check in `v3`, `v5` and `v6` **when the caller supplies a `buf`
+argument**. It arrives through `exceljs`, which generates XLSX exports.
+
+Not reachable. `exceljs` uses `uuid` in exactly one place —
+`lib/xlsx/xform/sheet/cf-ext/cf-rule-ext-xform.js` — and calls `uuidv4()` with
+no arguments. The vulnerable code paths take a caller-provided buffer, which
+nothing in this dependency chain does, and v4 is not among the affected
+versions in any case.
+
+The offered fix is `exceljs@3.4.0`, a major downgrade from the 4.x line this
+project uses. Taking a breaking change to a working export pipeline, to fix a
+function that is never called, is the worse trade.
+
+**What would change our mind:**
+
+- `exceljs` starts passing a buffer to `uuid`, or uses v3/v5/v6.
+- A `uuid` release above 11.1.1 becomes reachable without downgrading `exceljs`.
+- Any advisory against `uuid` that affects `v4` with no arguments.
+
+**Re-check:** whenever `exceljs` is upgraded.
+

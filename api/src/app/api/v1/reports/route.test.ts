@@ -55,7 +55,7 @@ describe("GET /api/v1/reports", () => {
     const body = (await res.json()) as {
       data: { key: string; formats: string[]; chart: { type: string } }[];
     };
-    expect(body.data).toHaveLength(9);
+    expect(body.data).toHaveLength(10);
     expect(body.data[0].formats).toContain("csv");
     expect(body.data[0].chart).toHaveProperty("type");
   });

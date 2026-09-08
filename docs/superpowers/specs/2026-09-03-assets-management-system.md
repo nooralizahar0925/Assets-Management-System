@@ -808,7 +808,8 @@ The plan is split one file per phase under
 | 2 — Core registry | `02-core-registry.md` | 5–9 | Categories with custom field schemas, asset CRUD, search/filter, check-in/out, audit trail |
 | 3 — Data & delivery | `03-data-and-delivery.md` | 10–18 | Import/export, attachments, multi-provider email, notification rules, scheduled jobs, dashboard, the multi-format report engine, scheduled reports |
 | 4 — Identification | `04-identification.md` | 19–20 | QR/Code128 generation, label sheets, tag lookup |
-| 5 — Frontend | `05-frontend.md` | 21–32 | The full dashboard on the TailAdmin template, including scanning, report builder, email settings and "What's new" |
-| 6 — Integration & release | `06-integration-and-release.md` | 33–36 | Webhooks, idempotency, OpenAPI document, versioning/CI/release pipeline |
-| 7 — Docs & enablement | `07-docs-enablement.md` | 37–42 | Developer portal, in-app tour, help centre, project docs, seed data, E2E smoke suite |
-| 8 — Rental (future) | not planned here | — | Built on the primitives prepared in §12 |
+| 5 — Frontend | `05-frontend.md` | 21–31 | The full dashboard, including scanning, report builder, email settings and the catalogue screens |
+| 6 — Advanced features | `06-advanced-features.md` | 32–44 | Depreciation and book value, stock-take sessions, maintenance schedules, backups and observability |
+| 7 — Integration & release | `07-integration-and-release.md` | 45–49 | Webhooks, idempotency, OpenAPI document, versioning, "What's new" and the release pipeline |
+| 8 — Docs & enablement | `08-docs-enablement.md` | 50–55 | Developer portal, in-app tour, help centre, project docs, seed data, E2E smoke suite |
+| 9 — Rental (future) | not planned here | — | Built on the primitives prepared in §12 |

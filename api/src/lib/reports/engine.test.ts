@@ -64,9 +64,9 @@ beforeAll(async () => {
 describe("REPORTS", () => {
   it("registers every report in the catalogue", () => {
     expect(Object.keys(REPORTS).sort()).toEqual([
-      "acquisition-value", "assets-by-category", "assets-by-location",
-      "assets-by-status", "assignments-active", "assignments-overdue",
-      "audit-activity", "expiring", "utilisation",
+      "acquisition-value", "asset-book-value", "assets-by-category",
+      "assets-by-location", "assets-by-status", "assignments-active",
+      "assignments-overdue", "audit-activity", "expiring", "utilisation",
     ]);
   });
 

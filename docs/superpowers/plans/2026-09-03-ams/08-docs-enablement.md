@@ -1,8 +1,8 @@
-# Phase 7 — Documentation & enablement
+# Phase 8 — Documentation & enablement
 
 > Part of the [Assets Management System plan](./00-overview.md). Read `00-overview.md` first — its Global Constraints apply to every task here.
 
-**Tasks 37–42.** The developer portal, the in-app tour and contextual help, the help centre, the project documentation, seed data and the end-to-end smoke suite.
+**Tasks 50–55.** The developer portal, the in-app tour and contextual help, the help centre, the project documentation, seed data and the end-to-end smoke suite.
 
 **Spec sections:** §10.1, §10.2, §10.3, and the operational items in §14.
 
@@ -12,10 +12,10 @@ nobody updates.
 
 ## Why this phase splits into six tasks, not four
 
-`00-overview.md` originally indexed this phase as Tasks 37–40. Writing it out showed
+`00-overview.md` originally indexed this phase as Tasks 50–53. Writing it out showed
 four boundaries too coarse to review: the developer portal alone is nine pages plus an
 API endpoint, and a reviewer could reasonably accept the portal shell while rejecting
-the recipe renderers. The phase is therefore Tasks 37–42, and the overview's task index
+the recipe renderers. The phase is therefore Tasks 50–55, and the overview's task index
 is updated to match.
 
 ## The single-source rule for this phase
@@ -31,11 +31,11 @@ Three deliverables in the spec describe the same material for three audiences:
 Writing those three by hand guarantees they disagree within a month. In this phase the
 help content is **one typed data module**, rendered by a shared block renderer into the
 panel and the help centre, and emitted by a build script into the printable guide. Task
-41 builds all three from that one source, and its test asserts the guide contains every
+54 builds all three from that one source, and its test asserts the guide contains every
 article.
 
 The same principle governs the developer portal: the API reference is rendered from
-`/api/v1/openapi.json` (Task 34) rather than written out, the error catalogue is served
+`/api/v1/openapi.json` (Task 46) rather than written out, the error catalogue is served
 by the API and its test fails if a handler ever returns an uncatalogued error type, and
 the code recipes are rendered from one request description per flow into four languages
 rather than hand-written thirty-two times.
@@ -53,7 +53,7 @@ rather than hand-written thirty-two times.
 
 ---
 
-### Task 37: The error catalogue and its anti-drift test
+### Task 50: The error catalogue and its anti-drift test
 
 **Files:**
 - Create: `api/src/lib/http/catalog.ts`
@@ -273,7 +273,7 @@ MSG
 
 ---
 
-### Task 38: Developer portal — shell, API reference, overview, authentication, conventions
+### Task 51: Developer portal — shell, API reference, overview, authentication, conventions
 
 **Files:**
 - Create: `web/src/pages/developers/DevelopersLayout.tsx`, `Overview.tsx`, `Authentication.tsx`, `Reference.tsx`, `Conventions.tsx`
@@ -282,12 +282,33 @@ MSG
 - Test: `web/src/pages/developers/DevelopersLayout.test.tsx`, `web/src/pages/developers/Reference.test.tsx`
 
 **Interfaces:**
-- Consumes: `GET /api/v1/openapi.json` (Task 34), `api` client and `useAuth` (Task 21).
+- Consumes: `GET /api/v1/openapi.json` (Task 46), `api` client and `useAuth` (Task 21).
 - Produces:
   - `<DevelopersLayout />` — sidebar nav + `<Outlet />`, no auth required
   - `<CodeBlock language={string} code={string} />` — syntax-neutral block with a copy button
   - `<Prose>` — typographic wrapper matching the dashboard's dark/light theme
   - Routes `/developers`, `/developers/authentication`, `/developers/reference`, `/developers/conventions`
+
+**Deviation, recorded during execution (2026-09-07):** the package this task
+named, `@scalar/api-reference-react`, does not exist on npm — the install returns
+404. The surviving `@scalar/api-reference` is 40.7 MB unpacked and pulls the Vue
+runtime, a chat agent and a second HTTP client into a React application whose
+590 kB chart library is already lazy-loaded to protect page weight. That is a bad
+trade for one page, so the reference is rendered from `/api/v1/openapi.json` by
+`Reference.tsx` instead.
+
+**What this costs:** the spec's "Try it" request runner is not built *by this
+task*. **Closed on 2026-09-08** by `web/src/components/developers/TryIt.tsx`:
+each operation gets a small runner that fills the path and query parameters,
+takes a key, sends one real request to this deployment and shows the status,
+timing, request id and body. The URL is built from the document rather than
+typed, so the page cannot be pointed at another host, and the key lives in
+component state only. A write asks for confirmation first, because it really
+writes.
+
+**Also moved here from Task 52:** the Errors page. The shell's sidebar links to
+it, and shipping a nav entry that 404s until the next task is worse than a small
+reordering. Task 52 keeps the recipes, webhooks and changelog pages.
 
 **Design note (spec §10.1):** the reference is rendered by Scalar from the live
 `/api/v1/openapi.json`, never transcribed. Scalar also supplies the "Try it" runner the
@@ -299,14 +320,14 @@ browser.
 before anyone has issued them a credential. These routes therefore sit outside
 `<RequireAuth>`, and nothing on them calls a tenant-scoped endpoint.
 
-- [ ] **Step 1: Install Scalar**
+- [x] **Step 1: Install Scalar**
 
 ```bash
 cd web
 npm install @scalar/api-reference-react
 ```
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 `web/src/pages/developers/DevelopersLayout.test.tsx`:
 
@@ -370,12 +391,12 @@ describe("api reference", () => {
 });
 ```
 
-- [ ] **Step 3: Run to verify they fail**
+- [x] **Step 3: Run to verify they fail**
 
 Run: `cd web && npx vitest run src/pages/developers`
 Expected: FAIL — `Cannot find module './DevelopersLayout'`.
 
-- [ ] **Step 4: Build the shared presentation components**
+- [x] **Step 4: Build the shared presentation components**
 
 `web/src/components/developers/CodeBlock.tsx`:
 
@@ -432,7 +453,7 @@ export default function Prose({ children }: { children: ReactNode }) {
 }
 ```
 
-- [ ] **Step 5: Build the portal shell**
+- [x] **Step 5: Build the portal shell**
 
 `web/src/pages/developers/DevelopersLayout.tsx`:
 
@@ -496,7 +517,7 @@ export default function DevelopersLayout() {
 }
 ```
 
-- [ ] **Step 6: Build the Reference, Overview, Authentication and Conventions pages**
+- [x] **Step 6: Build the Reference, Overview, Authentication and Conventions pages**
 
 `web/src/pages/developers/Reference.tsx`:
 
@@ -747,7 +768,7 @@ export default function Conventions() {
 }
 ```
 
-- [ ] **Step 7: Register the public routes**
+- [x] **Step 7: Register the public routes**
 
 In `web/src/App.tsx`, add these **outside** `<RequireAuth>`, alongside `/signin`:
 
@@ -760,12 +781,12 @@ In `web/src/App.tsx`, add these **outside** `<RequireAuth>`, alongside `/signin`
 </Route>
 ```
 
-- [ ] **Step 8: Run to verify it passes**
+- [x] **Step 8: Run to verify it passes**
 
 Run: `cd web && npx vitest run src/pages/developers`
 Expected: PASS, 3 tests.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add web/src/pages/developers web/src/components/developers web/src/App.tsx \
@@ -784,7 +805,7 @@ MSG
 
 ---
 
-### Task 39: Recipes in four languages, webhooks, errors and changelog
+### Task 52: Recipes in four languages, webhooks, errors and changelog
 
 **Files:**
 - Create: `web/src/content/recipes.ts`, `web/src/content/renderers.ts`
@@ -794,7 +815,7 @@ MSG
 - Test: `web/src/content/renderers.test.ts`, `web/src/pages/developers/Errors.test.tsx`
 
 **Interfaces:**
-- Consumes: `CodeBlock`, `Prose` (Task 38); `GET /api/v1/errors.json` (Task 37); `GET /api/releases` (Task 35).
+- Consumes: `CodeBlock`, `Prose` (Task 51); `GET /api/v1/errors.json` (Task 50); `GET /api/releases` (Task 47).
 - Produces:
   - `interface HttpRequest { method: "GET"|"POST"|"PATCH"|"DELETE"; path: string; query?: Record<string,string>; body?: unknown }`
   - `interface Recipe { id: string; title: string; blurb: string; request: HttpRequest; note?: string }`
@@ -809,7 +830,52 @@ described once as an `HttpRequest` and rendered by four small functions, so the 
 tabs are provably the same call. Adding a language later is one function, not eight
 more snippets.
 
-- [ ] **Step 1: Write the failing tests**
+
+**Corrections made during execution (2026-09-07).** The plan's recipes were
+written against endpoints that do not exist. Read out of the handlers instead:
+
+- `/check-out` and `/check-in` are `checkout` and `checkin`.
+- `/api/v1/tags/<tag>` does not exist; the scanner endpoint is
+  `GET /api/v1/assets/lookup?tag=`.
+- The custody body field is `note`, not `checkout_note`/`checkin_note` — those
+  are the stored column names. Zod strips unknown keys, so the plan's version
+  would have been accepted with the note silently discarded.
+- `purchase_cost` is written as a **number** and read back as a decimal string.
+  The plan sent a string, which is a 422.
+- `/history` takes no pagination and returns `data.events` and
+  `data.assignments` together.
+- The import is multipart with a required `mapping` field, so the renderers
+  grew an `upload` case rather than pretending it is a JSON body.
+
+A test now asserts every recipe's path is one the API actually serves.
+
+**Defects found while writing the webhooks page, and fixed here:**
+
+1. `asset.created`, `asset.updated`, `asset.deleted` and `import.completed`
+   were subscribable and **never dispatched**. A customer could subscribe and
+   receive nothing for ever, and "no deliveries" is indistinguishable from
+   "nothing happened". Now dispatched from the asset routes and the import
+   route, with an integration test that drives the real routes and asserts a
+   delivery row appears, plus a source scanner that fails the build if a
+   published event has no dispatch site.
+2. `warranty.expiring` and `licence.expiring` were dispatched but **not
+   subscribable** — the reverse gap. Added to `WEBHOOK_EVENTS`.
+3. The delivery body carried no `id`, so the standard advice to de-duplicate
+   at-least-once deliveries was impossible to follow. It now carries the
+   delivery id, stable across retries.
+4. `dispatch` forwarded only `asset_id` to the webhook payload, so
+   `import.completed` delivered `{"asset_id": null}` and nothing else. The
+   whole event context now travels, minus the two keys that only decide who
+   gets emailed.
+5. There was **no Settings → Webhooks screen at all**: the only way to
+   subscribe was to POST by hand, and the signing secret — returned exactly
+   once — arrived in a terminal. Built here, driven by the event list the
+   server publishes.
+
+**Also moved:** the Errors page was built in Task 51 so the sidebar had no dead
+link.
+
+- [x] **Step 1: Write the failing tests**
 
 `web/src/content/renderers.test.ts`:
 
@@ -956,12 +1022,12 @@ describe("errors page", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify they fail**
+- [x] **Step 2: Run to verify they fail**
 
 Run: `cd web && npx vitest run src/content src/pages/developers/Errors`
 Expected: FAIL — `Cannot find module './renderers'`.
 
-- [ ] **Step 3: Implement the renderers**
+- [x] **Step 3: Implement the renderers**
 
 `web/src/content/renderers.ts`:
 
@@ -1085,7 +1151,7 @@ function phpArray(value: unknown): string {
 }
 ```
 
-- [ ] **Step 4: Write the recipe catalogue**
+- [x] **Step 4: Write the recipe catalogue**
 
 `web/src/content/recipes.ts`:
 
@@ -1212,7 +1278,7 @@ export const RECIPES: Recipe[] = [
 ];
 ```
 
-- [ ] **Step 5: Build CodeTabs and the four pages**
+- [x] **Step 5: Build CodeTabs and the four pages**
 
 `web/src/components/developers/CodeTabs.tsx`:
 
@@ -1529,7 +1595,7 @@ export default function Changelog() {
 }
 ```
 
-- [ ] **Step 6: Register the remaining routes**
+- [x] **Step 6: Register the remaining routes**
 
 In `web/src/App.tsx`, inside the existing `/developers` route:
 
@@ -1540,12 +1606,12 @@ In `web/src/App.tsx`, inside the existing `/developers` route:
 <Route path="changelog" element={<Changelog />} />
 ```
 
-- [ ] **Step 7: Run to verify it passes**
+- [x] **Step 7: Run to verify it passes**
 
 Run: `cd web && npx vitest run src/content src/pages/developers`
-Expected: PASS — 15 renderer tests, 1 errors-page test, 3 from Task 38.
+Expected: PASS — 15 renderer tests, 1 errors-page test, 3 from Task 51.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```
 git add web/src/content web/src/components/developers/CodeTabs.tsx \
@@ -1568,7 +1634,7 @@ release-note: The developer portal now carries copy-paste examples in four langu
 
 ---
 
-### Task 40: First-run tour, contextual help, teaching empty states and onboarding checklists
+### Task 53: First-run tour, contextual help, teaching empty states and onboarding checklists
 
 **Files:**
 - Create: `web/src/content/help/blocks.tsx` (block types + renderer)
@@ -1591,8 +1657,8 @@ release-note: The developer portal now carries copy-paste examples in four langu
   - `<EmptyState title description actionLabel onAction icon />`
   - `<OnboardingChecklist />`
 
-**Design note (spec §10.2):** the panel, the help centre (Task 41) and the printable
-guide (Task 41) are three renderings of one content module. `Block` is a small closed
+**Design note (spec §10.2):** the panel, the help centre (Task 54) and the printable
+guide (Task 54) are three renderings of one content module. `Block` is a small closed
 union rather than Markdown because it needs no parser, cannot inject HTML, and is
 type-checked — a typo in a block kind fails the build instead of rendering as literal
 asterisks in front of a customer.
@@ -1602,14 +1668,48 @@ user. Keying it by user id in `localStorage` needs no schema change and no reque
 every page load. The trade-off is that a user on a second browser sees it again, which
 is a mild annoyance rather than a defect, and the tour is dismissible in one click.
 
-- [ ] **Step 1: Install driver.js**
+
+**Corrections made during execution (2026-09-07).**
+
+- The plan keys the onboarding checklist on `user.role` with the values
+  `admin | manager | technician | viewer`. `SessionUser` has no `role` field,
+  and roles are tenant-owned and renameable since Phase 1b — keying on the
+  string "admin" breaks the moment a customer calls their administrators
+  something else, which they are free to do. `checklistFor` takes `can` and
+  filters by permission, the same way every other gate in the UI works.
+- Completion needs counts the dashboard did not return. `GET
+  /api/v1/dashboard/summary` gained a `setup` block (categories, users, api
+  keys, committed imports, assignments ever opened). "Ever opened" rather than
+  "open now", so an item does not un-tick itself when the asset comes back;
+  committed imports only, so a dry run cannot claim the register was imported.
+- The register's teaching empty state already existed and is better than the
+  plan's version — it distinguishes "nothing here" from "nothing matches your
+  filters" and gates each action by permission. Left alone; `EmptyState` was
+  applied to Categories instead.
+- File paths in the plan are wrong throughout: the dashboard is
+  `pages/Dashboard/Home.tsx`, the register `pages/Assets/AssetList.tsx`, and
+  categories `pages/Catalog/Categories.tsx`.
+- The plan's route list for the help topics is a subset of the real one. The
+  test reads the routes out of `App.tsx` instead, so a new page without help
+  fails the build; `/a/:tag` is excluded, being a redirect nobody looks at.
+- `topicForPath` needed an exact-match-first rule: `/assets/new` matches the
+  `/assets/:id` pattern, so without it somebody adding an asset was shown how
+  to read an asset's history.
+- driver.js is imported only when the tour runs (its own 26 kB chunk), and a
+  test reads the `data-tour` attributes out of the source — driver.js skips a
+  step whose element is missing, silently, which is the failure nobody notices.
+- The tour is replayable from the help panel rather than only from the help
+  centre in Task 54: somebody who dismissed it on day one otherwise has no way
+  back to it.
+
+- [x] **Step 1: Install driver.js**
 
 ```bash
 cd web
 npm install driver.js
 ```
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 `web/src/content/help/topics.test.ts`:
 
@@ -1738,12 +1838,12 @@ describe("onboarding checklist", () => {
 });
 ```
 
-- [ ] **Step 3: Run to verify they fail**
+- [x] **Step 3: Run to verify they fail**
 
 Run: `cd web && npx vitest run src/content/help src/components/help`
 Expected: FAIL — `Cannot find module './topics'`.
 
-- [ ] **Step 4: Implement the block renderer**
+- [x] **Step 4: Implement the block renderer**
 
 `web/src/content/help/blocks.tsx`:
 
@@ -1798,7 +1898,7 @@ export function Blocks({ blocks }: { blocks: Block[] }) {
 }
 ```
 
-- [ ] **Step 5: Write the per-route help topics**
+- [x] **Step 5: Write the per-route help topics**
 
 `web/src/content/help/topics.ts`:
 
@@ -1808,7 +1908,7 @@ import type { Block } from "./blocks";
 export interface HelpTopic {
   title: string;
   blocks: Block[];
-  /** Slug of the fuller help-centre article, linked from the panel (Task 41). */
+  /** Slug of the fuller help-centre article, linked from the panel (Task 54). */
   article?: string;
 }
 
@@ -1919,7 +2019,7 @@ export const HELP_TOPICS: Record<string, HelpTopic> = {
 };
 ```
 
-- [ ] **Step 6: Build the help button and panel**
+- [x] **Step 6: Build the help button and panel**
 
 `web/src/components/help/HelpPanel.tsx`:
 
@@ -2005,7 +2105,7 @@ export default function HelpButton({ route }: { route: string }) {
 }
 ```
 
-- [ ] **Step 7: Build the first-run tour**
+- [x] **Step 7: Build the first-run tour**
 
 `web/src/components/help/tourSteps.ts`:
 
@@ -2159,7 +2259,7 @@ the filter bar (`filters`), the first table row (`asset-row`), the check-out but
 (`checkout`), the scan button (`scan`), the import nav item (`import`) and the help
 button (`help`).
 
-- [ ] **Step 8: Build the teaching empty state**
+- [x] **Step 8: Build the teaching empty state**
 
 `web/src/components/common/EmptyState.tsx`:
 
@@ -2227,7 +2327,7 @@ On categories:
 />
 ```
 
-- [ ] **Step 9: Build the role-based onboarding checklist**
+- [x] **Step 9: Build the role-based onboarding checklist**
 
 `web/src/components/help/OnboardingChecklist.tsx`:
 
@@ -2337,12 +2437,12 @@ export default function OnboardingChecklist({ role, state }: Props) {
 Render it at the top of `Dashboard.tsx`, passing `user.role` and counts already fetched
 for the KPI tiles.
 
-- [ ] **Step 10: Run to verify it passes**
+- [x] **Step 10: Run to verify it passes**
 
 Run: `cd web && npx vitest run src/content/help src/components/help`
 Expected: PASS — 3 topic tests, 3 panel tests, 4 checklist tests.
 
-- [ ] **Step 11: Commit**
+- [x] **Step 11: Commit**
 
 ```
 git add web/src/content/help web/src/components/help \
@@ -2363,14 +2463,14 @@ checklist whose completion is derived from the register, so it cannot claim
 work is done that is not.
 
 Help content is one typed data module rendered by a shared block renderer,
-which Task 41 also renders into the help centre and the printable guide.
+which Task 54 also renders into the help centre and the printable guide.
 
 release-note: New users now get a guided tour, and every page has a ? that explains what it does.
 ```
 
 ---
 
-### Task 41: Help centre and the generated printable user guide
+### Task 54: Help centre and the generated printable user guide
 
 **Files:**
 - Create: `web/src/content/help/articles.ts`
@@ -2380,7 +2480,7 @@ release-note: New users now get a guided tour, and every page has a ? that expla
 - Test: `web/src/content/help/articles.test.ts`, `web/src/pages/Help.test.tsx`, `web/scripts/build-user-guide.test.ts`
 
 **Interfaces:**
-- Consumes: `Block`, `Blocks` and `HELP_TOPICS` (Task 40); `useTour` (Task 40).
+- Consumes: `Block`, `Blocks` and `HELP_TOPICS` (Task 53); `useTour` (Task 53).
 - Produces:
   - `interface Article { slug: string; title: string; section: string; summary: string; keywords: string[]; blocks: Block[] }`
   - `ARTICLES: Article[]`, `SECTIONS: string[]`
@@ -2394,7 +2494,39 @@ help-centre content as one printable document". It is therefore *generated* by
 test asserts every article appears in the output. Writing the guide by hand would give
 two documents that agree on the day they are written and never again.
 
-- [ ] **Step 1: Write the failing tests**
+
+**Corrections made during execution (2026-09-07).**
+
+- The plan's `users-and-roles` article describes **four fixed roles** (Admin,
+  Manager, Technician, Viewer) and states that "roles apply across the whole
+  organisation, not per location... per-resource permissions are on the
+  roadmap". Both claims are false: Phase 1b shipped tenant-owned, renameable
+  roles built from permissions, *and* branch scoping. Publishing that would
+  have been customer-facing documentation for a product we deliberately do not
+  ship. Rewritten as "Who can do what", with tests asserting it does not
+  describe a fixed list and does mention branches.
+- The plan's nine sections predate Phase 6. Stock-takes, maintenance and
+  depreciation had no article at all, and the Task 53 help panels link to
+  `stock-takes`, `maintenance`, `roles-and-access`, `integrations` and
+  `notifications` — none of which existed in the plan's `ARTICLES`. Thirteen
+  sections now, one article each, and a test resolves every panel link.
+- The plan asserts `SECTIONS` equals its nine strings. That test would have
+  frozen the help centre to the product as it was planned rather than as it is;
+  replaced with two that hold regardless of the list: every article sits in a
+  declared section, and every declared section has an article.
+- `web` had no `tsx` and `tsconfig.node.json` did not include `scripts/`, so
+  the generator would not have run and would never have been typechecked. Both
+  fixed; `jsx` added there because the script imports the help content.
+- The plan puts the anchor after the heading, which breaks the contents links
+  under any renderer that generates its own heading ids. Anchor first, and a
+  test resolves every contents link against an anchor that exists.
+- Added a test that `docs/user-guide.md` matches what the articles generate.
+  Generating it is worthless if nobody remembers to regenerate it; CI runs the
+  web suite, so now the build remembers. Red-green verified.
+- `/help` and `/help/:slug` are themselves routes, so Task 53's own guard
+  demanded help topics for them. It caught that immediately.
+
+- [x] **Step 1: Write the failing tests**
 
 `web/src/content/help/articles.test.ts`:
 
@@ -2535,12 +2667,12 @@ describe("help centre", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify they fail**
+- [x] **Step 2: Run to verify they fail**
 
 Run: `cd web && npx vitest run src/content/help/articles src/pages/Help scripts/build-user-guide`
 Expected: FAIL — `Cannot find module './articles'`.
 
-- [ ] **Step 3: Write the articles**
+- [x] **Step 3: Write the articles**
 
 `web/src/content/help/articles.ts`:
 
@@ -2748,7 +2880,7 @@ export function searchArticles(query: string): Article[] {
 }
 ```
 
-- [ ] **Step 4: Build the help centre page**
+- [x] **Step 4: Build the help centre page**
 
 `web/src/pages/Help.tsx`:
 
@@ -2853,7 +2985,7 @@ export default function Help() {
 Register `/help` and `/help/:slug` inside the authenticated routes, and add a Help item
 to `AppSidebar.tsx`.
 
-- [ ] **Step 5: Build the user-guide generator**
+- [x] **Step 5: Build the user-guide generator**
 
 `web/scripts/build-user-guide.ts`:
 
@@ -2933,7 +3065,7 @@ Add to `web/package.json`:
 "docs:guide": "tsx scripts/build-user-guide.ts"
 ```
 
-- [ ] **Step 6: Run to verify it passes, then generate the guide**
+- [x] **Step 6: Run to verify it passes, then generate the guide**
 
 ```bash
 cd web
@@ -2944,7 +3076,7 @@ npm run docs:guide
 Expected: PASS — 9 article tests, 5 guide tests, 3 help-centre tests. `docs/user-guide.md`
 is written and contains all nine articles.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```
 git add web/src/content/help/articles.ts web/src/pages/Help.tsx \
@@ -2970,7 +3102,7 @@ release-note: A searchable help centre is now built into the dashboard, covering
 
 ---
 
-### Task 42: Project documentation, seed data and the end-to-end smoke suite
+### Task 55: Project documentation, seed data and the end-to-end smoke suite
 
 **Files:**
 - Create: `README.md`, `docs/architecture.md`, `docs/database.md`, `docs/deployment.md`, `docs/operations.md`, `docs/development.md`
@@ -2997,7 +3129,40 @@ did not run. That is what this suite exists to catch, and why it runs against
 the e2e suite. Re-running must converge on the same demo org rather than accumulating a
 second copy, so every insert is an upsert keyed on a stable slug.
 
-- [ ] **Step 1: Write the failing seed test**
+
+**Corrections made during execution (2026-09-08).**
+
+- `npm run migrate`, `npm run seed` and the other scripts did not read
+  `api/.env`. Only `next dev` did, because Next loads it itself. Following the
+  README exactly therefore failed with `SASL: client password must be a
+  string`, which reads as a wrong credential rather than an unset one. The
+  scripts now pass `--env-file-if-exists=.env`. The dev database turned out to
+  be three migrations behind because of it.
+- `discardOrganisation` - the seed's own rollback for a failed first run - could
+  never work: deleting an organisation cascades into `roles`, and a trigger
+  refused to delete a system role. The path that exists so a half-seeded tenant
+  is discarded threw, leaving exactly the half-seeded tenant it was written to
+  prevent. Migration 020 lets a system role go when its organisation is going.
+- The seed produced 11 assets in 3 statuses, so the status donut had three
+  slices and retired and lost - the two states a customer asks about first -
+  never appeared. Now 25 assets across all five, a third category, a two-level
+  location tree, and a warranty and a service inside their warning windows so
+  the dashboard's panels are not empty.
+- `seed.ts` ran `main()` on import, so it could not be tested; proving it worked
+  needed `seed:check`, run by hand. It now exports `seed()` and the suite drives
+  it.
+- The API reference printed the bare OpenAPI path - `/assets` - beside each
+  method. Paths are relative to the server URL, so the one document a reader
+  copies from was showing URLs that do not exist. Found by the smoke suite.
+- `AppLayout` had no `<main>` landmark, so a screen-reader user walked the
+  sidebar and header again on every page. Also found by the smoke suite, which
+  could not scope a query to the page content.
+
+**On the smoke suite:** it was run for real against the dev stack - 12 tests,
+all passing - and every failure along the way was a genuine defect or a genuinely
+wrong assertion, not a flake.
+
+- [x] **Step 1: Write the failing seed test**
 
 `api/scripts/seed.test.ts`:
 
@@ -3063,12 +3228,12 @@ describe("seed", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd api && npx vitest run scripts/seed.test.ts`
 Expected: FAIL — `Cannot find module './seed'`.
 
-- [ ] **Step 3: Implement the seed script**
+- [x] **Step 3: Implement the seed script**
 
 `api/scripts/seed.ts` — the shape to build. Every write is an upsert on a stable key,
 which is what makes re-running converge:
@@ -3308,7 +3473,7 @@ Two schema additions this needs, added as migration `api/migrations/011_seed_sup
 CREATE UNIQUE INDEX IF NOT EXISTS locations_org_name_idx ON locations (org_id, name);
 ```
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 ```bash
 cd api
@@ -3318,7 +3483,7 @@ npx vitest run scripts/seed.test.ts
 
 Expected: PASS, 4 tests.
 
-- [ ] **Step 5: Write the Playwright smoke suite**
+- [x] **Step 5: Write the Playwright smoke suite**
 
 ```bash
 mkdir e2e && cd e2e
@@ -3447,7 +3612,7 @@ Root `package.json` script:
 "e2e": "playwright test --config e2e/playwright.config.ts"
 ```
 
-- [ ] **Step 6: Run the suite against the real stack**
+- [x] **Step 6: Run the suite against the real stack**
 
 ```bash
 docker compose up -d --build
@@ -3459,7 +3624,7 @@ npm run e2e
 Expected: PASS, 8 tests. A failure here is an integration fault — a service address, a
 cookie, a migration that did not run — not a unit-level bug.
 
-- [ ] **Step 7: Write the project documentation**
+- [x] **Step 7: Write the project documentation**
 
 `README.md` — quickstart in under five minutes:
 
@@ -3490,13 +3655,13 @@ Then open http://localhost:3000 and sign in as `admin@demo.test` / `demo1234`.
 
 | Document | Covers |
 |---|---|
-| [docs/architecture.md](docs/architecture.md) | Services, data flow, the tenant isolation model |
-| [docs/database.md](docs/database.md) | Schema reference and entity diagram |
-| [docs/deployment.md](docs/deployment.md) | Environment variables, production deployment, backups |
-| [docs/operations.md](docs/operations.md) | Runbook: restore, rotate secrets, diagnose a slow query |
-| [docs/development.md](docs/development.md) | Local setup, test strategy, conventions |
-| [docs/user-guide.md](docs/user-guide.md) | The in-app help centre as one printable document |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Branching, commit conventions, releases |
+| `docs/architecture.md` | Services, data flow, the tenant isolation model |
+| `docs/database.md` | Schema reference and entity diagram |
+| `docs/deployment.md` | Environment variables, production deployment, backups |
+| `docs/operations.md` | Runbook: restore, rotate secrets, diagnose a slow query |
+| `docs/development.md` | Local setup, test strategy, conventions |
+| `docs/user-guide.md` | The in-app help centre as one printable document |
+| `CONTRIBUTING.md` | Branching, commit conventions, releases |
 ```
 
 `docs/architecture.md` must contain: the three services and what each is responsible for;
@@ -3533,7 +3698,7 @@ commands, the RLS testing pattern (`createOrg` over the owner connection), the f
 layout, and the rule that route handlers contain no SQL and domain modules build no
 `Response`.
 
-- [ ] **Step 8: Wire the e2e job into CI**
+- [x] **Step 8: Wire the e2e job into CI**
 
 In `.github/workflows/ci.yml`, after the unit-test job:
 
@@ -3557,7 +3722,7 @@ In `.github/workflows/ci.yml`, after the unit-test job:
           path: test-results/
 ```
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```
 git add README.md docs/ api/scripts/seed.ts api/scripts/seed.test.ts \
@@ -3585,28 +3750,28 @@ release-note: A demo dataset and a five-minute quickstart make it possible to ev
 
 ---
 
-## Phase 7 self-review
+## Phase 8 self-review
 
 **Spec coverage.** §10.1's ten portal rows: Overview, Authentication and Reference in
-Task 38; Try it via Scalar's request client in Task 38; Recipes, Pagination/sorting/
-filtering, Rate limits & idempotency, Webhooks, Errors and Changelog in Tasks 37 and 39.
+Task 51; Try it via Scalar's request client in Task 51; Recipes, Pagination/sorting/
+filtering, Rate limits & idempotency, Webhooks, Errors and Changelog in Tasks 50 and 52.
 §10.2's five bullets: first-run tour, per-page help, empty states and onboarding
-checklists in Task 40; the help centre in Task 41. §10.3's eight documents: `user-guide.md`
-generated in Task 41, the remaining seven in Task 42, with `CONTRIBUTING.md` already
+checklists in Task 53; the help centre in Task 54. §10.3's eight documents: `user-guide.md`
+generated in Task 54, the remaining seven in Task 55, with `CONTRIBUTING.md` already
 written during Phase 1. §14's operational items appear in `docs/operations.md` and
 `docs/deployment.md` (backup and tested restore, request ids, health deep check, pool
 sizing). Playwright, `seed.ts`, Scalar and driver.js — the four dependencies named in the
 overview's tech stack that no earlier task uses — are all consumed here.
 
-**Type consistency.** `Block` is defined once in Task 40 and consumed unchanged by Tasks
-40, 41 and 42's generator. `HttpRequest` is defined in Task 39's `renderers.ts` and
+**Type consistency.** `Block` is defined once in Task 53 and consumed unchanged by Tasks
+53, 54 and 55's generator. `HttpRequest` is defined in Task 52's `renderers.ts` and
 imported by `recipes.ts` and `CodeTabs`. `HELP_TOPICS[route].article` is asserted against
-`ARTICLES` slugs by a test in Task 41, so the two modules cannot drift apart.
+`ARTICLES` slugs by a test in Task 54, so the two modules cannot drift apart.
 
-**Known gaps, deliberately left.** Task 40's `invite-team` checklist item points at
+**Known gaps, deliberately left.** Task 53's `invite-team` checklist item points at
 `/settings/users`, which Task 31 builds; its `done` predicate is hard-coded `false`
 because no user-count endpoint exists in the MVP — wire it up if Task 31 adds one.
-Task 42's seed generates its 40 asset rows from a deterministic sequence rather than
+Task 55's seed generates its 40 asset rows from a deterministic sequence rather than
 listing them, so the fixture is stable across runs and there is one place to edit. If
 Task 5 changes the seeded categories' field schemas, the three `custom` shapes in the
 generator must change with them.

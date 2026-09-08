@@ -2902,7 +2902,7 @@ git commit -m "feat: email templates, outbox worker and provider failover"
   - `dispatch(ctx, event, context): Promise<{ queued: number }>` — the single entry point every feature calls
 
 **Design note (spec §9.5):** `dispatch` writes to a channel. Email is implemented here;
-webhooks (Task 33) become a second channel row in the same table rather than a parallel
+webhooks (Task 45) become a second channel row in the same table rather than a parallel
 system.
 
 - [ ] **Step 1: Write the failing test**

@@ -1,38 +1,29 @@
 import { query } from "../db";
 import type { Ctx } from "../http/handler";
+import { systemCtx } from "./context";
 import { PERMISSIONS, type PermissionKey } from "../auth/permissions";
 import { processOutbox, } from "../email/outbox";
 import { purgeRateLimitEvents } from "../auth/apikey";
 import { purgeOldLoginAttempts } from "../auth/loginThrottle";
 import { runOverdueJob } from "./overdue";
 import { runExpiryJobs } from "./expiring";
+import { runDepreciationJob } from "./depreciation";
+import { runMaintenanceJob } from "./maintenance";
+import { deliverPending } from "../domain/webhooks";
 import { runDueSchedules } from "../reports/schedules";
 import { logError } from "../http/logger";
 
-/**
- * The scheduler acts as the organisation itself, not as a person.
- *
- * It holds every permission because it is not subject to authorization - there
- * is no user to authorize - and no branch scope, because a nightly overdue
- * sweep must see the whole register regardless of who happens to be limited to
- * which site.
- */
-const systemCtx = (orgId: string): Ctx => ({
-  orgId,
-  actor: {
-    type: "system",
-    id: orgId,
-    label: "Scheduler",
-    scopes: ["admin"],
-    permissions: PERMISSIONS.map((p) => p.key) as PermissionKey[],
-    locationScope: null,
-  },
-});
 
 export interface JobRunSummary {
   scheduled_reports?: number;
   org_id: string;
   overdue: number;
+  /** Book-value rows written. Zero for most of the month, by design. */
+  depreciation: number;
+  /** Service reminders sent from recurring schedules. */
+  servicing: number;
+  /** Webhook deliveries that reached their endpoint this sweep. */
+  webhooks: number;
   warranty: number;
   licence: number;
   maintenance: number;
@@ -62,9 +53,25 @@ export async function runAllJobs(): Promise<JobRunSummary[]> {
       // guard - the table it sweeps carries org_id and row-level security.
       await purgeRateLimitEvents(ctx);
 
+      // Month-end book values. Runs nightly and writes nothing for most of the
+      // month; the first run after a month closes records that month.
+      const depreciation = await runDepreciationJob(ctx);
+
+      // Recurring service schedules. The expiry sweep above still covers
+      // assets that carry only the one-off next_service_at field.
+      const servicing = await runMaintenanceJob(ctx);
+
+      // Queued webhook deliveries, including retries whose backoff has
+      // elapsed. Sending inline would make a customer's slow endpoint into our
+      // slow request.
+      const hooks = await deliverPending(ctx);
+
       summaries.push({
         org_id: org.id,
         overdue: overdue.notified,
+        depreciation: depreciation.periods,
+        servicing: servicing.notified,
+        webhooks: hooks.delivered,
         ...expiry,
         sent: mail.sent,
         failed: mail.failed,

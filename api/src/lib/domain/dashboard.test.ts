@@ -6,7 +6,8 @@ import type { Ctx } from "../http/handler";
 import { createAsset, updateAsset } from "./assets";
 import { createCategory } from "./categories";
 import { createLocation } from "./locations";
-import { checkOut } from "./assignments";
+import { runDepreciationJob } from "../jobs/depreciation";
+import { checkOut, checkIn } from "./assignments";
 import { getDashboardSummary } from "./dashboard";
 
 let orgId: string;
@@ -90,6 +91,41 @@ describe("getDashboardSummary", () => {
     expect(Number(summary.totals.total_value)).toBe(107_000_000);
   });
 
+  it("reports book value as cost until anything has been depreciated", async () => {
+    // Nothing in this fixture carries a depreciation policy, so written-down
+    // value and cost are the same figure. A tile that showed zero here would
+    // read as a register worth nothing.
+    const summary = await getDashboardSummary(ctx);
+    expect(Number(summary.totals.book_value)).toBe(107_000_000);
+  });
+
+  it("subtracts accumulated depreciation from book value", async () => {
+    const cat = await createCategory(ctx, {
+      name: "Depreciating", kind: "it", field_schema: { fields: [] },
+    });
+    await withTenant(orgId, (c) =>
+      c.query(
+        `UPDATE categories SET depreciation_method = 'straight_line',
+                useful_life_months = 10 WHERE id = $1`,
+        [cat.id],
+      ),
+    );
+    const asset = await createAsset(ctx, {
+      name: "Writes down", category_id: cat.id,
+      purchase_cost: 10_000_000, purchase_date: "2026-01-05",
+    });
+    await runDepreciationJob(ctx, "2026-04-10");
+
+    const summary = await getDashboardSummary(ctx);
+    // Cost rises by the new asset; book value rises by cost less three months.
+    expect(Number(summary.totals.total_value)).toBe(117_000_000);
+    expect(Number(summary.totals.book_value)).toBe(114_000_000);
+
+    await withTenant(orgId, (c) =>
+      c.query("DELETE FROM assets WHERE id = $1", [asset.id]),
+    );
+  });
+
   it("breaks the register down by status", async () => {
     const summary = await getDashboardSummary(ctx);
     const byStatus = Object.fromEntries(summary.by_status.map((s) => [s.status, s.count]));
@@ -165,5 +201,30 @@ describe("branch scope", () => {
     expect(summary.totals.assets).toBe(2);
     expect(summary.totals.active_assignments).toBe(1);
     expect(summary.totals.maintenance).toBe(1);
+  });
+});
+
+describe("the onboarding counts", () => {
+  it("counts what has actually been set up, not what somebody ticked", async () => {
+    const summary = await getDashboardSummary(ctx);
+    expect(summary.setup.categories).toBeGreaterThan(0);
+    expect(summary.setup.users).toBeGreaterThan(0);
+  });
+
+  it("counts assignments ever opened, not the ones open now", async () => {
+    // A checklist item that un-ticks itself when the asset comes back would
+    // tell a customer they had never checked anything out.
+    const before = (await getDashboardSummary(ctx)).setup.checkouts;
+    const asset = await createAsset(ctx, { name: "Counted Once" });
+    await checkOut(ctx, asset.id, { assignee_type: "external", assignee_label: "Rina" });
+    await checkIn(ctx, asset.id, {});
+    const after = (await getDashboardSummary(ctx)).setup.checkouts;
+    expect(after).toBe(before + 1);
+  });
+
+  it("does not count a dry run as an import", async () => {
+    // A preview writes nothing, so claiming the register has been imported
+    // would be a lie the customer cannot see through.
+    expect((await getDashboardSummary(ctx)).setup.imports).toBe(0);
   });
 });

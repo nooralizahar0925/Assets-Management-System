@@ -1,10 +1,11 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, beforeEach } from "vitest";
 import { withTenant } from "@/lib/db";
 import { createOrg, createUserWithRole } from "@/test/org";
 import { createSession } from "@/lib/auth/session";
 import { PERMISSIONS, type PermissionKey } from "@/lib/auth/permissions";
 import type { Ctx } from "@/lib/http/handler";
 import { createCategory } from "@/lib/domain/categories";
+import { createWebhook } from "@/lib/domain/webhooks";
 import { POST } from "./route";
 import { GET as GET_JOB } from "./[id]/route";
 
@@ -153,14 +154,14 @@ describe("running the import", () => {
       mapping, category_id: categoryId, dry_run: "false",
     }));
     expect(res.status).toBe(201);
-    const body = (await res.json()) as { created: number; jobId: string };
+    const body = (await res.json()) as { created: number; job_id: string };
     expect(body.created).toBe(2);
 
     const job = await GET_JOB(
-      new Request(`http://api.test/api/v1/imports/${body.jobId}`, {
+      new Request(`http://api.test/api/v1/imports/${body.job_id}`, {
         headers: { cookie: `ams_session=${managerSession}` },
       }),
-      { params: Promise.resolve({ id: body.jobId }) },
+      { params: Promise.resolve({ id: body.job_id }) },
     );
     expect(job.status).toBe(200);
     expect((await job.json()) as { dry_run: boolean }).toMatchObject({ dry_run: false });
@@ -175,5 +176,101 @@ describe("running the import", () => {
       { params: Promise.resolve({ id }) },
     );
     expect(res.status).toBe(404);
+  });
+});
+
+describe("announcing a finished import", () => {
+  const mapping = JSON.stringify({
+    "Asset Name": "name", "Serial Number": "serial_no", "Status": "status",
+  });
+
+  const queued = () =>
+    withTenant(orgId, async (c) =>
+      (await c.query<{ event: string }>(
+        "SELECT event FROM webhook_deliveries ORDER BY created_at",
+      )).rows.map((r) => r.event),
+    );
+
+  beforeAll(async () => {
+    await createWebhook(adminCtx, {
+      url: "https://example.test/imports", events: ["import.completed"],
+    });
+  });
+
+  beforeEach(() =>
+    withTenant(orgId, (c) => c.query("DELETE FROM webhook_deliveries")),
+  );
+
+  it("tells a subscriber when a committed import finishes", async () => {
+    // There has been a default email rule and a template for this event since
+    // the notifications work; nothing ever fired them.
+    await POST(upload(managerSession, {
+      mapping, category_id: categoryId, dry_run: "false",
+    }));
+    expect(await queued()).toEqual(["import.completed"]);
+  });
+
+  it("says nothing about a dry run, which changed nothing", async () => {
+    await POST(upload(managerSession, { mapping, category_id: categoryId }));
+    expect(await queued()).toEqual([]);
+  });
+
+  it("carries the counts, so a subscriber need not fetch the job", async () => {
+    await POST(upload(managerSession, {
+      mapping, category_id: categoryId, dry_run: "false",
+    }));
+    const payload = await withTenant(orgId, async (c) =>
+      (await c.query<{ payload: Record<string, unknown> }>(
+        "SELECT payload FROM webhook_deliveries LIMIT 1",
+      )).rows[0].payload,
+    );
+    expect(payload).toMatchObject({
+      import: { total: 2, filename: "assets.csv" },
+    });
+  });
+});
+
+describe("the email a finished import sends", () => {
+  const mapping = JSON.stringify({
+    "Asset Name": "name", "Serial Number": "serial_no", "Status": "status",
+  });
+
+  const queuedEmails = () =>
+    withTenant(orgId, async (c) =>
+      (await c.query<{ subject: string; text_body: string }>(
+        `SELECT subject, text_body FROM email_messages
+          WHERE event = 'import.completed' ORDER BY created_at DESC`,
+      )).rows,
+    );
+
+  beforeEach(() =>
+    withTenant(orgId, (c) =>
+      c.query("DELETE FROM email_messages WHERE event = 'import.completed'"),
+    ),
+  );
+
+  it("names the file and the counts rather than leaving blanks", async () => {
+    // The template reads {{import.filename}} and {{import.total}}. Handing it
+    // those values flat renders "Import finished:" with nothing after it, and
+    // an email that says nothing is worse than no email.
+    await POST(upload(managerSession, {
+      mapping, category_id: categoryId, dry_run: "false",
+    }));
+
+    const [email] = await queuedEmails();
+    expect(email).toBeDefined();
+    expect(email.subject).toContain("assets.csv");
+    expect(email.text_body).toContain("2 rows");
+    expect(email.text_body).not.toContain("{{");
+  });
+
+  it("links to a page that exists", async () => {
+    // /import/<id> is a real route; it was not until the result page was built.
+    await POST(upload(managerSession, {
+      mapping, category_id: categoryId, dry_run: "false",
+    }));
+
+    const [email] = await queuedEmails();
+    expect(email.text_body).toMatch(/\/import\/[0-9a-f-]{36}/);
   });
 });
