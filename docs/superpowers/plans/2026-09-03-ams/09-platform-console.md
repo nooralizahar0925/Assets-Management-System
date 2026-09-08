@@ -352,7 +352,23 @@ release-note: none
   - `platformCookie(id: string): string`, `clearPlatformCookie(): string`
   - `recordPlatformAction(actor, action, detail): Promise<void>`
 
-- [ ] **Step 1: Write the failing tests**
+
+**Executed 2026-09-08.** Three things the plan did not anticipate:
+
+- `problem()` takes no `headers` option - its fourth argument is spread into the
+  document body. Passing one would have put `Retry-After` in the JSON rather
+  than in the response, where no client looks for it. Set on the response, as
+  the tenant route does.
+- The platform role holds no `UPDATE` on `platform_sessions`, deliberately: a
+  session is issued and destroyed, never edited. The plan's expiry test aged a
+  session with an UPDATE and was refused by the grant, which is the grant
+  working. The test inserts an already-expired session instead.
+- `api/.env` set `APP_BASE_URL` to the API's own port. Every QR label and every
+  link in an email is built from it, so in development a scanned label led to a
+  port that serves no pages. Corrected to the Vite dev server; compose already
+  set its own.
+
+- [x] **Step 1: Write the failing tests**
 
 `api/src/lib/platform/auth.test.ts`:
 
@@ -432,12 +448,12 @@ describe("platform sessions", () => {
 });
 ```
 
-- [ ] **Step 2: Run and watch it fail**
+- [x] **Step 2: Run and watch it fail**
 
 Run: `cd api && npx vitest run src/lib/platform/auth.test.ts`
 Expected: FAIL — `Cannot find module './auth'`.
 
-- [ ] **Step 3: Implement the session layer**
+- [x] **Step 3: Implement the session layer**
 
 `api/src/lib/platform/auth.ts`. Mirror `src/lib/auth/session.ts` deliberately —
 same shape, different table, different cookie, shorter life:
@@ -511,7 +527,7 @@ export async function requirePlatform(
 }
 ```
 
-- [ ] **Step 4: Write the audit recorder**
+- [x] **Step 4: Write the audit recorder**
 
 `api/src/lib/platform/audit.ts`:
 
@@ -542,7 +558,7 @@ export async function recordPlatformAction(
 }
 ```
 
-- [ ] **Step 5: Write the routes**
+- [x] **Step 5: Write the routes**
 
 `POST /api/platform/auth/login` — throttled by the **same** mechanism as tenant
 sign-in (read `src/lib/auth/throttle.ts` and reuse it; do not write a second
@@ -560,7 +576,7 @@ const actor = await requirePlatform(req);
 if (actor instanceof Response) return actor;
 ```
 
-- [ ] **Step 6: Write the bootstrap CLI**
+- [x] **Step 6: Write the bootstrap CLI**
 
 `api/scripts/platform-admin.ts`, run as `npm run platform:admin -- --email
 ops@example.com --name "Noor"`. There is a chicken and egg here: the console
@@ -576,7 +592,7 @@ one exists. It:
 
 Add `"platform:admin": "tsx --env-file-if-exists=.env scripts/platform-admin.ts"`.
 
-- [ ] **Step 7: Write the route tests**
+- [x] **Step 7: Write the route tests**
 
 `api/src/app/api/platform/auth/routes.test.ts` — drive the real handlers:
 
@@ -590,7 +606,7 @@ it("records the sign-in in the platform audit", async () => { /* … */ });
 it("throttles repeated failures", async () => { /* … */ });
 ```
 
-- [ ] **Step 8: Run everything, then commit**
+- [x] **Step 8: Run everything, then commit**
 
 Run: `cd api && npx tsc -b --noEmit && npx vitest run`
 
