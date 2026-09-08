@@ -208,7 +208,15 @@ jobs:
         # seed:prod, not seed: the runtime image ships the production
         # dependency tree and the bundled scripts, and no tsx to run the
         # TypeScript with.
-        run: docker compose exec -T api npm run seed:prod
+        #
+        # -e, because `exec` runs inside an already-started container and does
+        # not inherit this shell's environment. Passing it here rather than
+        # adding it to the compose service keeps a one-off provisioning secret
+        # out of the long-running container, where it would sit for the life of
+        # the process and show up in `docker inspect`.
+        run: >-
+          docker compose exec -T -e SEED_PASSWORD="$SEED_PASSWORD"
+          api npm run seed:prod
 
       - name: Smoke
         run: npm test
