@@ -156,7 +156,14 @@ jobs:
       APP_ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000001"
       SESSION_SECRET: ci-session-secret-not-a-real-one
       APP_BASE_URL: http://localhost:3000
-
+      # The container runs with NODE_ENV=production, and the seed refuses to
+      # give a production database a well-known password - correctly. This
+      # stack is thrown away at the end of the job, so it gets one explicitly.
+      #
+      # Deliberately not the development default: the smoke suite falls back to
+      # that same default, so if this failed to reach it both halves would
+      # still agree and the test would pass having proved nothing.
+      SEED_PASSWORD: ci-not-the-development-default
     steps:
       - uses: actions/checkout@v4
 
