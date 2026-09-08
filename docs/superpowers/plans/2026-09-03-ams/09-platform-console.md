@@ -103,10 +103,19 @@ application yields no platform access, because the credential is not there.
 **Interfaces:**
 - Produces: `withPlatform<T>(fn: (client: PoolClient) => Promise<T>): Promise<T>`
 
-A draft of this migration already exists at
-`api/migrations/022_platform_admins.sql`, written before this plan and **not
-applied to any database**. Rename it to `022_platform.sql` and extend it; do not
-add a second migration for the same step.
+A draft of this migration was written before this plan and then **backed out of
+the branch on purpose**, for two reasons worth knowing before you rewrite it:
+
+1. It creates a login role holding `BYPASSRLS`. An unapplied migration doing
+   that has no business sitting in a branch being validated for release.
+2. The migration runner change that goes with it **throws in production when
+   `PLATFORM_DB_PASSWORD` is unset**. Shipping the two separately would have
+   made the first real deploy fail its migration step, demanding a variable for
+   a feature that did not exist yet.
+
+Write the migration and the runner change together, in this task, and apply them
+to a database before committing. `git log --diff-filter=D -- api/migrations/022_platform.sql`
+finds the draft if it is useful.
 
 - [ ] **Step 1: Write the failing test**
 
