@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { Client, type QueryResultRow } from "pg";
-import { seed, SEED_USERS } from "./seed";
+import { seed, SEED_USERS, invokedAsScript } from "./seed";
 
 /**
  * The seed is the first thing a new developer runs and the last thing anybody
@@ -106,4 +106,31 @@ describe("the demo seed", () => {
     expect(again.orgId).toBe(orgId);
     expect(await count("assets")).toBe(before);
   }, 60_000);
+});
+
+describe("running the seed as a script", () => {
+  it("recognises the bundle a real deployment runs", () => {
+    // `npm run seed:prod` runs dist-scripts/seed.js. A guard that only knew
+    // about seed.ts made that command exit zero having done nothing at all -
+    // no output, no rows, and no way to tell from the outside. It is the
+    // command docs/deployment.md tells an operator to run.
+    expect(invokedAsScript("dist-scripts/seed.js")).toBe(true);
+    expect(invokedAsScript("/app/dist-scripts/seed.js")).toBe(true);
+    // Doubled, or the escapes eat the separators and this asserts nothing.
+    expect(invokedAsScript("C:\\app\\dist-scripts\\seed.js")).toBe(true);
+  });
+
+  it("recognises the TypeScript a developer runs", () => {
+    expect(invokedAsScript("scripts/seed.ts")).toBe(true);
+    expect(invokedAsScript("seed.ts")).toBe(true);
+  });
+
+  it("does not fire for anything else", () => {
+    // Importing this module from a test must not seed, and must certainly not
+    // call process.exit in the middle of a suite.
+    expect(invokedAsScript(undefined)).toBe(false);
+    expect(invokedAsScript("/usr/lib/node_modules/vitest/vitest.mjs")).toBe(false);
+    expect(invokedAsScript("scripts/seed-permissions.ts")).toBe(false);
+    expect(invokedAsScript("scripts/reseed.js")).toBe(false);
+  });
 });

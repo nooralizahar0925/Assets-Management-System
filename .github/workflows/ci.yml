@@ -145,6 +145,18 @@ jobs:
     # unit is noise, and this job is slow enough to be worth protecting.
     needs: [api, web]
 
+    # On the job, not on one step. Every step below talks to compose - including
+    # the two that run only on failure - and compose refuses to interpolate
+    # without these. Putting them on the "start" step alone meant the first
+    # thing to go wrong was reported as a missing variable rather than as
+    # whatever actually broke.
+    env:
+      # Deliberately not compose's own fallbacks: a stack that only works with
+      # its defaults hides a missing variable until deployment.
+      APP_ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000001"
+      SESSION_SECRET: ci-session-secret-not-a-real-one
+      APP_BASE_URL: http://localhost:3000
+
     steps:
       - uses: actions/checkout@v4
 
@@ -163,12 +175,13 @@ jobs:
 
       - name: Start the stack
         run: docker compose up -d --build
-        env:
-          # Deliberately not the defaults: a compose file that only works with
-          # its own fallbacks hides a missing variable until deployment.
-          APP_ENCRYPTION_KEY: 0000000000000000000000000000000000000000000000000000000000000001
-          SESSION_SECRET: ci-session-secret-not-a-real-one
-          APP_BASE_URL: http://localhost:3000
+
+      # Nothing in the stack migrates on start-up, by design: a container that
+      # migrates when it boots migrates once per replica. The health endpoint
+      # answers 503 until the schema matches the code, so without this the wait
+      # below would time out and blame the API.
+      - name: Migrate
+        run: docker compose exec -T api npm run migrate:prod
 
       - name: Wait for the API to report healthy
         # Polling the endpoint rather than sleeping: the wait is as long as it
@@ -185,7 +198,10 @@ jobs:
           exit 1
 
       - name: Seed the demo organisation
-        run: docker compose exec -T api npm run seed
+        # seed:prod, not seed: the runtime image ships the production
+        # dependency tree and the bundled scripts, and no tsx to run the
+        # TypeScript with.
+        run: docker compose exec -T api npm run seed:prod
 
       - name: Smoke
         run: npm test

@@ -385,9 +385,21 @@ async function seedInto(orgId: string) {
   );
 }
 
-// Only when run as a script. Importing this from a test must not seed, and
-// must certainly not call process.exit in the middle of a suite.
-if (process.argv[1]?.endsWith("seed.ts")) {
+/**
+ * Whether this was run as a script rather than imported.
+ *
+ * Both extensions, because there are two of it: `npm run seed` runs the
+ * TypeScript through tsx, and `npm run seed:prod` runs the bundle that esbuild
+ * writes to dist-scripts/seed.js - which is the one a real deployment uses.
+ * Checking only for "seed.ts" made the production seed a silent no-op: exit
+ * zero, no output, nothing written, and no way to tell from the outside.
+ */
+export const invokedAsScript = (argv1: string | undefined): boolean =>
+  /(^|[\\/])seed\.(ts|js)$/.test(argv1 ?? "");
+
+// Importing this from a test must not seed, and must certainly not call
+// process.exit in the middle of a suite.
+if (invokedAsScript(process.argv[1])) {
   main().then(
     () => process.exit(0),
     (err: unknown) => {
