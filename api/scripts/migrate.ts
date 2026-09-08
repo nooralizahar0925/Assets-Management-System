@@ -62,6 +62,41 @@ async function setAppRolePassword(client: Client): Promise<void> {
 }
 
 /**
+ * The platform role's password, on the same terms as the application role's.
+ *
+ * ams_platform holds BYPASSRLS: whoever has this credential can read every
+ * tenant in the database. Refusing to invent one in production matters more
+ * here than it does for ams_app, not less.
+ */
+async function setPlatformRolePassword(client: Client): Promise<void> {
+  const exists = await client.query(
+    "SELECT 1 FROM pg_roles WHERE rolname = 'ams_platform'",
+  );
+  // Before migration 022 the role does not exist yet; nothing to set.
+  if (exists.rowCount === 0) return;
+
+  const password = process.env.PLATFORM_DB_PASSWORD;
+
+  if (!password) {
+    if (isProduction) {
+      throw new Error(
+        "PLATFORM_DB_PASSWORD is not set. Refusing to fall back to a " +
+          "well-known password for a role that can read every tenant.",
+      );
+    }
+    process.stdout.write(
+      "PLATFORM_DB_PASSWORD not set - using the development default for ams_platform\n",
+    );
+  }
+
+  const { rows } = await client.query<{ sql: string }>(
+    "SELECT format('ALTER ROLE ams_platform WITH LOGIN PASSWORD %L', $1::text) AS sql",
+    [password ?? "ams_platform"],
+  );
+  await client.query(rows[0].sql);
+}
+
+/**
  * The auth lookup functions in migration 006 are SECURITY DEFINER and must be
  * able to read tables carrying FORCE ROW LEVEL SECURITY, which applies to the
  * table owner too. That only works if their owner bypasses RLS.
@@ -129,6 +164,7 @@ async function main() {
   // After the role exists, and on every run, so rotating APP_DB_PASSWORD and
   // re-running migrate is all it takes to change the credential.
   await setAppRolePassword(client);
+  await setPlatformRolePassword(client);
 
   await client.end();
   process.stdout.write("migrations up to date\n");

@@ -211,3 +211,5 @@ AssetsManagementSystem/
 | 53 | First-run tour, contextual help, empty states, onboarding checklists | 8 |
 | 54 | Help centre and the generated printable user guide | 8 |
 | 55 | Project documentation, seed data and E2E smoke suite | 8 |
+
+- [Phase 9 — The platform console](./09-platform-console.md) — organisation management, plans and entitlements, limits, and the commercial record. Planned 2026-09-08, not yet executed.
