@@ -14,6 +14,7 @@ import { useModal } from "../../hooks/useModal";
 import { assetsApi } from "../../api/assets";
 import { useAuth } from "../../context/AuthContext";
 import type { Asset, Assignment, AuditEvent, Attachment } from "../../api/types";
+import { formatDate, formatIfDate } from "../../lib/datetime";
 
 type Tab = "overview" | "servicing" | "history" | "files";
 
@@ -65,7 +66,7 @@ export default function AssetDetail() {
     ["Category", asset.category_name ?? "—"],
     ["Location", asset.location_name ?? "—"],
     ["Held by", asset.assignee_name ?? "—"],
-    ["Purchased", asset.purchase_date ?? "—"],
+    ["Purchased", formatDate(asset.purchase_date)],
     ["Purchase cost", asset.purchase_cost
       ? new Intl.NumberFormat("id-ID", {
           style: "currency", currency: asset.currency, maximumFractionDigits: 0,
@@ -148,7 +149,7 @@ export default function AssetDetail() {
                       <div key={key}>
                         <dt className="text-theme-xs text-gray-500 dark:text-gray-400">{key}</dt>
                         <dd className="mt-0.5 text-sm text-gray-800 dark:text-white/90">
-                          {String(value ?? "—")}
+                          {formatIfDate(value)}
                         </dd>
                       </div>
                     ))}

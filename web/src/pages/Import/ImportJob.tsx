@@ -5,6 +5,7 @@ import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import ComponentCard from "../../components/common/ComponentCard";
 import Badge from "../../components/ui/badge/Badge";
 import { importsApi, type ImportJob as Job } from "../../api/imports";
+import { formatDateTime } from "../../lib/datetime";
 
 /**
  * What one past import did.
@@ -67,7 +68,7 @@ export default function ImportJob() {
       <div className="space-y-5">
         <ComponentCard
           title={job.filename}
-          desc={`Imported ${new Date(job.created_at).toLocaleString("en-GB")}`}
+          desc={`Imported ${formatDateTime(job.created_at)}`}
         >
           <div className="flex flex-wrap items-center gap-3">
             {job.dry_run && <Badge color="warning" size="sm">Preview only</Badge>}

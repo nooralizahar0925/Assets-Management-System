@@ -8,6 +8,7 @@ import { useAuth } from "../../context/AuthContext";
 import {
   maintenanceApi, describeDue, daysUntilDue, type MaintenanceSchedule,
 } from "../../api/maintenance";
+import { formatDate } from "../../lib/datetime";
 
 /**
  * Overdue first, then what is coming.
@@ -56,7 +57,7 @@ function ScheduleRow({ schedule }: { schedule: MaintenanceSchedule }) {
       )}
       {schedule.last_service_at && (
         <span className="ml-auto text-theme-xs text-gray-400">
-          Last serviced {new Date(schedule.last_service_at).toLocaleDateString("en-GB")}
+          Last serviced {formatDate(schedule.last_service_at)}
         </span>
       )}
     </li>

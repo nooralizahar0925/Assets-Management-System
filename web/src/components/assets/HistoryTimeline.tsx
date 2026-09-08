@@ -1,7 +1,15 @@
 import type { AuditEvent, Assignment } from "../../api/types";
+import { formatDateTime, formatIfDate } from "../../lib/datetime";
 
+/**
+ * One side of a change, as the reader should see it.
+ *
+ * formatIfDate rather than String: a changed due date used to appear in the
+ * history as "2026-10-01T09:00:00Z", which is the database's business and not
+ * the reader's. Anything that is not a date is left exactly as it was.
+ */
 const value = (raw: unknown) =>
-  raw === null || raw === undefined || raw === "" ? "empty" : String(raw);
+  raw === null || raw === undefined || raw === "" ? "empty" : formatIfDate(raw);
 
 /** Turns a stored event into a sentence a non-technical user can read. */
 export function describeEvent(event: AuditEvent): string {
@@ -37,11 +45,7 @@ export function describeEvent(event: AuditEvent): string {
   }
 }
 
-const when = (iso: string) =>
-  new Date(iso).toLocaleString("en-GB", {
-    day: "numeric", month: "short", year: "numeric",
-    hour: "2-digit", minute: "2-digit",
-  });
+const when = (iso: string) => formatDateTime(iso);
 
 const DOT: Record<string, string> = {
   "asset.created": "bg-brand-500",

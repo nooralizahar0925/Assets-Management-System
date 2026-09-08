@@ -10,6 +10,7 @@ import { useModal } from "../../hooks/useModal";
 import { reportsApi } from "../../api/reports";
 import { useAuth } from "../../context/AuthContext";
 import type { ReportResult } from "../../api/types";
+import { formatDateTime } from "../../lib/datetime";
 
 // ApexCharts is 590 kB. The table is the report; the chart illustrates it, and
 // several reports declare no chart at all, so it loads separately.
@@ -93,7 +94,7 @@ export default function ReportViewer() {
           <p className="text-sm text-gray-500 dark:text-gray-400">{result.description}</p>
           <p className="text-theme-xs text-gray-400">
             {result.filter_summary} · {result.rows.length.toLocaleString("en-GB")} rows ·
-            generated {new Date(result.generated_at).toLocaleString("en-GB")}
+            generated {formatDateTime(result.generated_at)}
           </p>
         </div>
 

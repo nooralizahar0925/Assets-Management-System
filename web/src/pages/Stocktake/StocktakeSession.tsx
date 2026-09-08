@@ -12,6 +12,7 @@ import {
   stocktakeApi, type CountResult, type Reconciliation, type StocktakeSession as Session,
 } from "../../api/stocktake";
 import { ApiError } from "../../api/client";
+import { formatDateTime } from "../../lib/datetime";
 
 /**
  * What the counter is told after each scan.
@@ -133,7 +134,7 @@ export default function StocktakeSession() {
               in a heading gives the page two identical titles. */}
           <p className="text-sm text-gray-500 dark:text-gray-400">
             {session.location_name ?? "Unknown location"} ·{" "}
-            opened {new Date(session.opened_at).toLocaleString("en-GB")}
+            opened {formatDateTime(session.opened_at)}
           </p>
           <Badge color={open ? "info" : "light"} size="sm">
             {open ? "In progress" : "Closed"}

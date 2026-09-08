@@ -11,6 +11,7 @@ import { stocktakeApi, type StocktakeSession } from "../../api/stocktake";
 import { catalogApi } from "../../api/catalog";
 import { ApiError } from "../../api/client";
 import type { LocationNode } from "../../api/types";
+import { formatDate } from "../../lib/datetime";
 
 const selectClass =
   "h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm " +
@@ -112,7 +113,7 @@ export default function StocktakeList() {
                       </Link>
                       <p className="text-theme-xs text-gray-500 dark:text-gray-400">
                         {session.location_name ?? "Unknown location"} ·{" "}
-                        {new Date(session.opened_at).toLocaleDateString("en-GB")}
+                        {formatDate(session.opened_at)}
                       </p>
                     </div>
                     <Badge color={session.status === "open" ? "info" : "light"} size="sm">

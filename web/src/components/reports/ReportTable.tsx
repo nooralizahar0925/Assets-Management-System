@@ -2,6 +2,7 @@ import {
   Table, TableBody, TableCell, TableHeader, TableRow,
 } from "../ui/table";
 import type { ReportColumn, ReportResult } from "../../api/types";
+import { formatDate } from "../../lib/datetime";
 
 const NUMERIC = new Set(["number", "money", "percent"]);
 
@@ -16,14 +17,8 @@ export function formatCell(column: ReportColumn, raw: unknown): string {
       return Number(raw).toLocaleString("en-GB");
     case "percent":
       return `${Number(raw).toFixed(1)}%`;
-    case "date": {
-      const date = new Date(String(raw));
-      return Number.isNaN(date.getTime())
-        ? String(raw)
-        : date.toLocaleDateString("en-GB", {
-            day: "numeric", month: "short", year: "numeric", timeZone: "UTC",
-          });
-    }
+    case "date":
+      return formatDate(String(raw));
     default:
       return String(raw);
   }

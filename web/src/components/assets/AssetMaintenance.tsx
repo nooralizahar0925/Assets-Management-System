@@ -12,6 +12,7 @@ import {
   type MaintenanceSchedule, type MaintenanceEvent,
 } from "../../api/maintenance";
 import { ApiError } from "../../api/client";
+import { formatDate } from "../../lib/datetime";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -139,8 +140,7 @@ export default function AssetMaintenance({ assetId }: { assetId: string }) {
                     <p className="text-theme-xs text-gray-500 dark:text-gray-400">
                       Due {describeDue(schedule)}
                       {schedule.last_service_at
-                        && ` · last done ${new Date(schedule.last_service_at)
-                          .toLocaleDateString("en-GB")}`}
+                        && ` · last done ${formatDate(schedule.last_service_at)}`}
                     </p>
                   </div>
                   {days !== null && days < 0 && (
@@ -169,7 +169,7 @@ export default function AssetMaintenance({ assetId }: { assetId: string }) {
               {history.map((entry) => (
                 <li key={entry.id} className="flex flex-wrap items-baseline gap-2 py-2">
                   <span className="text-sm text-gray-700 dark:text-gray-300">
-                    {new Date(entry.serviced_at).toLocaleDateString("en-GB")}
+                    {formatDate(entry.serviced_at)}
                   </span>
                   {entry.note && (
                     <span className="text-sm text-gray-500 dark:text-gray-400">

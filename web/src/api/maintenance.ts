@@ -1,4 +1,5 @@
 import { api } from "./client";
+import { formatDate } from "../lib/datetime";
 
 export interface MaintenanceSchedule {
   id: string;
@@ -62,9 +63,7 @@ export const maintenanceApi = {
 export function describeDue(schedule: MaintenanceSchedule): string {
   const parts: string[] = [];
   if (schedule.next_due_at) {
-    parts.push(new Date(schedule.next_due_at).toLocaleDateString("en-GB", {
-      day: "numeric", month: "short", year: "numeric", timeZone: "UTC",
-    }));
+    parts.push(formatDate(schedule.next_due_at));
   }
   if (schedule.next_due_hours !== null) {
     const now = schedule.current_hours ?? 0;

@@ -7,6 +7,7 @@ import Label from "../../components/form/Label";
 import Input from "../../components/form/input/InputField";
 import { useAuth } from "../../context/AuthContext";
 import { keysApi, type ApiKey, type MintedApiKey } from "../../api/admin";
+import { formatDateTime } from "../../lib/datetime";
 
 /** The published v1 scopes. Frozen: integrations depend on these names. */
 const SCOPES = ["assets:read", "assets:write", "reports:read", "admin"] as const;
@@ -171,7 +172,7 @@ export default function ApiKeys() {
                     </p>
                     <p className="text-theme-xs text-gray-400">
                       {key.last_used_at
-                        ? `Last used ${new Date(key.last_used_at).toLocaleString("en-GB")}`
+                        ? `Last used ${formatDateTime(key.last_used_at)}`
                         : "Never used"}
                     </p>
                   </div>

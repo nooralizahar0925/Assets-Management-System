@@ -5,6 +5,7 @@ import Badge from "../components/ui/badge/Badge";
 import {
   releasesApi, type Release, type VersionInfo, type EntryType,
 } from "../api/releases";
+import { formatDate } from "../lib/datetime";
 
 /**
  * What changed, written for the person using the system.
@@ -20,11 +21,6 @@ const ENTRY_LABEL: Record<EntryType, { label: string; color: "success" | "info" 
   improvement: { label: "Improved", color: "info" },
   fix: { label: "Fixed", color: "warning" },
 };
-
-const formatDate = (iso: string) =>
-  new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", {
-    day: "numeric", month: "short", year: "numeric", timeZone: "UTC",
-  });
 
 export default function WhatsNew() {
   const [releases, setReleases] = useState<Release[]>([]);

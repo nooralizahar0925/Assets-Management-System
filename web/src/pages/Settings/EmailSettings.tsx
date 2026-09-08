@@ -11,6 +11,7 @@ import { useAuth } from "../../context/AuthContext";
 import {
   settingsApi, type EmailProvider, type EmailMessage, type EmailTemplate,
 } from "../../api/settings";
+import { formatDateTime } from "../../lib/datetime";
 
 const STATUS_COLOR: Record<string, "success" | "warning" | "error" | "light"> = {
   sent: "success", queued: "warning", sending: "warning",
@@ -119,7 +120,7 @@ export default function EmailSettings() {
                     )}
                   </div>
                   <time className="ml-auto shrink-0 text-theme-xs text-gray-400">
-                    {new Date(message.created_at).toLocaleString("en-GB")}
+                    {formatDateTime(message.created_at)}
                   </time>
                 </li>
               ))}

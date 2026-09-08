@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { releasesApi, type Release } from "../../api/releases";
 import Prose from "../../components/developers/Prose";
+import { formatDate } from "../../lib/datetime";
 
 const LABEL: Record<string, string> = {
   feature: "New",
@@ -61,7 +62,7 @@ export default function Changelog() {
             {release.version}
             {release.title ? ` — ${release.title}` : ""}
             <span className="ml-2 font-normal text-gray-400">
-              {new Date(release.released_at).toLocaleDateString()}
+              {formatDate(release.released_at)}
             </span>
           </h3>
           <ul className="mt-2 space-y-1">

@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 import Badge from "../ui/badge/Badge";
 import type { DashboardSummary } from "../../api/types";
+import { formatDate } from "../../lib/datetime";
 
 const FIELD_LABEL: Record<string, string> = {
   warranty_end: "Warranty",
@@ -31,7 +32,7 @@ export default function ExpiringSoon({
               {item.name}
             </Link>
             <span className="text-theme-xs text-gray-500 dark:text-gray-400">
-              {FIELD_LABEL[item.field] ?? item.field} · {item.expires_on}
+              {FIELD_LABEL[item.field] ?? item.field} · {formatDate(item.expires_on)}
             </span>
           </div>
           <Badge color={item.days_left <= 30 ? "error" : "warning"} size="sm">
