@@ -5,6 +5,7 @@ import { validationProblem, problem } from "@/lib/http/problem";
 import { safe } from "@/lib/http/handler";
 import { withIdempotency } from "@/lib/http/idempotency";
 import { dispatch } from "@/lib/notify/dispatch";
+import { assertWithinLimit } from "@/lib/entitlements";
 import { parsePagination, parseSort, paginated } from "@/lib/http/pagination";
 import {
   AssetInput, STATUSES, SORTABLE, listAssets, createAsset, CustomFieldError,
@@ -60,6 +61,12 @@ export const POST = safe(async (req: Request) => {
   if (!withinLocationScope(ctx, parsed.data.location_id ?? null)) {
     return branchForbidden();
   }
+
+  // Checked before the idempotency wrapper: a replayed request must return the
+  // original answer rather than being refused because the register has since
+  // filled up.
+  const capped = await assertWithinLimit(ctx, "max_assets");
+  if (capped) return capped;
 
   // Creating an asset is the write integrators retry most: a timeout leaves
   // them unable to tell whether it happened, and retrying without this makes

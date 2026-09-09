@@ -984,7 +984,35 @@ release-note: none
   - `requireFeature(ctx: Ctx, key: FeatureKey): Promise<Response | null>`
   - `assertWithinLimit(ctx: Ctx, limit: "max_assets" | "max_users", adding?: number): Promise<Response | null>`
 
-- [ ] **Step 1: Write the failing tests**
+
+**Executed 2026-09-09.**
+
+Two of the three call sites the plan names exist and are wired: creating an
+asset, and committing an import. The third does not: **there is no endpoint
+that creates a user anywhere in this system.** `POST /api/admin/users` is not
+missing a limit check - it is missing. `max_users` is implemented and tested,
+and has nothing to gate until somebody can be invited.
+
+That is a product gap rather than a gap in this task, and it is larger than it
+looks: the onboarding checklist added in Task 53 tells a customer to "Invite
+your colleagues" and links them to a page that can only list the people who are
+already there. The item can never be completed by any action the product
+offers. Recorded here, and raised with the owner on the day it was found.
+
+The import is checked once for the whole file, before `runImport`, and only for
+a run that writes. A dry run is never refused: previewing what would happen is
+how somebody discovers they need a bigger plan, and refusing it tells them
+nothing.
+
+The asset check sits before `withIdempotency`, so a replayed request returns
+the original answer rather than being refused because the register has filled
+up since.
+
+402 rather than 403, because a permission failure and a commercial one have
+different remedies - one an administrator fixes, the other whoever pays - and a
+client that cannot tell them apart tells the customer the wrong thing.
+
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 describe("plan limits", () => {
@@ -1018,7 +1046,7 @@ describe("plan limits", () => {
 });
 ```
 
-- [ ] **Step 2: Implement**
+- [x] **Step 2: Implement**
 
 ```ts
 /**
@@ -1052,12 +1080,12 @@ export async function assertWithinLimit(
 Add `plan-limit` (402) and `feature-not-enabled` (403) to the error catalogue
 with a real cause and a real remedy — the catalogue test fails otherwise.
 
-- [ ] **Step 3: Wire the three call sites, and only those**
+- [x] **Step 3: Wire the three call sites, and only those**
 
 `POST /api/v1/assets`, the committed branch of `POST /api/v1/imports` (checking
 `rows.length` **before** `runImport`), and `POST /api/admin/users`.
 
-- [ ] **Step 4: Run, verify each through its real route, commit**
+- [x] **Step 4: Run, verify each through its real route, commit**
 
 ```
 feat(api): hold a customer to the limits their plan sets

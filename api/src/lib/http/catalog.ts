@@ -120,6 +120,30 @@ export const ERROR_CATALOG: ErrorEntry[] = [
       + "several passes produce the same register as one large file.",
   },
   {
+    slug: "plan-limit",
+    status: 402,
+    title: "Plan limit reached",
+    when:
+      "The write would take the organisation past a limit its plan sets - the "
+      + "number of assets, or the number of people. Reading and exporting are "
+      + "never refused for this reason, however far over the limit they are.",
+    fix:
+      "The detail names the limit and the current count. Remove some, or ask "
+      + "whoever manages the subscription to change plan. Retrying unchanged "
+      + "will fail again.",
+  },
+  {
+    slug: "feature-not-enabled",
+    status: 403,
+    title: "Not included in this plan",
+    when:
+      "The endpoint belongs to a feature this organisation's plan does not "
+      + "include - stock-takes, webhooks, scheduled reports and the like.",
+    fix:
+      "Nothing in the API will change this. Whoever manages the subscription "
+      + "can add the feature; until then the endpoint stays refused.",
+  },
+  {
     slug: "rate-limited",
     status: 429,
     title: "Rate limit exceeded",

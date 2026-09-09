@@ -2,6 +2,7 @@ import { requireAuth, isResponse } from "@/lib/auth/guard";
 import { problem, forbidden } from "@/lib/http/problem";
 import { safe } from "@/lib/http/handler";
 import { dispatch } from "@/lib/notify/dispatch";
+import { assertWithinLimit } from "@/lib/entitlements";
 import {
   parseUpload, suggestMapping, runImport, type ColumnMap,
 } from "@/lib/domain/imports";
@@ -72,6 +73,16 @@ export const POST = safe(async (req: Request) => {
   // Defaults to a dry run: committing has to be asked for explicitly, so a
   // caller who forgets the flag previews rather than rewrites the register.
   const dryRun = String(form?.get("dry_run") ?? "true") !== "false";
+  // Checked once for the whole file, and only for a run that writes. Half an
+  // import is the worst outcome available: the customer cannot tell what
+  // landed, and re-running double-imports the part that did. A dry run is
+  // never refused - previewing what would happen is how somebody finds out
+  // they need a bigger plan.
+  if (!dryRun) {
+    const capped = await assertWithinLimit(ctx, "max_assets", rows.length);
+    if (capped) return capped;
+  }
+
   const result = await runImport(ctx, {
     rows, mapping, categoryId, dryRun, filename: file.name,
   });
