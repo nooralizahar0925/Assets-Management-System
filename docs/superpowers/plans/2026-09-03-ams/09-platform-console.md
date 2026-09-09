@@ -857,7 +857,39 @@ release-note: none
   - `provisionOrg(input): Promise<{ orgId: string; adminEmail: string; password: string }>`
   - `suspendOrg(orgId, reason)`, `resumeOrg(orgId)`, `deleteOrg(orgId, slug)`
 
-- [ ] **Step 1: Write the failing tests**
+
+**Executed 2026-09-09.** Two defects the tests caught, both of which would have
+produced a customer who could not use the product:
+
+1. **`seed_system_roles` creates roles and nothing else.** The permission grants
+   are applied afterwards in TypeScript by `seedRolesForOrg`, because the
+   permission list lives in code. Calling only the function - as the plan says
+   to - produced an administrator holding no permissions at all, refused by
+   every screen on their first day. Provisioning now applies the grants in the
+   same transaction.
+2. **Reading `organizations` outside a tenant context throws.** The `own_org`
+   policy from migration 004 is written without the missing-ok flag, so
+   `current_setting('app.org_id')` raises rather than returning null. The
+   suspension check first read it on the plain pool, which turned every
+   authenticated request into a 500. It reads inside `withTenant` instead - an
+   organisation can see its own row by design.
+
+Suspension is enforced in `requireAuth`, not only at sign-in, so an existing
+session and a running integration both stop. That is the whole difference
+between suspending a customer and asking them to stop. The login route checks
+separately, after the password, because answering differently before the
+credential is known would say which addresses exist and which customers have
+stopped paying.
+
+`PATCH` guards each nullable field with "was it mentioned", because for a
+renewal date null is a value an operator sets deliberately and coalesce cannot
+tell that from an absent field.
+
+The demo seed was left calling its own `provision()`: it targets a fixed slug,
+repairs a half-finished earlier run and is idempotent, none of which the
+console's path does or should. Sharing them would have made both worse.
+
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 describe("provisioning a customer", () => {
@@ -905,7 +937,7 @@ describe("suspension", () => {
 });
 ```
 
-- [ ] **Step 2–4: Implement, run, verify**
+- [x] **Step 2–4: Implement, run, verify**
 
 `provisionOrg` runs the whole thing under one `withPlatform` transaction:
 insert the organisation, `SELECT seed_system_roles($1)`, seed the default
@@ -922,13 +954,13 @@ prove it with a test that suspends *after* signing in.
 Return a new `problem(403, "organization-suspended", …)` and add it to
 `src/lib/http/catalog.ts` — the catalogue test will fail until you do.
 
-- [ ] **Step 5: Make the demo seed use this**
+- [x] **Step 5: Make the demo seed use this**
 
 `scripts/seed.ts` has its own `provision()` written before this existed. Replace
 its body with a call to `provisionOrg`, so there is one way to create a tenant
 and the demo exercises it. Its tests must still pass unchanged.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```
 feat(api): provision, suspend and remove a customer organisation

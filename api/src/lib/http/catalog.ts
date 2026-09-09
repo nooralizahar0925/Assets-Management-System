@@ -97,6 +97,20 @@ export const ERROR_CATALOG: ErrorEntry[] = [
       + "until the asset actually changes state.",
   },
   {
+    slug: "organization-suspended",
+    status: 403,
+    title: "Organisation suspended",
+    when:
+      "The organisation's access has been suspended by whoever manages its "
+      + "subscription. Sign-in is refused, and so is every existing session "
+      + "and API key - a suspension that only stopped new sign-ins would not "
+      + "be one.",
+    fix:
+      "Nothing in the API will lift this. Contact whoever manages the "
+      + "subscription; the organisation's data is intact and returns "
+      + "untouched when access is restored.",
+  },
+  {
     slug: "payload-too-large",
     status: 413,
     title: "File too large",

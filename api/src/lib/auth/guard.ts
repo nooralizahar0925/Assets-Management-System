@@ -4,6 +4,7 @@ import { unauthorized, forbidden, problem } from "../http/problem";
 import type { Ctx } from "../http/handler";
 import type { PermissionKey } from "./permissions";
 import { setRequestActor } from "../http/logging";
+import { isSuspended, suspendedResponse } from "./suspension";
 
 const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
@@ -97,6 +98,12 @@ export async function requireAuth(
 
   const crossOrigin = assertSameOrigin(req, ctx);
   if (crossOrigin) return crossOrigin;
+
+  // Before the permission check, and before anything is read: a suspended
+  // customer's existing sessions and API keys stop working too, not only their
+  // next sign-in. Refusing here rather than at the login route is the whole
+  // difference between suspending an organisation and asking it to stop.
+  if (await isSuspended(ctx.orgId)) return suspendedResponse();
 
   if (!hasPermission(ctx, permission)) {
     return forbidden(`This credential lacks the "${permission}" permission.`);

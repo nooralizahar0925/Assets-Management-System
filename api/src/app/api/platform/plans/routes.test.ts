@@ -127,21 +127,31 @@ describe("the plan catalogue over HTTP", () => {
   });
 
   it("refuses to delete a plan somebody is on, and says how many", async () => {
+    // Its own plan, with exactly one customer on it. Asserting against a
+    // shared plan counts whatever every other test file has created, and the
+    // number is then nobody's to predict.
+    const code = "route-occupied-plan";
+    await CREATE(req("POST", {
+      code, name: "Occupied", price_minor: 1, features: ["core"],
+    }));
+
     const orgId = await withPlatform(async (c) =>
       (await c.query<{ id: string }>(
         `INSERT INTO organizations (name, slug, plan_code)
-         VALUES ('Plan Holder', $1, 'starter') RETURNING id`,
-        [`plan-holder-${Date.now()}`],
+         VALUES ('Plan Holder', $1, $2) RETURNING id`,
+        [`plan-holder-${Date.now()}`, code],
       )).rows[0].id,
     );
 
-    const res = await DELETE(req("DELETE"), params("starter"));
+    const res = await DELETE(req("DELETE"), params(code));
     expect(res.status).toBe(409);
-    expect((await res.json() as { detail: string }).detail).toMatch(/1 organisation/);
+    expect((await res.json() as { detail: string }).detail)
+      .toMatch(/1 organisation is on/);
 
     await withPlatform((c) =>
       c.query("DELETE FROM organizations WHERE id = $1", [orgId]),
     );
+    await DELETE(req("DELETE"), params(code));
   });
 
   it("records every change where the operator cannot erase it", async () => {

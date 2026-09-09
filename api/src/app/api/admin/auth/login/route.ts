@@ -16,6 +16,7 @@ import {
 import { withTenant } from "@/lib/db";
 import { validationProblem, unauthorized, problem } from "@/lib/http/problem";
 import { safe } from "@/lib/http/handler";
+import { isSuspended, suspendedResponse } from "@/lib/auth/suspension";
 
 const Body = z.object({ email: z.string().email(), password: z.string().min(1) });
 
@@ -75,6 +76,11 @@ export const POST = safe(async (req: Request) => {
       ]),
     );
   }
+
+  // Checked after the password, not before: answering differently for a
+  // suspended organisation before knowing the credential is right would tell
+  // an outsider which addresses exist and which customers have stopped paying.
+  if (await isSuspended(user.org_id)) return suspendedResponse();
 
   const sid = await createSession(user.id, user.org_id);
   return Response.json(

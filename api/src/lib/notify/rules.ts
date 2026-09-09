@@ -93,7 +93,8 @@ export const deleteRule = (ctx: Ctx, id: string) =>
  * is named is the technician default for maintenance, and even there the seed
  * resolves the name to an id once, so a later rename keeps working.
  */
-const DEFAULTS: RuleInput[] = [
+/** Exported so provisioning writes the same rules the seeder does. */
+export const DEFAULT_NOTIFICATION_RULES: RuleInput[] = [
   { event: "asset.checked_out", channel: "email", template_key: "asset.checked_out",
     recipient_spec: { assignee: true }, active: true },
   { event: "asset.checked_in", channel: "email", template_key: "asset.checked_in",
@@ -114,7 +115,7 @@ const DEFAULTS: RuleInput[] = [
 
 /** Idempotent - safe on every org creation and on upgrade. */
 export async function seedDefaultRules(ctx: Ctx): Promise<void> {
-  for (const rule of DEFAULTS) await createRule(ctx, rule);
+  for (const rule of DEFAULT_NOTIFICATION_RULES) await createRule(ctx, rule);
 }
 
 /**
@@ -131,7 +132,7 @@ export async function seedDefaultRulesWithClient(
   client: { query: (text: string, values: unknown[]) => Promise<unknown> },
   orgId: string,
 ): Promise<void> {
-  for (const rule of DEFAULTS) {
+  for (const rule of DEFAULT_NOTIFICATION_RULES) {
     await client.query(
       `INSERT INTO notification_rules
          (org_id, event, channel, template_key, recipient_spec, active)
