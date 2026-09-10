@@ -1,8 +1,15 @@
 # Assets Management System — User guide
 
-This document is **generated** from the in-app help centre by `npm run docs:guide`.
-Edit `web/src/content/help/articles.ts` and regenerate; anything written here by
-hand is lost on the next run.
+<!--
+  Generated from the in-app help centre by `npm run docs:guide`.
+  Edit web/src/content/help/articles.ts and regenerate: anything written
+  here by hand is lost on the next run.
+-->
+
+Everything here is also in the application itself: the ? on any screen
+explains that screen, and the Help section has the same guides with a
+search box. This document exists so a new colleague can be handed the
+whole thing at once, on paper if that suits them better.
 
 ## Contents
 

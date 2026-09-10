@@ -3,6 +3,7 @@ import { requireAuth, isResponse } from "@/lib/auth/guard";
 import { validationProblem, problem } from "@/lib/http/problem";
 import { safe } from "@/lib/http/handler";
 import { buildLabelSheet, LABEL_TEMPLATES } from "@/lib/domain/labels";
+import { requireFeature } from "@/lib/entitlements";
 
 const Body = z.object({
   asset_ids: z.array(z.string().uuid()).min(1).max(500),
@@ -13,6 +14,8 @@ const Body = z.object({
 export const GET = safe(async (req: Request) => {
   const ctx = await requireAuth(req, "labels:print");
   if (isResponse(ctx)) return ctx;
+  const gate = await requireFeature(ctx, "labels");
+  if (gate) return gate;
   // The catalogue, so the UI can offer real stock sizes rather than guesses.
   return Response.json({
     data: Object.entries(LABEL_TEMPLATES).map(([key, t]) => ({ key, ...t })),
@@ -22,6 +25,8 @@ export const GET = safe(async (req: Request) => {
 export const POST = safe(async (req: Request) => {
   const ctx = await requireAuth(req, "labels:print");
   if (isResponse(ctx)) return ctx;
+  const gate = await requireFeature(ctx, "labels");
+  if (gate) return gate;
 
   const parsed = Body.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return validationProblem(parsed.error);

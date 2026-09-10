@@ -32,9 +32,22 @@ export function renderUserGuide(articles: Article[]): string {
   const out: string[] = [
     "# Assets Management System — User guide",
     "",
-    "This document is **generated** from the in-app help centre by `npm run docs:guide`.",
-    "Edit `web/src/content/help/articles.ts` and regenerate; anything written here by",
-    "hand is lost on the next run.",
+    // A comment, not a paragraph. This is a note to whoever maintains the
+    // guide, and it was appearing at the top of a document handed to
+    // customers - telling them our source layout and our build commands,
+    // which is nobody's business but ours. Markdown renderers and PDF
+    // exporters drop it; `npm run docs:guide` still finds it, which is what
+    // the staleness check reads.
+    "<!--",
+    "  Generated from the in-app help centre by `npm run docs:guide`.",
+    "  Edit web/src/content/help/articles.ts and regenerate: anything written",
+    "  here by hand is lost on the next run.",
+    "-->",
+    "",
+    "Everything here is also in the application itself: the ? on any screen",
+    "explains that screen, and the Help section has the same guides with a",
+    "search box. This document exists so a new colleague can be handed the",
+    "whole thing at once, on paper if that suits them better.",
     "",
     "## Contents",
     "",

@@ -23,6 +23,14 @@ export interface SessionUser {
 interface AuthValue {
   user: SessionUser | null;
   orgId: string | null;
+  /**
+   * Whether this organisation's plan includes a feature.
+   *
+   * Separate from `can`: a permission is what this person may do, a feature is
+   * what the organisation has bought. Somebody can hold every permission in
+   * the product and still not have stock-takes.
+   */
+  has: (feature: string) => boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -34,20 +42,27 @@ const AuthContext = createContext<AuthValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [orgId, setOrgId] = useState<string | null>(null);
+  const [features, setFeatures] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
     try {
-      const me = await api.get<{ org_id: string; user: SessionUser }>(
-        "/api/admin/auth/me",
-      );
+      const me = await api.get<{
+        org_id: string; user: SessionUser; features?: string[];
+      }>("/api/admin/auth/me");
       setUser(me.user);
       setOrgId(me.org_id);
+      // Absent while the API is a version behind during a rolling deploy. An
+      // empty list would hide every optional feature; treating it as "not
+      // known yet" and allowing them is the kinder failure, since the API
+      // refuses anything that is genuinely not included.
+      setFeatures(me.features ?? null);
     } catch (err) {
       // A 401 here is the normal signed-out state, not a failure worth surfacing.
       if (!(err instanceof ApiError) || err.status !== 401) console.error(err);
       setUser(null);
       setOrgId(null);
+      setFeatures(null);
     } finally {
       setLoading(false);
     }
@@ -74,9 +89,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [user],
   );
 
+  const has = useCallback(
+    (feature: string) =>
+      // null means the API did not say - a version behind during a rolling
+      // deploy. Allowing then is the kinder failure: the API still refuses
+      // anything genuinely not included, so the worst case is a menu item
+      // that leads to an explanation rather than a feature quietly vanishing.
+      features === null || features.includes(feature),
+    [features],
+  );
+
   const value = useMemo(
-    () => ({ user, orgId, loading, signIn, signOut, can }),
-    [user, orgId, loading, signIn, signOut, can],
+    () => ({ user, orgId, loading, signIn, signOut, can, has }),
+    [user, orgId, loading, signIn, signOut, can, has],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

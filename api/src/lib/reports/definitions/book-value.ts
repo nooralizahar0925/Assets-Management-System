@@ -12,6 +12,7 @@ import { assetFilters, sumBy } from "./shared";
  */
 export const bookValue: ReportDefinition = {
   key: "asset-book-value",
+  feature: "depreciation",
   name: "Asset book value",
   description:
     "What each asset is worth after depreciation, from the month-end figures.",

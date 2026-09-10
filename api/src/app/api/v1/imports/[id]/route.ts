@@ -2,6 +2,7 @@ import { requireAuth, isResponse } from "@/lib/auth/guard";
 import { notFound } from "@/lib/http/problem";
 import { safe } from "@/lib/http/handler";
 import { getImportJob } from "@/lib/domain/imports";
+import { requireFeature } from "@/lib/entitlements";
 
 export const GET = safe(async (
   req: Request,
@@ -9,6 +10,8 @@ export const GET = safe(async (
 ) => {
   const ctx = await requireAuth(req, "assets:read");
   if (isResponse(ctx)) return ctx;
+  const gate = await requireFeature(ctx, "import");
+  if (gate) return gate;
   const job = await getImportJob(ctx, (await params).id);
   return job ? Response.json(job) : notFound("import job");
 });

@@ -2,6 +2,7 @@ import { withTenant } from "@/lib/db";
 import { requireAuth, isResponse } from "@/lib/auth/guard";
 import { notFound } from "@/lib/http/problem";
 import { safe } from "@/lib/http/handler";
+import { requireFeature } from "@/lib/entitlements";
 
 export const DELETE = safe(async (
   req: Request,
@@ -9,6 +10,8 @@ export const DELETE = safe(async (
 ) => {
   const ctx = await requireAuth(req, "api_keys:write");
   if (isResponse(ctx)) return ctx;
+  const gate = await requireFeature(ctx, "api");
+  if (gate) return gate;
   const { id } = await params;
 
   const rows = await withTenant(ctx.orgId, async (c) =>

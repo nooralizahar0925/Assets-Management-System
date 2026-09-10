@@ -11,6 +11,7 @@ import {
   AssetInput, STATUSES, SORTABLE, listAssets, createAsset, CustomFieldError,
   type AssetStatus, type AssetFilters,
 } from "@/lib/domain/assets";
+import { requireFeature } from "@/lib/entitlements";
 
 function readFilters(url: URL): AssetFilters {
   const statuses = url.searchParams
@@ -60,6 +61,14 @@ export const POST = safe(async (req: Request) => {
   // otherwise they could file an asset somewhere they cannot then see.
   if (!withinLocationScope(ctx, parsed.data.location_id ?? null)) {
     return branchForbidden();
+  }
+
+  // Configuring depreciation is the feature, not merely reading its output. A
+  // customer without it can still hold assets that have a purchase cost; they
+  // simply cannot set a policy for writing that cost down.
+  if (parsed.data.depreciation !== undefined) {
+    const depreciationGate = await requireFeature(ctx, "depreciation");
+    if (depreciationGate) return depreciationGate;
   }
 
   // Checked before the idempotency wrapper: a replayed request must return the

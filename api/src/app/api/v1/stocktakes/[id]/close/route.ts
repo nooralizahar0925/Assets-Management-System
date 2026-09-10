@@ -5,6 +5,7 @@ import { safe } from "@/lib/http/handler";
 import {
   closeSession, getSession, SessionClosedError,
 } from "@/lib/domain/stocktake";
+import { requireFeature } from "@/lib/entitlements";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -15,6 +16,8 @@ const Body = z.object({ adjust: z.boolean().default(false) });
 export const POST = safe(async (req: Request, { params }: Params) => {
   const ctx = await requireAuth(req, "stocktake:write");
   if (isResponse(ctx)) return ctx;
+  const gate = await requireFeature(ctx, "stocktake");
+  if (gate) return gate;
 
   const parsed = Body.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return validationProblem(parsed.error);

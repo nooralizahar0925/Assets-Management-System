@@ -3,10 +3,13 @@ import { validationProblem, notFound, forbidden } from "@/lib/http/problem";
 import { safe } from "@/lib/http/handler";
 import { ScheduleInput, createSchedule, listSchedules } from "@/lib/domain/maintenance";
 import { getAsset } from "@/lib/domain/assets";
+import { requireFeature } from "@/lib/entitlements";
 
 export const GET = safe(async (req: Request) => {
   const ctx = await requireAuth(req, "maintenance:read");
   if (isResponse(ctx)) return ctx;
+  const gate = await requireFeature(ctx, "maintenance");
+  if (gate) return gate;
 
   const assetId = new URL(req.url).searchParams.get("asset_id") ?? undefined;
   const schedules = await listSchedules(ctx, assetId);
@@ -17,6 +20,8 @@ export const GET = safe(async (req: Request) => {
 export const POST = safe(async (req: Request) => {
   const ctx = await requireAuth(req, "maintenance:write");
   if (isResponse(ctx)) return ctx;
+  const gate = await requireFeature(ctx, "maintenance");
+  if (gate) return gate;
 
   const parsed = ScheduleInput.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return validationProblem(parsed.error);

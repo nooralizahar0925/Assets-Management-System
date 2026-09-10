@@ -16,12 +16,17 @@ import {
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
 import { useUnseenReleases } from "../hooks/useUnseenReleases";
+import { useAuth } from "../context/AuthContext";
 
 type NavItem = {
   name: string;
   icon: React.ReactNode;
   path?: string;
-  subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
+  /** The plan feature this leads to, when it is not part of the register. */
+  feature?: string;
+  subItems?: {
+    name: string; path: string; pro?: boolean; new?: boolean; feature?: string;
+  }[];
 };
 
 const navItems: NavItem[] = [
@@ -29,11 +34,11 @@ const navItems: NavItem[] = [
   { icon: <ListIcon />, name: "Assets", path: "/assets" },
   { icon: <BoxCubeIcon />, name: "Categories", path: "/categories" },
   { icon: <PieChartIcon />, name: "Locations", path: "/locations" },
-  { icon: <DocsIcon />, name: "Import", path: "/import" },
-  { icon: <BoxIcon />, name: "Stock-takes", path: "/stocktakes" },
-  { icon: <PlugInIcon />, name: "Maintenance", path: "/maintenance" },
+  { icon: <DocsIcon />, name: "Import", path: "/import", feature: "import" },
+  { icon: <BoxIcon />, name: "Stock-takes", path: "/stocktakes", feature: "stocktake" },
+  { icon: <PlugInIcon />, name: "Maintenance", path: "/maintenance", feature: "maintenance" },
   { icon: <DocsIcon />, name: "What's new", path: "/whats-new" },
-  { icon: <TableIcon />, name: "Reports", path: "/reports" },
+  { icon: <TableIcon />, name: "Reports", path: "/reports", feature: "reports" },
   { icon: <InfoIcon />, name: "Help", path: "/help" },
 ];
 
@@ -44,8 +49,8 @@ const othersItems: NavItem[] = [
     subItems: [
       { name: "People", path: "/settings/users", pro: false },
       { name: "Roles", path: "/settings/roles", pro: false },
-      { name: "API keys", path: "/settings/api-keys", pro: false },
-      { name: "Webhooks", path: "/settings/webhooks", pro: false },
+      { name: "API keys", path: "/settings/api-keys", pro: false, feature: "api" },
+      { name: "Webhooks", path: "/settings/webhooks", pro: false, feature: "webhooks" },
       { name: "Email", path: "/settings/email", pro: false },
       { name: "Notifications", path: "/settings/notifications", pro: false },
     ],
@@ -56,6 +61,7 @@ const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const location = useLocation();
   const unseenReleases = useUnseenReleases();
+  const { has } = useAuth();
 
   const [openSubmenu, setOpenSubmenu] = useState<{
     type: "main" | "others";
@@ -121,9 +127,19 @@ const AppSidebar: React.FC = () => {
     });
   };
 
+  /**
+   * Nothing the organisation has not bought.
+   *
+   * Courtesy rather than enforcement - the API refuses these regardless - but
+   * a menu full of things that answer "not included in this plan" makes the
+   * product feel broken rather than sold in tiers.
+   */
+  const included = (item: { feature?: string }) =>
+    !item.feature || has(item.feature);
+
   const renderMenuItems = (items: NavItem[], menuType: "main" | "others") => (
     <ul className="flex flex-col gap-4">
-      {items.map((nav, index) => (
+      {items.filter(included).map((nav, index) => (
         <li key={nav.name}>
           {nav.subItems ? (
             <button
@@ -209,7 +225,7 @@ const AppSidebar: React.FC = () => {
               }}
             >
               <ul className="mt-2 space-y-1 ml-9">
-                {nav.subItems.map((subItem) => (
+                {nav.subItems.filter(included).map((subItem) => (
                   <li key={subItem.name}>
                     <Link
                       to={subItem.path}

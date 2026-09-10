@@ -24,8 +24,15 @@ export async function createOrg(name = "Test Org"): Promise<string> {
   try {
     // The slug carries the run's random id so a re-run cannot collide with the
     // previous run's row and silently leave the fixture missing.
+    // On a plan that includes everything, because that is what a customer
+    // looks like: a fixture with no plan has only the register, and every
+    // test of a sold feature would fail with "not included in this plan"
+    // rather than testing what it means to. Tests that care about
+    // entitlements set their own plan.
     await owner.query(
-      "INSERT INTO organizations (id, name, slug) VALUES ($1::uuid, $2, $3)",
+      `INSERT INTO organizations (id, name, slug, plan_code)
+       VALUES ($1::uuid, $2, $3,
+               (SELECT code FROM plans WHERE code = 'enterprise'))`,
       [id, name, `org-${id}`],
     );
     // A real organisation gets the system roles at sign-up, so a fixture that

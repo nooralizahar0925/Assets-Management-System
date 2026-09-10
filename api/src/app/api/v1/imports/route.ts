@@ -7,12 +7,15 @@ import {
   parseUpload, suggestMapping, runImport, type ColumnMap,
 } from "@/lib/domain/imports";
 import { getCategory } from "@/lib/domain/categories";
+import { requireFeature } from "@/lib/entitlements";
 
 const MAX_BYTES = 10 * 1024 * 1024;
 
 export const POST = safe(async (req: Request) => {
   const ctx = await requireAuth(req, "assets:import");
   if (isResponse(ctx)) return ctx;
+  const gate = await requireFeature(ctx, "import");
+  if (gate) return gate;
 
   // Imported assets carry no location - the column map has no location field -
   // so a branch-scoped user would create assets they immediately cannot see.

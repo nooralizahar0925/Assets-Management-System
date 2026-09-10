@@ -2,10 +2,13 @@ import { requireAuth, isResponse } from "@/lib/auth/guard";
 import { validationProblem } from "@/lib/http/problem";
 import { safe } from "@/lib/http/handler";
 import { WebhookInput, createWebhook, listWebhooks, WEBHOOK_EVENTS } from "@/lib/domain/webhooks";
+import { requireFeature } from "@/lib/entitlements";
 
 export const GET = safe(async (req: Request) => {
   const ctx = await requireAuth(req, "webhooks:write");
   if (isResponse(ctx)) return ctx;
+  const gate = await requireFeature(ctx, "webhooks");
+  if (gate) return gate;
 
   return Response.json({
     data: await listWebhooks(ctx),
@@ -18,6 +21,8 @@ export const GET = safe(async (req: Request) => {
 export const POST = safe(async (req: Request) => {
   const ctx = await requireAuth(req, "webhooks:write");
   if (isResponse(ctx)) return ctx;
+  const gate = await requireFeature(ctx, "webhooks");
+  if (gate) return gate;
 
   const parsed = WebhookInput.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return validationProblem(parsed.error);

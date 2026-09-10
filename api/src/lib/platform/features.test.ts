@@ -44,10 +44,26 @@ describe("the feature catalogue", () => {
     expect(isFeatureKey("")).toBe(false);
   });
 
-  it.todo(
-    "gates only features that something actually checks — turned on in Task 61, "
-    + "which adds the gates. See the failing-by-design test below.",
-  );
+  it("gates only features that something actually checks", async () => {
+    // The mirror of the webhook-events guard, and the same failure mode: a
+    // feature nobody enforces is a line on a price list that means nothing,
+    // and the customer finds out by using what they did not buy.
+    const gated = new Set<string>();
+    for (const file of await sourceFiles(SRC)) {
+      const text = await readFile(file, "utf8");
+      for (const match of text.matchAll(
+        /(?:hasFeature|requireFeature)\(\s*\w+\s*,\s*"([a-z_]+)"/g,
+      )) {
+        gated.add(match[1]);
+      }
+    }
+
+    const ungated = FEATURE_KEYS
+      .filter((key) => !ALWAYS_ON.includes(key))
+      .filter((key) => !gated.has(key));
+
+    expect(ungated, `sold but never enforced: ${ungated.join(", ")}`).toEqual([]);
+  });
 
   it("names every feature that is already gated", async () => {
     // The other half of Task 61's guard, and safe to run now: a gate for a

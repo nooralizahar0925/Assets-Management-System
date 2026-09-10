@@ -2,10 +2,13 @@ import { requireAuth, isResponse } from "@/lib/auth/guard";
 import { validationProblem } from "@/lib/http/problem";
 import { safe } from "@/lib/http/handler";
 import { listSchedules, createSchedule, ScheduleInput } from "@/lib/reports/schedules";
+import { requireFeature } from "@/lib/entitlements";
 
 export const GET = safe(async (req: Request) => {
   const ctx = await requireAuth(req, "reports:schedule");
   if (isResponse(ctx)) return ctx;
+  const gate = await requireFeature(ctx, "reports_scheduled");
+  if (gate) return gate;
   return Response.json({ data: await listSchedules(ctx) });
 });
 
@@ -14,6 +17,8 @@ export const POST = safe(async (req: Request) => {
   // same as arranging for it to be emailed to a list every week.
   const ctx = await requireAuth(req, "reports:schedule");
   if (isResponse(ctx)) return ctx;
+  const gate = await requireFeature(ctx, "reports_scheduled");
+  if (gate) return gate;
 
   const parsed = ScheduleInput.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return validationProblem(parsed.error);

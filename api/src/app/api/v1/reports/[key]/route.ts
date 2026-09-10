@@ -7,6 +7,7 @@ import { renderCsv } from "@/lib/reports/renderers/csv";
 import { renderXlsx } from "@/lib/reports/renderers/xlsx";
 import { renderPdf } from "@/lib/reports/renderers/pdf";
 import { renderSvg, renderPng } from "@/lib/reports/renderers/svg";
+import { requireFeature } from "@/lib/entitlements";
 
 const FORMATS = new Set(["json", "csv", "xlsx", "pdf", "svg", "png"]);
 
@@ -16,9 +17,21 @@ export const GET = safe(async (
 ) => {
   const ctx = await requireAuth(req, "reports:read");
   if (isResponse(ctx)) return ctx;
+  const gate = await requireFeature(ctx, "reports");
+  if (gate) return gate;
 
   const { key } = await params;
-  if (!REPORTS[key]) return notFound("report");
+  const definition = REPORTS[key];
+  if (!definition) return notFound("report");
+
+  // Some reports belong to a feature of their own. Book value is only
+  // meaningful to a customer who has depreciation.
+  if (definition.feature) {
+    const featureGate = await requireFeature(
+      ctx, definition.feature as Parameters<typeof requireFeature>[1],
+    );
+    if (featureGate) return featureGate;
+  }
 
   const url = new URL(req.url);
   const format = url.searchParams.get("format") ?? "json";

@@ -7,6 +7,7 @@ import { safe } from "@/lib/http/handler";
 import {
   AssetInput, getAsset, updateAsset, softDeleteAsset, CustomFieldError,
 } from "@/lib/domain/assets";
+import { requireFeature } from "@/lib/entitlements";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -30,6 +31,14 @@ export const PATCH = safe(async (req: Request, { params }: Params) => {
 
   const parsed = AssetInput.partial().safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return validationProblem(parsed.error);
+
+  // Configuring depreciation is the feature, not merely reading its output. A
+  // customer without it can still hold assets that have a purchase cost; they
+  // simply cannot set a policy for writing that cost down.
+  if (parsed.data.depreciation !== undefined) {
+    const depreciationGate = await requireFeature(ctx, "depreciation");
+    if (depreciationGate) return depreciationGate;
+  }
 
   const id = (await params).id;
   const existing = await getAsset(ctx, id);

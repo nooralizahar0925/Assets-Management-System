@@ -3,12 +3,15 @@ import { validationProblem, notFound, forbidden } from "@/lib/http/problem";
 import { safe } from "@/lib/http/handler";
 import { ServiceInput, completeService, listSchedules } from "@/lib/domain/maintenance";
 import { getAsset } from "@/lib/domain/assets";
+import { requireFeature } from "@/lib/entitlements";
 
 type Params = { params: Promise<{ id: string }> };
 
 export const POST = safe(async (req: Request, { params }: Params) => {
   const ctx = await requireAuth(req, "maintenance:write");
   if (isResponse(ctx)) return ctx;
+  const gate = await requireFeature(ctx, "maintenance");
+  if (gate) return gate;
 
   const parsed = ServiceInput.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return validationProblem(parsed.error);

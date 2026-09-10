@@ -5,16 +5,21 @@ import {
   listSavedReports, createSavedReport, SavedReportInput,
   UnknownReportError, DuplicateSavedReportError,
 } from "@/lib/reports/saved";
+import { requireFeature } from "@/lib/entitlements";
 
 export const GET = safe(async (req: Request) => {
   const ctx = await requireAuth(req, "reports:read");
   if (isResponse(ctx)) return ctx;
+  const gate = await requireFeature(ctx, "reports");
+  if (gate) return gate;
   return Response.json({ data: await listSavedReports(ctx) });
 });
 
 export const POST = safe(async (req: Request) => {
   const ctx = await requireAuth(req, "reports:read");
   if (isResponse(ctx)) return ctx;
+  const gate = await requireFeature(ctx, "reports");
+  if (gate) return gate;
 
   const parsed = SavedReportInput.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return validationProblem(parsed.error);

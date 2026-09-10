@@ -2,12 +2,15 @@ import { requireAuth, isResponse, withinLocationScope } from "@/lib/auth/guard";
 import { notFound, forbidden } from "@/lib/http/problem";
 import { safe } from "@/lib/http/handler";
 import { getSession, reconcile } from "@/lib/domain/stocktake";
+import { requireFeature } from "@/lib/entitlements";
 
 type Params = { params: Promise<{ id: string }> };
 
 export const GET = safe(async (req: Request, { params }: Params) => {
   const ctx = await requireAuth(req, "stocktake:read");
   if (isResponse(ctx)) return ctx;
+  const gate = await requireFeature(ctx, "stocktake");
+  if (gate) return gate;
 
   const id = (await params).id;
   const session = await getSession(ctx, id);

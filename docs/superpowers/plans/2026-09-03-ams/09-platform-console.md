@@ -1109,7 +1109,33 @@ release-note: Creating an asset or inviting a colleague now tells you plainly
 - Test: `api/src/app/api/v1/features.test.ts`, `web/src/context/AuthContext.test.tsx`
 - Modify: `api/src/lib/platform/features.test.ts` (turn on the `it.todo` from Task 58)
 
-- [ ] **Step 1: Write the failing tests**
+
+**Executed 2026-09-10.**
+
+`depreciation` has no route of its own - it is fields on an asset, a report,
+and a month-end job - so the scanner correctly reported it as sold and never
+enforced. Gated where it is *configured*: setting a policy on an asset. Owning
+something with a purchase cost is not the feature; writing that cost down is.
+The book-value report names its feature in its own definition, so the gallery
+leaves it out and running it directly is refused - offering something and then
+saying no when it is chosen is worse than not offering it.
+
+The scanner only sees a literal key, which is why passing `definition.feature`
+as a variable did not satisfy it. That is the scanner being right: a gate it
+cannot see is a gate nobody can audit.
+
+`createOrg` now puts test organisations on a plan that includes everything.
+Without it every fixture had only the register, and dozens of tests failed with
+"not included in this plan" rather than testing what they meant to. A fixture
+should look like a customer.
+
+The interface hides what is not included, and the API refuses it regardless -
+both, because a UI-only gate is not a gate. When the API does not say what the
+features are (a version behind during a rolling deploy) the interface shows
+everything: the worst case is then a menu item leading to an explanation,
+rather than half the product silently disappearing.
+
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 it("refuses a stock-take to an organisation whose plan has none", async () => {
@@ -1126,7 +1152,7 @@ it("hides the navigation for a feature the customer does not have", () => {
 it("still refuses the endpoint when the UI is bypassed", async () => { /* … */ });
 ```
 
-- [ ] **Step 2: Gate each area at its route**, once per area, immediately after
+- [x] **Step 2: Gate each area at its route**, once per area, immediately after
 `requireAuth`. One line per handler:
 
 ```ts
@@ -1134,19 +1160,19 @@ const gate = await requireFeature(ctx, "stocktake");
 if (gate) return gate;
 ```
 
-- [ ] **Step 3: Publish entitlements to the UI**
+- [x] **Step 3: Publish entitlements to the UI**
 
 `GET /api/admin/auth/me` returns `features: string[]` and `limits` alongside
 `permissions`. `SessionUser` gains `features`; `AuthContext` gains
 `has(feature: string): boolean` beside `can(permission)`. The sidebar filters on
 it, exactly as it does permissions.
 
-- [ ] **Step 4: Turn on the "gates only features that something checks" test**
+- [x] **Step 4: Turn on the "gates only features that something checks" test**
 
 Remove the `it.todo` and run it. It should now pass — and if a feature has no
 gate, add the gate rather than removing it from the catalogue.
 
-- [ ] **Step 5: Run all three commands in both workspaces, then commit**
+- [x] **Step 5: Run all three commands in both workspaces, then commit**
 
 ```
 feat: sell features, and enforce what was sold

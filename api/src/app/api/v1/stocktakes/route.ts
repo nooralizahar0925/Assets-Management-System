@@ -2,10 +2,13 @@ import { requireAuth, isResponse, withinLocationScope } from "@/lib/auth/guard";
 import { validationProblem, forbidden } from "@/lib/http/problem";
 import { safe } from "@/lib/http/handler";
 import { SessionInput, openSession, listSessions } from "@/lib/domain/stocktake";
+import { requireFeature } from "@/lib/entitlements";
 
 export const GET = safe(async (req: Request) => {
   const ctx = await requireAuth(req, "stocktake:read");
   if (isResponse(ctx)) return ctx;
+  const gate = await requireFeature(ctx, "stocktake");
+  if (gate) return gate;
 
   // A branch-limited reader sees only counts at their own sites. Filtering
   // here rather than in SQL keeps the domain query simple and the rule in one
@@ -19,6 +22,8 @@ export const GET = safe(async (req: Request) => {
 export const POST = safe(async (req: Request) => {
   const ctx = await requireAuth(req, "stocktake:write");
   if (isResponse(ctx)) return ctx;
+  const gate = await requireFeature(ctx, "stocktake");
+  if (gate) return gate;
 
   const parsed = SessionInput.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return validationProblem(parsed.error);

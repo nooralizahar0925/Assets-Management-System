@@ -36,6 +36,14 @@ export interface ReportDefinition {
   key: string;
   name: string;
   description: string;
+  /**
+   * The plan feature this report belongs to, when it is more than "reports".
+   *
+   * Book value is only meaningful to a customer who has depreciation, and
+   * showing it to one who does not would be selling them the output of
+   * something they did not buy.
+   */
+  feature?: string;
   columns: ReportColumn[];
   chart: ChartSpec;
   run(ctx: Ctx, params: ReportParams): Promise<ReportRow[]>;
