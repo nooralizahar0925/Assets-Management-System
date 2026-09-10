@@ -26,8 +26,50 @@ export const keysApi = {
   revoke: (id: string) => api.del(`/api/admin/api-keys/${id}`),
 };
 
+export interface Invitation {
+  id: string;
+  email: string;
+  name: string;
+  role_id: string;
+  role_name: string | null;
+  expires_at: string;
+  created_at: string;
+}
+
+export interface SentInvitation {
+  id: string;
+  email: string;
+  name: string;
+  role_name: string | null;
+  expires_at: string;
+  /** False when the invitation exists but the email could not be queued. */
+  emailed: boolean;
+}
+
 export const membersApi = {
-  list: () => api.get<OrgMember[]>("/api/admin/users"),
+  /**
+   * People, and the invitations still waiting.
+   *
+   * getEnvelope rather than get: the response carries both, and `get` peels a
+   * `data` wrapper - which would silently drop the invitations and leave an
+   * administrator inviting the same person twice.
+   */
+  list: () =>
+    api.getEnvelope<{ data: OrgMember[]; invitations: Invitation[] }>(
+      "/api/admin/users",
+    ),
+
+  invite: (email: string, name: string, roleId: string) =>
+    api.post<SentInvitation>("/api/admin/users", {
+      email, name, role_id: roleId,
+    }),
+
+  revokeInvitation: (id: string) => api.del(`/api/admin/invitations/${id}`),
+
+  acceptInvitation: (token: string, password: string) =>
+    api.post<{ id: string; email: string; org_id: string }>(
+      "/api/admin/auth/accept-invitation", { token, password },
+    ),
   setRole: (id: string, roleId: string, locationIds: string[]) =>
     api.put(`/api/admin/users/${id}/role`, {
       role_id: roleId, location_ids: locationIds,

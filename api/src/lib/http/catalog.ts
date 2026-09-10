@@ -111,6 +111,19 @@ export const ERROR_CATALOG: ErrorEntry[] = [
       + "untouched when access is restored.",
   },
   {
+    slug: "invitation-invalid",
+    status: 410,
+    title: "Invitation is no longer valid",
+    when:
+      "The invitation link has been used already, withdrawn, or has passed its "
+      + "72 hours. All three answer the same way on purpose: this endpoint is "
+      + "public, and three different answers would let somebody probe which "
+      + "invitations exist.",
+    fix:
+      "Ask whoever invited you to send another. The old link cannot be "
+      + "revived - a new invitation carries a new token.",
+  },
+  {
     slug: "payload-too-large",
     status: 413,
     title: "File too large",

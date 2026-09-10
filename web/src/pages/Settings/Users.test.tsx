@@ -19,6 +19,14 @@ const MEMBERS = [
   },
 ];
 
+const INVITATIONS = [
+  {
+    id: "i1", email: "waiting@example.com", name: "Waiting Person",
+    role_id: "r1", role_name: "Technician",
+    expires_at: "2026-12-01T09:00:00Z", created_at: "2026-11-28T09:00:00Z",
+  },
+];
+
 function mockSession(permissions: string[]) {
   vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
     const url = String(input);
@@ -31,7 +39,9 @@ function mockSession(permissions: string[]) {
         },
       }));
     }
-    if (url.includes("/admin/users")) return Promise.resolve(json({ data: MEMBERS }));
+    if (url.includes("/admin/users")) {
+      return Promise.resolve(json({ data: MEMBERS, invitations: INVITATIONS }));
+    }
     if (url.includes("/admin/roles")) {
       return Promise.resolve(json({ data: [
         { id: "r1", name: "Technician", description: null, is_system: true,
@@ -84,5 +94,47 @@ describe("Users", () => {
     await waitFor(() =>
       expect(screen.getByRole("alert")).toHaveTextContent(/managed by an administrator/i));
     expect(screen.queryByText("Rina")).not.toBeInTheDocument();
+  });
+});
+
+describe("inviting a colleague", () => {
+  it("offers the form to somebody who can manage people", async () => {
+    // Until this existed the onboarding checklist told people to invite
+    // colleagues using a page that could only list the ones already there.
+    mockSession(["users:read", "users:write", "roles:read"]);
+    render();
+    expect(await screen.findByLabelText(/^email$/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /send invitation/i })).toBeInTheDocument();
+  });
+
+  it("offers no form to somebody who cannot", async () => {
+    mockSession(["users:read"]);
+    render();
+    await waitFor(() => expect(screen.getByText("Rina")).toBeInTheDocument());
+    expect(screen.queryByRole("button", { name: /send invitation/i }))
+      .not.toBeInTheDocument();
+  });
+
+  it("will not send until there is a name, an address and a role", async () => {
+    mockSession(["users:read", "users:write", "roles:read"]);
+    render();
+    await screen.findByLabelText(/^email$/i);
+    expect(screen.getByRole("button", { name: /send invitation/i })).toBeDisabled();
+  });
+
+  it("shows who has been invited and not yet accepted", async () => {
+    // Without this an administrator invites the same person twice and wonders
+    // why nothing happened the first time.
+    mockSession(["users:read", "users:write", "roles:read"]);
+    render();
+    expect(await screen.findByText("Waiting Person")).toBeInTheDocument();
+    expect(screen.getByText(/waiting@example.com/)).toBeInTheDocument();
+  });
+
+  it("shows the expiry as a date, not a timestamp", async () => {
+    mockSession(["users:read", "users:write", "roles:read"]);
+    render();
+    await screen.findByText("Waiting Person");
+    expect(screen.getByText(/1 Dec 2026/)).toBeInTheDocument();
   });
 });

@@ -7,6 +7,7 @@ import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 
 import SignIn from "./pages/AuthPages/SignIn";
+import AcceptInvitation from "./pages/AuthPages/AcceptInvitation";
 import NotFound from "./pages/OtherPage/NotFound";
 import Dashboard from "./pages/Dashboard/Home";
 import AssetList from "./pages/Assets/AssetList";
@@ -58,6 +59,11 @@ export default function App() {
         <ScrollToTop />
         <Routes>
           <Route path="/signin" element={<SignIn />} />
+          {/*
+            Public, like sign-in: whoever holds an invitation link has no
+            account yet, which is the entire point of the link.
+          */}
+          <Route path="/accept-invitation/:token" element={<AcceptInvitation />} />
 
           {/*
             Public on purpose, outside RequireAuth: an integrator reads these

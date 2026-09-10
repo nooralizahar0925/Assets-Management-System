@@ -8,10 +8,12 @@ import Label from "../../components/form/Label";
 import { Modal } from "../../components/ui/modal";
 import { useModal } from "../../hooks/useModal";
 import { useAuth } from "../../context/AuthContext";
-import { membersApi, rolesApi } from "../../api/admin";
+import { membersApi, rolesApi, type Invitation } from "../../api/admin";
 import { catalogApi } from "../../api/catalog";
 import { ApiError } from "../../api/client";
 import type { LocationNode, OrgMember, Role } from "../../api/types";
+import { formatDateTime } from "../../lib/datetime";
+import Input from "../../components/form/input/InputField";
 
 const selectClass =
   "h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm " +
@@ -22,6 +24,12 @@ export default function Users() {
   const { can } = useAuth();
   const dialog = useModal();
   const [members, setMembers] = useState<OrgMember[]>([]);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteName, setInviteName] = useState("");
+  const [inviteRole, setInviteRole] = useState("");
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [invited, setInvited] = useState<string | null>(null);
   const [roles, setRoles] = useState<Role[]>([]);
   const [locations, setLocations] = useState<LocationNode[]>([]);
   const [editing, setEditing] = useState<OrgMember | null>(null);
@@ -34,7 +42,13 @@ export default function Users() {
 
   const load = useCallback(() => {
     if (!canRead) return;
-    void membersApi.list().then(setMembers).catch(() => undefined);
+    void membersApi.list().then((body) => {
+      setMembers(body.data ?? []);
+      // Tolerated as absent: the API is rolled out before the web build, so
+      // for a few minutes during a deploy this page can be talking to a
+      // version that predates invitations entirely.
+      setInvitations(body.invitations ?? []);
+    }).catch(() => undefined);
     if (canAssign) {
       void rolesApi.list().then(setRoles).catch(() => undefined);
       void catalogApi.locations().then(setLocations).catch(() => undefined);
@@ -42,6 +56,38 @@ export default function Users() {
   }, [canRead, canAssign]);
 
   useEffect(load, [load]);
+
+  async function invite() {
+    setInviteError(null);
+    setInvited(null);
+    try {
+      const sent = await membersApi.invite(inviteEmail.trim(), inviteName.trim(), inviteRole);
+      setInviteEmail("");
+      setInviteName("");
+      // Said plainly when the invitation exists but the email did not go: the
+      // link is the only way in, and silently succeeding would leave somebody
+      // waiting for an email that is never coming.
+      setInvited(sent.emailed
+        ? `Invitation sent to ${sent.email}.`
+        : `Invitation created for ${sent.email}, but the email could not be sent. `
+          + "Check the email settings, then invite them again.");
+      load();
+    } catch (err) {
+      setInviteError(
+        err instanceof ApiError
+          ? err.problem.detail ?? err.message
+          : "Could not send that invitation.",
+      );
+    }
+  }
+
+  async function revoke(invitation: Invitation) {
+    if (!window.confirm(
+      `Withdraw the invitation for ${invitation.email}? Their link stops working.`,
+    )) return;
+    await membersApi.revokeInvitation(invitation.id);
+    load();
+  }
 
   function open(member: OrgMember) {
     setEditing(member);
@@ -91,6 +137,103 @@ export default function Users() {
     <>
       <PageMeta title="People | AMS" description="People in this organisation" />
       <PageBreadcrumb pageTitle="People" />
+
+      {canAssign && (
+        <ComponentCard
+          title="Invite a colleague"
+          desc="They choose their own password from a link that expires in 72 hours."
+          className="mb-5"
+        >
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div>
+              <Label htmlFor="invite-name">Name</Label>
+              <Input
+                id="invite-name" type="text" value={inviteName}
+                placeholder="Rina Kusuma"
+                onChange={(e) => setInviteName(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="invite-email">Email</Label>
+              <Input
+                id="invite-email" type="text" value={inviteEmail}
+                placeholder="rina@example.com"
+                onChange={(e) => setInviteEmail(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="invite-role">Role</Label>
+              <select
+                id="invite-role"
+                value={inviteRole}
+                onChange={(e) => setInviteRole(e.target.value)}
+                className="h-11 w-full rounded-lg border border-gray-300 px-3 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+              >
+                <option value="">Choose a role…</option>
+                {roles.map((role) => (
+                  <option key={role.id} value={role.id}>{role.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {inviteError && (
+            <p role="alert" className="mt-3 text-theme-xs text-error-500">
+              {inviteError}
+            </p>
+          )}
+          {invited && (
+            <p role="status" className="mt-3 text-theme-xs text-success-600">
+              {invited}
+            </p>
+          )}
+
+          <button
+            type="button"
+            disabled={!inviteEmail.trim() || !inviteName.trim() || !inviteRole}
+            onClick={() => void invite()}
+            className="mt-4 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Send invitation
+          </button>
+        </ComponentCard>
+      )}
+
+      {invitations.length > 0 && (
+        <ComponentCard
+          title="Waiting to accept"
+          desc="Invitations that have been sent and not yet used."
+          className="mb-5"
+        >
+          <ul className="divide-y divide-gray-100 dark:divide-gray-800">
+            {invitations.map((invitation) => (
+              <li
+                key={invitation.id}
+                className="flex flex-wrap items-center gap-3 py-3 first:pt-0"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+                    {invitation.name}
+                  </p>
+                  <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+                    {invitation.email} · {invitation.role_name ?? "no role"} ·
+                    {" "}expires {formatDateTime(invitation.expires_at)}
+                  </p>
+                </div>
+                {canAssign && (
+                  <button
+                    type="button"
+                    onClick={() => void revoke(invitation)}
+                    className="ml-auto rounded-lg px-3 py-2 text-theme-xs font-medium text-gray-400 hover:text-error-500"
+                  >
+                    Withdraw
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </ComponentCard>
+      )}
 
       <ComponentCard
         title="People"
