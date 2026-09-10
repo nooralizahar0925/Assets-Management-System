@@ -32,6 +32,8 @@ export interface DashboardSummary {
   setup: {
     categories: number;
     users: number;
+    /** Sent and not yet accepted. Inviting somebody is the action taken. */
+    pending_invitations: number;
     api_keys: number;
     imports: number;
     /** Assignments ever opened, not the ones open now. */
@@ -148,6 +150,8 @@ export function getDashboardSummary(ctx: Ctx): Promise<DashboardSummary> {
          SELECT
            (SELECT count(*)::int FROM categories) AS categories,
            (SELECT count(*)::int FROM users) AS users,
+           (SELECT count(*)::int FROM user_invitations
+             WHERE accepted_at IS NULL AND expires_at > now()) AS pending_invitations,
            (SELECT count(*)::int FROM api_keys WHERE revoked_at IS NULL) AS api_keys,
            (SELECT count(*)::int FROM import_jobs WHERE NOT dry_run) AS imports,
            (SELECT count(*)::int FROM assignments) AS checkouts
@@ -173,6 +177,7 @@ export function getDashboardSummary(ctx: Ctx): Promise<DashboardSummary> {
          'setup', jsonb_build_object(
            'categories', su.categories,
            'users', su.users,
+           'pending_invitations', su.pending_invitations,
            'api_keys', su.api_keys,
            'imports', su.imports,
            'checkouts', su.checkouts)

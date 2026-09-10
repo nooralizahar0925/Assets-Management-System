@@ -168,6 +168,7 @@ export const HELP_TOPICS: Record<string, HelpTopic> = {
     article: "roles-and-access",
     blocks: [
       { kind: "p", text: "Everybody who can sign in to your organisation, and the role each of them holds." },
+      { kind: "p", text: "Invite a colleague by name, address and role. They get a link that lasts 72 hours and choose their own password, so nobody else ever knows it - an invitation you send to the wrong address can be withdrawn before it is used." },
       { kind: "p", text: "A role can be limited to particular branches. Somebody scoped to one site sees only that site's assets, in the register, in reports and in search." },
       { kind: "note", text: "Changing somebody's role takes effect the next time they load a page. It never removes what they have already done - the history keeps their name." },
     ],

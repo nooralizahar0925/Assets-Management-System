@@ -165,6 +165,8 @@ export interface DashboardSummary {
   setup: {
     categories: number;
     users: number;
+    /** Sent and not yet accepted. */
+    pending_invitations: number;
     api_keys: number;
     imports: number;
     /** Assignments ever opened, not the ones open now. */

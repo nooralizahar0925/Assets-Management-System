@@ -4,6 +4,8 @@ export interface OnboardingState {
   categories: number;
   assets: number;
   users: number;
+  /** Sent and not yet accepted. */
+  pending_invitations: number;
   api_keys: number;
   imports: number;
   checkouts: number;
@@ -59,9 +61,11 @@ export function checklistFor(
       label: "Invite your colleagues",
       to: "/settings/users",
       needs: "users:write",
-      // One user is the person who signed the organisation up. A second means
-      // somebody was actually invited.
-      done: state.users > 1,
+      // Ticked by the action the customer took, which is sending the
+      // invitation - not by whether the colleague has got round to accepting
+      // it. One user is the person who signed the organisation up; a second,
+      // or an invitation waiting, means somebody was actually invited.
+      done: state.users > 1 || state.pending_invitations > 0,
     },
     {
       id: "connect-system",

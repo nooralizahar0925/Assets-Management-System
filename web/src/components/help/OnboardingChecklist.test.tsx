@@ -6,7 +6,8 @@ import OnboardingChecklist, {
 } from "./OnboardingChecklist";
 
 const NOTHING_DONE: OnboardingState = {
-  categories: 0, assets: 0, users: 1, api_keys: 0, imports: 0, checkouts: 0,
+  categories: 0, assets: 0, users: 1, pending_invitations: 0,
+  api_keys: 0, imports: 0, checkouts: 0,
 };
 
 const allows = (...permissions: string[]) => (p: string) => permissions.includes(p);
@@ -92,7 +93,8 @@ describe("the checklist on the dashboard", () => {
 
   it("disappears once everything is done", () => {
     const { container } = render_(admin, {
-      categories: 3, assets: 40, users: 4, api_keys: 1, imports: 1, checkouts: 2,
+      categories: 3, assets: 40, users: 4, pending_invitations: 0,
+      api_keys: 1, imports: 1, checkouts: 2,
     });
     expect(container).toBeEmptyDOMElement();
   });
@@ -100,5 +102,22 @@ describe("the checklist on the dashboard", () => {
   it("shows nothing to somebody with no setup permissions at all", () => {
     const { container } = render_(allows("assets:read"), NOTHING_DONE);
     expect(container).toBeEmptyDOMElement();
+  });
+});
+
+describe("inviting colleagues", () => {
+  it("counts an invitation that has been sent but not accepted", () => {
+    // The action the customer took was inviting. Waiting for a colleague to
+    // get round to accepting before ticking it makes the checklist feel
+    // unresponsive to something they did do.
+    const item = checklistFor(admin, { ...NOTHING_DONE, pending_invitations: 1 })
+      .find((i) => i.id === "invite-team");
+    expect(item?.done).toBe(true);
+  });
+
+  it("still counts a colleague who has joined", () => {
+    const item = checklistFor(admin, { ...NOTHING_DONE, users: 2 })
+      .find((i) => i.id === "invite-team");
+    expect(item?.done).toBe(true);
   });
 });

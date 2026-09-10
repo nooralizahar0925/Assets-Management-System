@@ -250,12 +250,14 @@ Every report downloads as JSON for another system, CSV for a spreadsheet, Excel 
 
 A role is a named set of permissions that you build yourself. There is no fixed list to fit your organisation into: create the roles you actually use, and call them what your colleagues already call them.
 
+**Invitation** — how somebody joins. You send one from People with their name, address and role; they follow a link that lasts 72 hours and choose their own password. Nobody else ever knows it, and an invitation sent to the wrong address can be withdrawn before it is used.
+
 **Permission** — one specific thing a person may do - read assets, edit them, issue them, run a stock-take, manage users. The API enforces exactly these, so what the screen offers and what the system allows can never drift apart.
 
 A role can also be limited to particular branches. Somebody scoped to one site sees only that site's assets - in the register, in search, in reports and on the dashboard - and cannot move an asset out of it.
 
 1. Open Settings, then Roles, and create a role with the permissions that job needs.
-2. Open People and give somebody that role, choosing their branches if they should only see part of the organisation.
+2. Open People and invite your colleague with that role, choosing their branches if they should only see part of the organisation.
 3. Grant the least that lets them do their work. It is easy to add a permission later and awkward to explain why somebody deleted something.
 
 > **Note:** A role still held by somebody cannot be deleted - move those people to another role first. Changing somebody's role never removes what they have already done: the history keeps their name against it.

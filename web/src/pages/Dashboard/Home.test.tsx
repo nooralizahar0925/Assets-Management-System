@@ -31,7 +31,10 @@ const SUMMARY: DashboardSummary = {
   by_status: [], by_category: [], by_location: [],
   recent_activity: [], expiring_soon: [],
   utilisation: { in_use_pct: 12 },
-  setup: { categories: 2, users: 1, api_keys: 0, imports: 0, checkouts: 0 },
+  setup: {
+    categories: 2, users: 1, pending_invitations: 0,
+    api_keys: 0, imports: 0, checkouts: 0,
+  },
 };
 
 beforeEach(() => {
