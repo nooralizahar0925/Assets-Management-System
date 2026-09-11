@@ -1194,7 +1194,30 @@ release-note: none
 download the operator's console on every page load, and `/platform` is guarded
 by its own context, not `RequireAuth`.
 
-- [ ] **Step 1: Write the failing tests**
+
+**Executed 2026-09-11.**
+
+The link guard refused the list as first written: it linked to `/platform/:id`
+and `/platform/new`, neither of which existed. Rather than ship dead links,
+**creating a customer moved into this task** - a console that can list
+customers but not take one on is no use on a fresh deployment, and the API for
+it was already built in Task 59. The row is deliberately not a link yet; Task
+63 makes it one when there is a page to open.
+
+The confirmation after creating a customer is a page of its own rather than a
+toast. It shows a password exactly once, and a stray click must not dismiss the
+only copy of a credential before anybody has written it down.
+
+The console is guarded by its own context rather than `RequireAuth`, which
+would redirect an operator to the customers' sign-in - the wrong door, and it
+would put the two planes one redirect apart. Somebody not signed in gets the
+operator sign-in in place, with a link to the ordinary one for whoever arrived
+by mistake.
+
+While the session is still resolving the layout says so rather than rendering
+the sign-in form: a flash of it reads as having been logged out.
+
+- [x] **Step 1: Write the failing tests**
 
 ```tsx
 it("lists every customer with what they hold and what they are on", async () => {
@@ -1215,7 +1238,7 @@ it("sends somebody who is not signed in to the platform sign-in", async () => {
 });
 ```
 
-- [ ] **Step 2: Build the list**
+- [x] **Step 2: Build the list**
 
 Columns: organisation (name and slug), plan, status (active / suspended / trial
 ending), assets, users, renews on. Sort by name; filter by status and plan; a
@@ -1226,7 +1249,7 @@ search box over name and slug.
 organisation with no assets still appears. **A plain join drops the customers
 who have not started yet, which are exactly the ones the operator needs to see.**
 
-- [ ] **Step 3: Run, then commit**
+- [x] **Step 3: Run, then commit**
 
 ```
 feat(web): the platform console's sign-in and customer list

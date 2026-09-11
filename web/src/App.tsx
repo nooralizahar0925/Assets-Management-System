@@ -48,6 +48,19 @@ const DevWebhooks = lazy(() => import("./pages/developers/Webhooks"));
 const DevChangelog = lazy(() => import("./pages/developers/Changelog"));
 
 /**
+ * The operator's console, lazy like the developer portal and for the same
+ * reason: no customer should download it on every page load. It is guarded by
+ * its own context rather than RequireAuth, which would send an operator to the
+ * customers' sign-in - the wrong door.
+ */
+const PlatformAuthProvider = lazy(() =>
+  import("./platform/PlatformAuthContext")
+    .then((m) => ({ default: m.PlatformAuthProvider })));
+const PlatformLayout = lazy(() => import("./platform/PlatformLayout"));
+const Organisations = lazy(() => import("./platform/Organisations"));
+const NewOrganisation = lazy(() => import("./platform/NewOrganisation"));
+
+/**
  * The whole route table exists from this task onward. Screens a later task
  * builds render a placeholder, so the shell, the sidebar and the auth guard are
  * all exercisable now rather than only once every page is written.
@@ -87,6 +100,20 @@ export default function App() {
             <Route path="webhooks" element={<Suspense fallback={null}><DevWebhooks /></Suspense>} />
             <Route path="errors" element={<Suspense fallback={null}><DevErrors /></Suspense>} />
             <Route path="changelog" element={<Suspense fallback={null}><DevChangelog /></Suspense>} />
+          </Route>
+
+          <Route
+            path="/platform"
+            element={
+              <Suspense fallback={null}>
+                <PlatformAuthProvider>
+                  <PlatformLayout />
+                </PlatformAuthProvider>
+              </Suspense>
+            }
+          >
+            <Route index element={<Suspense fallback={null}><Organisations /></Suspense>} />
+            <Route path="new" element={<Suspense fallback={null}><NewOrganisation /></Suspense>} />
           </Route>
 
           <Route element={<RequireAuth />}>
