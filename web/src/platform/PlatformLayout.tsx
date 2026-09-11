@@ -15,6 +15,7 @@ import PlatformSignIn from "./PlatformSignIn";
 const PAGES = [
   { to: "/platform", label: "Needs attention", end: true },
   { to: "/platform/customers", label: "Customers" },
+  { to: "/platform/plans", label: "Plans" },
 ];
 
 export default function PlatformLayout() {

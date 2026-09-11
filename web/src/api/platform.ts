@@ -41,6 +41,16 @@ export interface Plan {
   sort_order: number;
 }
 
+/**
+ * What the plan editor sends.
+ *
+ * The same shape as a plan minus nothing: the server merges a PATCH onto the
+ * plan it already holds, but sending the whole thing means what the operator
+ * sees on screen is exactly what is saved, with no field quietly kept from an
+ * earlier version of the form.
+ */
+export type PlanInput = Omit<Plan, "limits"> & { limits: Record<string, number> };
+
 export interface Feature {
   key: string;
   group: string;
@@ -141,6 +151,16 @@ export const platformApi = {
 
   plans: () =>
     api.getEnvelope<{ data: Plan[]; features: Feature[] }>("/api/platform/plans"),
+
+  createPlan: (input: PlanInput) =>
+    api.post<Plan>("/api/platform/plans", input),
+
+  /** The code is the identity and is never in the body; it addresses the row. */
+  updatePlan: (code: string, patch: Omit<PlanInput, "code">) =>
+    api.patch<Plan>(`/api/platform/plans/${encodeURIComponent(code)}`, patch),
+
+  deletePlan: (code: string) =>
+    api.del(`/api/platform/plans/${encodeURIComponent(code)}`),
 
   organisation: (id: string) =>
     api.get<OrganisationDetail>(`/api/platform/orgs/${id}`),
