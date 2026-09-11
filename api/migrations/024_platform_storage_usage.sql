@@ -1,0 +1,13 @@
+-- How much storage a customer is using, without letting the console read what
+-- they have stored.
+--
+-- The platform role holds no grant on attachments at all, deliberately: the
+-- operator needs to know a customer is near their allowance, and has no
+-- business reading the register to find out. But the allowance is measured in
+-- megabytes, and the megabytes are in that table.
+--
+-- A column grant is exactly the right size of hole. `SELECT *` on attachments
+-- stays refused - which is asserted in src/lib/platform/db.test.ts - while
+-- `SELECT sum(size_bytes)` works. The filename, the asset it belongs to, the
+-- object key and who uploaded it all remain unreadable.
+GRANT SELECT (org_id, size_bytes) ON attachments TO ams_platform;

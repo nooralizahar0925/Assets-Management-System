@@ -159,12 +159,12 @@ export default function Organisations() {
                     className="border-t border-gray-800 hover:bg-white/[0.02]"
                   >
                     <td className="px-4 py-3">
-                      {/*
-                        Not a link yet: the page for one customer arrives with
-                        the next step, and a row that navigates to a not-found
-                        page is worse than a row that does nothing.
-                      */}
-                      <span className="font-medium text-gray-100">{org.name}</span>
+                      <Link
+                        to={`/platform/${org.id}`}
+                        className="font-medium text-gray-100 hover:text-brand-300"
+                      >
+                        {org.name}
+                      </Link>
                       <span className="block text-theme-xs text-gray-500">
                         {org.slug}
                       </span>

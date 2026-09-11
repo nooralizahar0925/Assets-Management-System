@@ -145,6 +145,21 @@ export const api = {
 
   del: (path: string) => request<null>(path, { method: "DELETE" }),
 
+  /**
+   * DELETE with a body.
+   *
+   * Unusual, and used for exactly one thing: removing a customer, where the
+   * operator types the slug to confirm and the server compares it. The
+   * confirmation has to travel with the request rather than in the URL, where
+   * it would end up in logs and in browser history.
+   */
+  delWithBody: (path: string, body: unknown) =>
+    request<null>(path, {
+      method: "DELETE",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    }),
+
   /** Multipart — never set content-type by hand, the boundary must be generated. */
   postForm: <T>(path: string, form: FormData) =>
     request<T>(path, { method: "POST", body: form }),

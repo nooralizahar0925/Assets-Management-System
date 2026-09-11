@@ -142,4 +142,10 @@ describe("the customer list", () => {
     expect(await screen.findByRole("link", { name: /new customer/i }))
       .toHaveAttribute("href", "/platform/new");
   });
+
+  it("leads to one customer", async () => {
+    renderList();
+    expect(await screen.findByRole("link", { name: "Acme Ltd" }))
+      .toHaveAttribute("href", "/platform/o1");
+  });
 });

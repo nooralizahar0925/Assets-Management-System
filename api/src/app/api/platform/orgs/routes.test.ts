@@ -5,6 +5,7 @@ import { createPlatformSession } from "@/lib/platform/auth";
 import { GET as LIST, POST as CREATE } from "./route";
 import { GET as SHOW, PATCH, DELETE } from "./[id]/route";
 import { POST as SUSPEND, DELETE as RESUME } from "./[id]/suspend/route";
+import { PUT as ENTITLEMENTS } from "./[id]/entitlements/route";
 
 let cookie: string;
 
@@ -188,5 +189,164 @@ describe("managing customers over HTTP", () => {
     // checked - which is the right order, and not what this asserts.
     expect((await SUSPEND(req("POST", { reason: "Unpaid" }), params(missing))).status)
       .toBe(404);
+  });
+});
+
+describe("one customer's exceptions to their plan", () => {
+  const ENT = "http://api.test/api/platform/orgs/x/entitlements";
+
+  const put = (body: unknown) =>
+    new Request(ENT, {
+      method: "PUT",
+      headers: { cookie, "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+  it("adds a feature the plan does not include", async () => {
+    const { res: created } = await create();
+    const { orgId } = await created.json() as { orgId: string };
+
+    const res = await ENTITLEMENTS(
+      put({ overrides: [{ feature_key: "stocktake", enabled: true }] }),
+      params(orgId),
+    );
+
+    expect(res.status).toBe(200);
+    expect((await res.json() as { features: string[] }).features)
+      .toContain("stocktake");
+  });
+
+  it("withdraws one it does", async () => {
+    const { res: created } = await create();
+    const { orgId } = await created.json() as { orgId: string };
+
+    const res = await ENTITLEMENTS(
+      put({ overrides: [{ feature_key: "labels", enabled: false }] }),
+      params(orgId),
+    );
+    expect((await res.json() as { features: string[] }).features)
+      .not.toContain("labels");
+  });
+
+  it("replaces the whole set rather than merging", async () => {
+    // The console shows every feature at once and knows what it means to
+    // leave out. Merging would make two half-finished edits land a customer
+    // somewhere neither operator intended.
+    const { res: created } = await create();
+    const { orgId } = await created.json() as { orgId: string };
+
+    await ENTITLEMENTS(
+      put({ overrides: [{ feature_key: "stocktake", enabled: true }] }),
+      params(orgId),
+    );
+    const res = await ENTITLEMENTS(
+      put({ overrides: [{ feature_key: "webhooks", enabled: true }] }),
+      params(orgId),
+    );
+
+    const { features } = await res.json() as { features: string[] };
+    expect(features).toContain("webhooks");
+    expect(features).not.toContain("stocktake");
+  });
+
+  it("refuses to switch off the register", async () => {
+    // The resolver puts it back regardless. Storing an override that is
+    // silently ignored would tell the next operator a lie about what they did.
+    const { res: created } = await create();
+    const { orgId } = await created.json() as { orgId: string };
+
+    const res = await ENTITLEMENTS(
+      put({ overrides: [{ feature_key: "core", enabled: false }] }),
+      params(orgId),
+    );
+    expect(res.status).toBe(422);
+  });
+
+  it("refuses a feature nothing enforces", async () => {
+    const { res: created } = await create();
+    const { orgId } = await created.json() as { orgId: string };
+
+    const res = await ENTITLEMENTS(
+      put({ overrides: [{ feature_key: "teleportation", enabled: true }] }),
+      params(orgId),
+    );
+    expect(res.status).toBe(422);
+  });
+
+  it("records what changed, both sides of it", async () => {
+    // "Who turned this on, and what was it before" is the question asked
+    // months later by somebody who was not there.
+    const { res: created } = await create();
+    const { orgId } = await created.json() as { orgId: string };
+
+    await ENTITLEMENTS(
+      put({ overrides: [{ feature_key: "stocktake", enabled: true, note: "Promised in the demo" }] }),
+      params(orgId),
+    );
+
+    const entry = await withPlatform(async (c) =>
+      (await c.query<{ detail: { to?: { feature_key: string; note?: string }[] } }>(
+        `SELECT detail FROM platform_audit
+          WHERE org_id = $1 AND action = 'org.entitlements_changed'
+          ORDER BY occurred_at DESC LIMIT 1`,
+        [orgId],
+      )).rows[0],
+    );
+
+    expect(entry.detail.to?.[0].feature_key).toBe("stocktake");
+    expect(entry.detail.to?.[0].note).toBe("Promised in the demo");
+  });
+
+  it("says what it cannot find", async () => {
+    const res = await ENTITLEMENTS(
+      put({ overrides: [] }),
+      params("00000000-0000-0000-0000-000000000000"),
+    );
+    expect(res.status).toBe(404);
+  });
+});
+
+describe("the detail a customer's page is built from", () => {
+  it("carries usage beside the limits it is measured against", async () => {
+    // A limit means nothing on screen without the number it is measured
+    // against, and fetching them separately invites two different answers.
+    const { res: created } = await create();
+    const { orgId } = await created.json() as { orgId: string };
+
+    const body = await (await SHOW(req("GET"), params(orgId))).json() as {
+      usage: { assets: number; users: number; storage_mb: number };
+    };
+
+    expect(body.usage.assets).toBe(0);
+    expect(body.usage.users).toBe(1);
+    expect(body.usage.storage_mb).toBe(0);
+  });
+
+  it("carries the overrides themselves, not only their effect", async () => {
+    // The console has to show where each feature comes from: "from the
+    // Professional plan" and "turned on for this customer" are different
+    // facts, and the operator needs to know which one they are changing.
+    const { res: created } = await create();
+    const { orgId } = await created.json() as { orgId: string };
+
+    await ENTITLEMENTS(
+      new Request("http://api.test/x", {
+        method: "PUT",
+        headers: { cookie, "content-type": "application/json" },
+        body: JSON.stringify({
+          overrides: [{ feature_key: "webhooks", enabled: true, note: "Agreed" }],
+        }),
+      }),
+      params(orgId),
+    );
+
+    const body = await (await SHOW(req("GET"), params(orgId))).json() as {
+      overrides: { feature_key: string; enabled: boolean; note: string }[];
+    };
+
+    expect(body.overrides).toHaveLength(1);
+    expect(body.overrides[0]).toMatchObject({
+      feature_key: "webhooks", enabled: true, note: "Agreed",
+    });
   });
 });

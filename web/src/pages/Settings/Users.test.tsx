@@ -84,8 +84,13 @@ describe("Users", () => {
   it("lets an administrator change someone's role", async () => {
     mockSession(["users:read", "users:write", "roles:read"]);
     render();
-    await waitFor(() =>
-      expect(screen.getAllByRole("button", { name: /Change role/i })).toHaveLength(2));
+    // A longer wait than the default second: this page grew an invite form and
+    // a pending-invitations card, and under a full parallel run it has been
+    // seen taking 1.1s to settle. A test that fails one run in twenty teaches
+    // people to re-run rather than to read.
+    expect(await screen.findAllByRole(
+      "button", { name: /Change role/i }, { timeout: 5000 },
+    )).toHaveLength(2);
   });
 
   it("turns away someone who cannot read the directory", async () => {

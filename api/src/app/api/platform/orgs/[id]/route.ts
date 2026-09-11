@@ -4,6 +4,8 @@ import { recordPlatformAction } from "@/lib/platform/audit";
 import { withPlatform } from "@/lib/platform/db";
 import { deleteOrg, SlugMismatchError } from "@/lib/platform/provision";
 import { effectiveEntitlements } from "@/lib/platform/plans";
+import { orgUsage } from "@/lib/platform/usage";
+import { forgetEntitlements } from "@/lib/entitlements";
 import { validationProblem, notFound, problem } from "@/lib/http/problem";
 import { safe } from "@/lib/http/handler";
 
@@ -25,10 +27,22 @@ export const GET = safe(async (req: Request, { params }: Params) => {
   );
   if (!org) return notFound("organisation");
 
-  // The resolved entitlements travel with it: what this customer can actually
-  // do is the plan plus their own exceptions, and neither one alone answers
-  // the question the operator is asking.
-  return Response.json({ ...org, entitlements: await effectiveEntitlements(id) });
+  // Entitlements and usage travel with it. What this customer can do is the
+  // plan plus their own exceptions - neither alone answers the question - and
+  // a limit means nothing on screen without the number it is measured against.
+  const [entitlements, usage, overrides] = await Promise.all([
+    effectiveEntitlements(id),
+    orgUsage(id),
+    withPlatform(async (c) =>
+      (await c.query(
+        `SELECT feature_key, enabled, note, set_at
+           FROM org_entitlements WHERE org_id = $1 ORDER BY feature_key`,
+        [id],
+      )).rows,
+    ),
+  ]);
+
+  return Response.json({ ...org, entitlements, usage, overrides });
 });
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -86,6 +100,10 @@ export const PATCH = safe(async (req: Request, { params }: Params) => {
     )).rows[0],
   );
   if (!updated) return notFound("organisation");
+
+  // A change of plan or of limits changes what the tenant API allows, and the
+  // cache would otherwise hold the old answer for another half minute.
+  forgetEntitlements(id);
 
   await recordPlatformAction(actor, "org.updated", {
     orgId: id, orgSlug: updated.slug, changed: Object.keys(patch),

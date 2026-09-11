@@ -59,6 +59,7 @@ const PlatformAuthProvider = lazy(() =>
 const PlatformLayout = lazy(() => import("./platform/PlatformLayout"));
 const Organisations = lazy(() => import("./platform/Organisations"));
 const NewOrganisation = lazy(() => import("./platform/NewOrganisation"));
+const Organisation = lazy(() => import("./platform/Organisation"));
 
 /**
  * The whole route table exists from this task onward. Screens a later task
@@ -114,6 +115,7 @@ export default function App() {
           >
             <Route index element={<Suspense fallback={null}><Organisations /></Suspense>} />
             <Route path="new" element={<Suspense fallback={null}><NewOrganisation /></Suspense>} />
+            <Route path=":id" element={<Suspense fallback={null}><Organisation /></Suspense>} />
           </Route>
 
           <Route element={<RequireAuth />}>

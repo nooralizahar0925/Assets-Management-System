@@ -1278,7 +1278,36 @@ One page holding everything about one customer:
   so the operator can see who is close.
 - **Actions** — suspend (with a reason), resume, delete (typing the slug).
 
-- [ ] **Step 1: Write the failing tests**
+
+**Executed 2026-09-11.**
+
+**Storage usage needed a hole in the platform role's grants, and the right size
+of hole turned out to be a column.** The console has no grant on `attachments`
+at all - deliberately, and asserted in `db.test.ts` - but the storage allowance
+is measured in megabytes and the megabytes are in that table. Migration 024
+grants `SELECT (org_id, size_bytes)`: `SELECT *` stays refused, filenames and
+object keys stay unreadable, and `sum(size_bytes)` works.
+
+Usage counts the same way the limits are enforced - live assets only, pending
+invitations counted as people - because two different numbers for the same
+question is how an operator comes to distrust the screen.
+
+The entitlements endpoint replaces the whole set rather than merging. Only the
+console knows what the operator meant to leave alone, and a per-feature
+endpoint would let two half-finished edits land a customer somewhere neither
+intended. An override that agrees with the plan is dropped rather than stored:
+it would sit there implying somebody had decided something.
+
+Switching off the register is refused by the endpoint as well as by the
+resolver. The resolver puts it back regardless, and storing an override that is
+silently ignored tells the next operator a lie about what they did.
+
+One test was left flaky by this work: the People page grew an invite form and a
+pending-invitations card, and an assertion waiting the default second was seen
+taking 1.1s under a full parallel run. Given room rather than left to fail one
+run in twenty, which teaches people to re-run instead of to read.
+
+- [x] **Step 1: Write the failing tests**
 
 ```tsx
 it("shows where each feature comes from", async () => {
@@ -1303,11 +1332,11 @@ it("warns when a limit is set below what the customer already holds", async () =
 });
 ```
 
-- [ ] **Step 2–4:** Implement `orgUsage(orgId)` (live assets, users, storage from
+- [x] **Step 2–4:** Implement `orgUsage(orgId)` (live assets, users, storage from
 `attachments`), the entitlements endpoint (`PUT` replaces the override set for
 one organisation and records one audit row per change), and the page.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```
 feat(web): manage one customer's plan, features, limits and contract
