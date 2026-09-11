@@ -1362,7 +1362,29 @@ The console's front page. Not a chart — a list of things that need a decision:
 - organisations suspended for more than 90 days (delete or reinstate?),
 - organisations with no sign-in for 60 days.
 
-- [ ] **Step 1: Write the failing tests**
+
+**Executed 2026-09-11.** Two judgements the plan did not make:
+
+**A suspended customer is chased about nothing.** Their access is already off,
+so a renewal reminder or a lapsing trial for somebody who cannot sign in is
+noise that hides the customers who actually need ringing. The only thing a
+suspended customer appears for is having been suspended long enough that
+somebody should decide: reinstate, or delete and stop holding their data.
+
+**A customer created this week is not dormant.** "Nobody has signed in" is only
+news once they have had the chance to, so the dormancy window applies to the
+organisation's age as well as to its last sign-in.
+
+A lapsed trial stays on the list rather than dropping off it, since nothing
+suspends anybody automatically and a trial that ended last week is exactly the
+conversation that is overdue.
+
+The attention list became the console's front page and the customer list moved
+to `/platform/customers`. Opening the console on "here is everything" answers a
+question nobody asked; opening it on "here is what needs deciding" is the
+reason to open it at all.
+
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 it("lists a trial ending inside the window and not one outside it", async () => { /* … */ });
@@ -1374,10 +1396,10 @@ it("says nothing at all when nothing needs attention", async () => {
 });
 ```
 
-- [ ] **Step 2–3:** One query per category, each returning organisation id, name,
+- [x] **Step 2–3:** One query per category, each returning organisation id, name,
 slug and the reason. Group by organisation in the handler.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```
 feat: the platform console's attention list

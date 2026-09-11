@@ -60,6 +60,7 @@ const PlatformLayout = lazy(() => import("./platform/PlatformLayout"));
 const Organisations = lazy(() => import("./platform/Organisations"));
 const NewOrganisation = lazy(() => import("./platform/NewOrganisation"));
 const Organisation = lazy(() => import("./platform/Organisation"));
+const Attention = lazy(() => import("./platform/Attention"));
 
 /**
  * The whole route table exists from this task onward. Screens a later task
@@ -113,7 +114,8 @@ export default function App() {
               </Suspense>
             }
           >
-            <Route index element={<Suspense fallback={null}><Organisations /></Suspense>} />
+            <Route index element={<Suspense fallback={null}><Attention /></Suspense>} />
+            <Route path="customers" element={<Suspense fallback={null}><Organisations /></Suspense>} />
             <Route path="new" element={<Suspense fallback={null}><NewOrganisation /></Suspense>} />
             <Route path=":id" element={<Suspense fallback={null}><Organisation /></Suspense>} />
           </Route>

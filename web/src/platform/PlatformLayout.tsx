@@ -13,8 +13,8 @@ import PlatformSignIn from "./PlatformSignIn";
  */
 
 const PAGES = [
-  { to: "/platform", label: "Customers", end: true },
-  { to: "/platform/plans", label: "Plans" },
+  { to: "/platform", label: "Needs attention", end: true },
+  { to: "/platform/customers", label: "Customers" },
 ];
 
 export default function PlatformLayout() {

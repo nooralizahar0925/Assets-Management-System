@@ -105,6 +105,17 @@ export interface OrganisationPatch {
   limit_overrides?: Record<string, number>;
 }
 
+export type ReasonKind =
+  | "trial-ending" | "renewal-due" | "over-limit"
+  | "no-plan" | "long-suspended" | "dormant";
+
+export interface AttentionItem {
+  org_id: string;
+  name: string;
+  slug: string;
+  reasons: { kind: ReasonKind; detail: string }[];
+}
+
 export const platformApi = {
   signIn: (email: string, password: string) =>
     api.post<PlatformActor>("/api/platform/auth/login", { email, password }),
@@ -112,6 +123,9 @@ export const platformApi = {
   signOut: () => api.post("/api/platform/auth/logout"),
 
   me: () => api.get<PlatformActor>("/api/platform/auth/me"),
+
+  attention: () =>
+    api.getEnvelope<{ data: AttentionItem[] }>("/api/platform/attention"),
 
   organisations: () =>
     api.getEnvelope<{ data: OrganisationRow[] }>("/api/platform/orgs"),
