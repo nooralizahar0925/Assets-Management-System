@@ -108,7 +108,7 @@ individual asset can override it, because the one machine bought second-hand doe
 follow the same life as the rest. Storing only per-asset would make bulk changes
 impossible; storing only per-category would make the exception impossible.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `api/src/lib/domain/depreciation.repo.test.ts`:
 
@@ -219,12 +219,12 @@ describe("listDepreciableAssets", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd api && npx vitest run src/lib/domain/depreciation.repo.test.ts`
 Expected: FAIL — cannot find module `./depreciation.repo`.
 
-- [ ] **Step 3: Write the migration**
+- [x] **Step 3: Write the migration**
 
 `api/migrations/014_depreciation.sql`:
 
@@ -303,13 +303,13 @@ CREATE POLICY asset_book_values_tenant ON asset_book_values
 GRANT SELECT, INSERT, UPDATE, DELETE ON asset_book_values TO ams_app;
 ```
 
-- [ ] **Step 4: Run the migration and confirm the isolation test still passes**
+- [x] **Step 4: Run the migration and confirm the isolation test still passes**
 
 Run: `cd api && npm run migrate:test && npx vitest run src/lib/db`
 Expected: PASS. The RLS suite walks every table with an `org_id`; a new table
 that is missing a policy fails there rather than in production.
 
-- [ ] **Step 5: Implement the repository**
+- [x] **Step 5: Implement the repository**
 
 `api/src/lib/domain/depreciation.repo.ts`:
 
@@ -427,12 +427,12 @@ export async function listDepreciableAssets(ctx: Ctx): Promise<DepreciableAsset[
 }
 ```
 
-- [ ] **Step 6: Run the tests**
+- [x] **Step 6: Run the tests**
 
 Run: `cd api && npx vitest run src/lib/domain/depreciation.repo.test.ts`
 Expected: PASS, 6 tests.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add api/migrations/014_depreciation.sql api/src/lib/domain/depreciation.repo.ts api/src/lib/domain/depreciation.repo.test.ts
@@ -481,7 +481,7 @@ The final period absorbs the difference so accumulated depreciation plus closing
 equals cost exactly. A report whose column does not sum to the register's cost is a
 report finance will not sign.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `api/src/lib/domain/depreciation.test.ts`:
 
@@ -605,12 +605,12 @@ describe("bookValueAt", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd api && npx vitest run src/lib/domain/depreciation.test.ts`
 Expected: FAIL — cannot find module `./depreciation`.
 
-- [ ] **Step 3: Implement the engine**
+- [x] **Step 3: Implement the engine**
 
 `api/src/lib/domain/depreciation.ts`:
 
@@ -731,12 +731,12 @@ export function bookValueAt(
 }
 ```
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 Run: `cd api && npx vitest run src/lib/domain/depreciation.test.ts`
 Expected: PASS, 15 tests.
 
-- [ ] **Step 5: Prove the reconciliation test can fail**
+- [x] **Step 5: Prove the reconciliation test can fail**
 
 Temporarily drop `|| isFinalStraightPeriod` from the charge clause and re-run.
 The rounding-drift test must fail with a total of 11,999,999.88 and a closing
@@ -747,7 +747,7 @@ finance signs.
 clause, and the failure above is what it produced when the algorithm was run
 against these assertions before the plan was finished.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add api/src/lib/domain/depreciation.ts api/src/lib/domain/depreciation.test.ts
@@ -796,7 +796,7 @@ makes a second run in the same month a no-op, and a run after a gap backfills ev
 month it missed — a scheduler that was down for a week must not leave a hole in the
 ledger.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `api/src/lib/jobs/depreciation.test.ts`:
 
@@ -902,12 +902,12 @@ describe("bookValueNow", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd api && npx vitest run src/lib/jobs/depreciation.test.ts`
 Expected: FAIL — cannot find module `./depreciation`.
 
-- [ ] **Step 3: Add the repository functions**
+- [x] **Step 3: Add the repository functions**
 
 Append to `api/src/lib/domain/depreciation.repo.ts`:
 
@@ -971,7 +971,7 @@ export async function bookValueNow(
 }
 ```
 
-- [ ] **Step 4: Implement the job**
+- [x] **Step 4: Implement the job**
 
 `api/src/lib/jobs/depreciation.ts`:
 
@@ -1018,7 +1018,7 @@ export async function runDepreciationJob(
 }
 ```
 
-- [ ] **Step 5: Add it to the nightly sweep**
+- [x] **Step 5: Add it to the nightly sweep**
 
 In `api/src/lib/jobs/runner.ts`, inside the per-organisation `try` block, after
 `purgeRateLimitEvents(ctx)`:
@@ -1032,12 +1032,12 @@ In `api/src/lib/jobs/runner.ts`, inside the per-organisation `try` block, after
 Add `depreciation: depreciation.periods` to the pushed summary and the field to
 `JobRunSummary`.
 
-- [ ] **Step 6: Run the tests**
+- [x] **Step 6: Run the tests**
 
 Run: `cd api && npx vitest run src/lib/jobs`
 Expected: PASS — the new file's 7 tests, and the existing job tests unchanged.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add api/src/lib/jobs/depreciation.ts api/src/lib/jobs/depreciation.test.ts \
@@ -1077,7 +1077,7 @@ CSV, XLSX, PDF, SVG and PNG from a single definition, so this adds a query and a
 list rather than an export pipeline. It reads the **snapshots**, not the live
 calculation: a finance report must reprint identically.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Assert, against a seeded organisation with two depreciating assets:
 
@@ -1091,9 +1091,9 @@ Assert, against a seeded organisation with two depreciating assets:
 - exactly one row per asset even when several months are recorded, via the
   LATERAL join below rather than a plain join
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
-- [ ] **Step 3: Implement the definition**
+- [x] **Step 3: Implement the definition**
 
 ```ts
 export const bookValueReport: ReportDefinition = {
@@ -1149,7 +1149,7 @@ export const bookValueReport: ReportDefinition = {
 };
 ```
 
-- [ ] **Step 4: Add the dashboard figure**
+- [x] **Step 4: Add the dashboard figure**
 
 In `getDashboardSummary`, add `book_value` alongside `total_value` using the same
 LATERAL join. In `KpiTiles.tsx` the Register value tile gains a second line —
@@ -1157,12 +1157,12 @@ purchase cost, and beneath it "written down to X" when the two differ — linkin
 to `/reports/asset-book-value`, gated on `reports:read` like the other report
 tiles.
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 Run: `cd api && npx vitest run`, then
 `cd web && npx tsc -b --noEmit && npx vitest run && npm run build`.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ---
 
@@ -1191,7 +1191,7 @@ the same bounds as the CHECK constraints — 1 to 100 for percentages, positive 
 life. Validation in two places is deliberate: the constraint is the guarantee, the
 schema is the readable error.
 
-- [ ] Steps follow the established pattern: failing test, verify it fails, implement,
+- [x] Steps follow the established pattern: failing test, verify it fails, implement,
       pass, confirm write-gating on `categories:write` and `assets:write`, commit.
 
 ---

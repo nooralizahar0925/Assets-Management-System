@@ -114,7 +114,7 @@ list, and a test asserts the two agree. The table exists so `role_permissions`
 can carry a foreign key, which is what stops a role referencing a permission
 that no longer exists after a rename.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `api/src/lib/auth/permissions.test.ts`:
 
@@ -350,12 +350,12 @@ describe("the users.role backfill", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify they fail**
+- [x] **Step 2: Run to verify they fail**
 
 Run: `cd api && npx vitest run src/lib/auth/permissions.test.ts src/lib/auth/roles.schema.test.ts`
 Expected: FAIL — `Cannot find module './permissions'`.
 
-- [ ] **Step 3: Write the permission vocabulary**
+- [x] **Step 3: Write the permission vocabulary**
 
 `api/src/lib/auth/permissions.ts`:
 
@@ -514,7 +514,7 @@ export const isPermissionKey = (value: string): value is PermissionKey =>
   (ALL as string[]).includes(value);
 ```
 
-- [ ] **Step 4: Write the migration**
+- [x] **Step 4: Write the migration**
 
 `api/migrations/008_roles.sql`:
 
@@ -735,7 +735,7 @@ await owner.query(
 );
 ```
 
-- [ ] **Step 5: Run to verify it passes**
+- [x] **Step 5: Run to verify it passes**
 
 ```bash
 cd api
@@ -747,7 +747,7 @@ npx vitest run src/lib/auth/permissions.test.ts src/lib/auth/roles.schema.test.t
 
 Expected: PASS — 12 vocabulary tests, 9 schema tests.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```
 git add api/src/lib/auth/permissions.ts api/src/lib/auth/permissions.test.ts \
@@ -806,7 +806,7 @@ because there is no single target. They compose this clause into their `WHERE`
 instead. It is deliberately the only way branch filtering is expressed, so there
 is one place to audit and one place to fix.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `api/src/lib/auth/resolve.test.ts`:
 
@@ -1007,12 +1007,12 @@ describe("locationScopeClause", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify they fail**
+- [x] **Step 2: Run to verify they fail**
 
 Run: `cd api && npx vitest run src/lib/auth/resolve.test.ts`
 Expected: FAIL — `Cannot find module './resolve'`.
 
-- [ ] **Step 3: Replace the auth lookup so it returns the role, not the enum**
+- [x] **Step 3: Replace the auth lookup so it returns the role, not the enum**
 
 `api/migrations/009_auth_lookup_roles.sql`:
 
@@ -1076,7 +1076,7 @@ GRANT EXECUTE ON FUNCTION auth_lookup_permissions(uuid)    TO ams_app;
 GRANT EXECUTE ON FUNCTION auth_lookup_location_scope(uuid) TO ams_app;
 ```
 
-- [ ] **Step 4: Implement resolution**
+- [x] **Step 4: Implement resolution**
 
 `api/src/lib/auth/resolve.ts`:
 
@@ -1121,7 +1121,7 @@ export async function permissionsForUser(userId: string): Promise<ResolvedAccess
 }
 ```
 
-- [ ] **Step 5: Widen the Actor and rewrite the guard**
+- [x] **Step 5: Widen the Actor and rewrite the guard**
 
 In `api/src/lib/http/handler.ts`:
 
@@ -1283,13 +1283,13 @@ export function locationScopeClause(
 pattern the asset query builder in Task 7 uses: collect params in an array and
 generate placeholders from their index, rather than hardcoding `$1`.
 
-- [ ] **Step 6: Run to verify it passes**
+- [x] **Step 6: Run to verify it passes**
 
 Run: `cd api && npm test`
 Expected: PASS — 7 resolve tests, 8 new guard tests, and every Task 4 test still
 green, because `requireAuth` kept its shape.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```
 git add api/src/lib/auth api/src/lib/http/handler.ts api/migrations/009_auth_lookup_roles.sql
@@ -1344,7 +1344,7 @@ and any future import path share them:
 3. The last user holding `roles:write` cannot have it taken away — otherwise a
    single careless edit leaves nobody able to fix it.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `api/src/lib/domain/roles.test.ts`:
 
@@ -1502,12 +1502,12 @@ describe("assignRole", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd api && npx vitest run src/lib/domain/roles.test.ts`
 Expected: FAIL — `Cannot find module './roles'`.
 
-- [ ] **Step 3: Implement the domain module**
+- [x] **Step 3: Implement the domain module**
 
 `api/src/lib/domain/roles.ts` — the rules that keep an organisation from locking
 itself out live here, not in the handlers:
@@ -1745,7 +1745,7 @@ export const permissionCatalogue = () => {
 };
 ```
 
-- [ ] **Step 4: Implement the route handlers**
+- [x] **Step 4: Implement the route handlers**
 
 `api/src/app/api/admin/roles/route.ts`:
 
@@ -1878,12 +1878,12 @@ export const PUT = safe(async (
 });
 ```
 
-- [ ] **Step 5: Run to verify it passes**
+- [x] **Step 5: Run to verify it passes**
 
 Run: `cd api && npm test`
 Expected: PASS — 11 domain tests plus the existing suite.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```
 git add api/src/lib/domain/roles.ts api/src/lib/domain/roles.test.ts \

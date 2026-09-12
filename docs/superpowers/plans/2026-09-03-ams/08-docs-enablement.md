@@ -74,7 +74,7 @@ someone adds a `problem(409, "asset-checked-out", …)` and forgets the docs. Th
 Step 1 scans the API source for every error slug that reaches a caller and fails if the
 catalogue is missing one, which converts a documentation promise into a build failure.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `api/src/lib/http/catalog.test.ts`:
 
@@ -143,12 +143,12 @@ describe("error catalogue", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd api && npx vitest run src/lib/http/catalog.test.ts`
 Expected: FAIL — `Cannot find module './catalog'`.
 
-- [ ] **Step 3: Implement the catalogue**
+- [x] **Step 3: Implement the catalogue**
 
 `api/src/lib/http/catalog.ts`:
 
@@ -244,7 +244,7 @@ export const GET = safe(async () =>
 );
 ```
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `cd api && npx vitest run src/lib/http/catalog.test.ts`
 Expected: PASS, 4 tests.
@@ -252,7 +252,7 @@ Expected: PASS, 4 tests.
 If the first test fails listing a slug, a task between 5 and 36 introduced an error type
 this catalogue has not got. Add it — that is the test doing its job, not a false alarm.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add api/src/lib/http/catalog.ts api/src/lib/http/catalog.test.ts \

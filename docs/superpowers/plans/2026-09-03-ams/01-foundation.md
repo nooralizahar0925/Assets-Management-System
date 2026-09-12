@@ -20,7 +20,7 @@
 - Consumes: nothing.
 - Produces: `pool: Pool` and `query(text, params)` from `src/lib/db.ts`; `GET /api/health` returning `{ status: "ok", db: true }`.
 
-- [ ] **Step 1: Initialise the repository and write the failing test**
+- [x] **Step 1: Initialise the repository and write the failing test**
 
 ```bash
 cd AssetsManagementSystem
@@ -43,7 +43,7 @@ describe("GET /api/health", () => {
 });
 ```
 
-- [ ] **Step 2: Write the package manifest and config**
+- [x] **Step 2: Write the package manifest and config**
 
 `api/package.json`:
 
@@ -132,7 +132,7 @@ export default defineConfig({
 });
 ```
 
-- [ ] **Step 3: Write the database pool and health route**
+- [x] **Step 3: Write the database pool and health route**
 
 `api/src/lib/db.ts`:
 
@@ -197,7 +197,7 @@ process.env.DATABASE_URL ??=
   "postgres://ams_app:ams_app@localhost:5433/ams_test";
 ```
 
-- [ ] **Step 4: Write the Docker stack**
+- [x] **Step 4: Write the Docker stack**
 
 `docker-compose.yml`:
 
@@ -333,7 +333,7 @@ dist/
 *.log
 ```
 
-- [ ] **Step 5: Run the test to verify it fails, then passes**
+- [x] **Step 5: Run the test to verify it fails, then passes**
 
 ```bash
 docker compose -f docker-compose.test.yml up -d
@@ -352,7 +352,7 @@ cd api && npm test
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add .
@@ -372,7 +372,7 @@ git commit -m "feat: docker stack with postgres and health-checked api service"
 - Consumes: `withTenant`, `query` from Task 1.
 - Produces: the full schema; `npm run migrate` applies pending migrations idempotently and records them in `schema_migrations(filename, applied_at)`.
 
-- [ ] **Step 1: Write the failing RLS test**
+- [x] **Step 1: Write the failing RLS test**
 
 `api/src/lib/db.rls.test.ts`:
 
@@ -484,12 +484,12 @@ describe("rental-ready schema", () => {
 });
 ```
 
-- [ ] **Step 2: Run it to verify it fails**
+- [x] **Step 2: Run it to verify it fails**
 
 Run: `cd api && npx vitest run src/lib/db.rls.test.ts`
 Expected: FAIL with `relation "organizations" does not exist`.
 
-- [ ] **Step 3: Write the migrations**
+- [x] **Step 3: Write the migrations**
 
 `api/migrations/001_extensions_and_org.sql`:
 
@@ -831,7 +831,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE
   ON parties, reservations, attachments TO ams_app;
 ```
 
-- [ ] **Step 4: Write the migration runner**
+- [x] **Step 4: Write the migration runner**
 
 `api/scripts/migrate.ts`:
 
@@ -885,7 +885,7 @@ main().catch((err) => {
 });
 ```
 
-- [ ] **Step 5: Run migrations and the test**
+- [x] **Step 5: Run migrations and the test**
 
 ```bash
 cd api
@@ -895,7 +895,7 @@ npx vitest run src/lib/db.rls.test.ts
 
 Expected: PASS — both isolation cases hold.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add api/migrations api/scripts/migrate.ts api/src/lib/db.rls.test.ts
@@ -921,7 +921,7 @@ git commit -m "feat: database schema with row-level security tenant isolation"
   - `paginated<T>(data, meta): Response`
   - `type Ctx = { orgId: string; actor: Actor }` where `Actor = { type: "user" | "api_key"; id: string; label: string; scopes: string[] }`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `api/src/lib/http/problem.test.ts`:
 
@@ -1005,12 +1005,12 @@ describe("parseSort", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `cd api && npx vitest run src/lib/http`
 Expected: FAIL — `Cannot find module './problem'`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `api/src/lib/http/problem.ts`:
 
@@ -1143,12 +1143,12 @@ export function safe<A extends unknown[]>(
 }
 ```
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `cd api && npx vitest run src/lib/http`
 Expected: PASS, 7 tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add api/src/lib/http
@@ -1174,7 +1174,7 @@ git commit -m "feat: problem+json errors, pagination and sort parsing"
   - `readApiKey(req): Promise<Ctx | null>`
   - `requireAuth(req, scope): Promise<Ctx | Response>` — accepts either mechanism, checks scope, enforces the rate limit
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `api/src/lib/auth/auth.test.ts`:
 
@@ -1248,12 +1248,12 @@ describe("api keys", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `cd api && npx vitest run src/lib/auth`
 Expected: FAIL — modules not found.
 
-- [ ] **Step 3: Implement password and session handling**
+- [x] **Step 3: Implement password and session handling**
 
 `api/src/lib/auth/password.ts`:
 
@@ -1352,7 +1352,7 @@ export async function destroySession(req: Request): Promise<void> {
 }
 ```
 
-- [ ] **Step 4: Implement API keys and the guard**
+- [x] **Step 4: Implement API keys and the guard**
 
 `api/src/lib/auth/apikey.ts`:
 
@@ -1469,7 +1469,7 @@ export async function requireAuth(
 export const isResponse = (v: unknown): v is Response => v instanceof Response;
 ```
 
-- [ ] **Step 5: Implement the auth route handlers**
+- [x] **Step 5: Implement the auth route handlers**
 
 `api/src/app/api/admin/auth/login/route.ts`:
 
@@ -1607,12 +1607,12 @@ export const DELETE = safe(async (
 });
 ```
 
-- [ ] **Step 6: Run the tests**
+- [x] **Step 6: Run the tests**
 
 Run: `cd api && npx vitest run src/lib/auth`
 Expected: PASS, 7 tests.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add api/src/lib/auth api/src/app/api/admin

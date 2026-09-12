@@ -25,7 +25,7 @@
   - `listCategories(ctx)`, `getCategory(ctx, id)`, `createCategory(ctx, input)`, `updateCategory(ctx, id, patch)`
   - `CategoryInput` Zod schema
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `api/src/lib/validation/customFields.test.ts`:
 
@@ -100,12 +100,12 @@ describe("buildCustomValidator", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd api && npx vitest run src/lib/validation`
 Expected: FAIL with `Cannot find module './customFields'`.
 
-- [ ] **Step 3: Implement the field-schema layer**
+- [x] **Step 3: Implement the field-schema layer**
 
 `api/src/lib/validation/customFields.ts`:
 
@@ -177,7 +177,7 @@ export function buildCustomValidator(
 }
 ```
 
-- [ ] **Step 4: Implement the category domain module**
+- [x] **Step 4: Implement the category domain module**
 
 `api/src/lib/domain/categories.ts`:
 
@@ -250,7 +250,7 @@ export const updateCategory = (ctx: Ctx, id: string, patch: Partial<CategoryInpu
   );
 ```
 
-- [ ] **Step 5: Implement the route handlers**
+- [x] **Step 5: Implement the route handlers**
 
 `api/src/app/api/v1/categories/route.ts`:
 
@@ -309,12 +309,12 @@ export const PATCH = safe(async (req: Request, { params }: Params) => {
 });
 ```
 
-- [ ] **Step 6: Run the tests to verify they pass**
+- [x] **Step 6: Run the tests to verify they pass**
 
 Run: `cd api && npx vitest run src/lib/validation`
 Expected: PASS, 10 tests.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add api/src/lib/validation api/src/lib/domain/categories.ts api/src/app/api/v1/categories
@@ -340,7 +340,7 @@ git commit -m "feat: categories with validated per-category custom field schemas
   - `updateAsset(ctx, id, patch): Promise<Asset | null>`, `softDeleteAsset(ctx, id): Promise<boolean>`
   - From `audit.ts`: `recordEvent(client, ctx, { assetId, event, changes?, note? })`, `diff(before, after)`, `listAssetHistory(ctx, assetId, limit?)`, `interface AuditEvent`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `api/src/lib/domain/assets.test.ts`:
 
@@ -470,12 +470,12 @@ describe("softDeleteAsset", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd api && npx vitest run src/lib/domain/assets.test.ts`
 Expected: FAIL with `Cannot find module './assets'`.
 
-- [ ] **Step 3: Implement the audit recorder**
+- [x] **Step 3: Implement the audit recorder**
 
 `api/src/lib/domain/audit.ts`:
 
@@ -550,7 +550,7 @@ export const listAssetHistory = (ctx: Ctx, assetId: string, limit = 200) =>
   );
 ```
 
-- [ ] **Step 4: Implement the asset domain module**
+- [x] **Step 4: Implement the asset domain module**
 
 `api/src/lib/domain/assets.ts`:
 
@@ -758,7 +758,7 @@ export const softDeleteAsset = (ctx: Ctx, id: string) =>
   });
 ```
 
-- [ ] **Step 5: Implement the single-asset route handler**
+- [x] **Step 5: Implement the single-asset route handler**
 
 `api/src/app/api/v1/assets/[id]/route.ts`:
 
@@ -805,12 +805,12 @@ export const DELETE = safe(async (req: Request, { params }: Params) => {
 });
 ```
 
-- [ ] **Step 6: Run the tests to verify they pass**
+- [x] **Step 6: Run the tests to verify they pass**
 
 Run: `cd api && npx vitest run src/lib/domain/assets.test.ts`
 Expected: PASS, 11 tests.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add api/src/lib/domain/audit.ts api/src/lib/domain/assets.ts api/src/app/api/v1/assets
@@ -834,7 +834,7 @@ git commit -m "feat: asset registry with tag generation, custom fields and audit
   - `listAssets(ctx, filters, page, sort): Promise<{ rows: Asset[]; total: number }>`
   - `GET /api/v1/assets`, `POST /api/v1/assets`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `api/src/lib/domain/assets.list.test.ts`:
 
@@ -939,12 +939,12 @@ describe("listAssets", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd api && npx vitest run src/lib/domain/assets.list.test.ts`
 Expected: FAIL with `listAssets is not a function`.
 
-- [ ] **Step 3: Append `listAssets` to the asset domain module**
+- [x] **Step 3: Append `listAssets` to the asset domain module**
 
 Append to `api/src/lib/domain/assets.ts` (and add the import at the top of the file):
 
@@ -1006,7 +1006,7 @@ export function listAssets(
 }
 ```
 
-- [ ] **Step 4: Implement the collection route handler**
+- [x] **Step 4: Implement the collection route handler**
 
 `api/src/app/api/v1/assets/route.ts`:
 
@@ -1075,12 +1075,12 @@ export const POST = safe(async (req: Request) => {
 });
 ```
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `cd api && npx vitest run src/lib/domain/assets.list.test.ts`
 Expected: PASS, 11 tests.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add api/src/lib/domain/assets.ts api/src/app/api/v1/assets/route.ts
@@ -1110,7 +1110,7 @@ git commit -m "feat: asset search, filtering, sorting and pagination"
 (`kind`, `party_id`, `rate_snapshot`, `charge_total`, `currency` from migration 005).
 The MVP writes `kind = 'internal'` by default and never touches the rest — see spec §11.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `api/src/lib/domain/assignments.test.ts`:
 
@@ -1234,12 +1234,12 @@ describe("checkIn", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd api && npx vitest run src/lib/domain/assignments.test.ts`
 Expected: FAIL with `Cannot find module './assignments'`.
 
-- [ ] **Step 3: Implement the assignment domain module**
+- [x] **Step 3: Implement the assignment domain module**
 
 `api/src/lib/domain/assignments.ts`:
 
@@ -1409,7 +1409,7 @@ export const listAssignments = (ctx: Ctx, assetId: string) =>
   );
 ```
 
-- [ ] **Step 4: Implement the route handlers**
+- [x] **Step 4: Implement the route handlers**
 
 `api/src/app/api/v1/assets/[id]/checkout/route.ts`:
 
@@ -1493,12 +1493,12 @@ export const POST = safe(async (
 });
 ```
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `cd api && npx vitest run src/lib/domain/assignments.test.ts`
 Expected: PASS, 10 tests.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add api/src/lib/domain/assignments.ts api/src/app/api/v1/assets
@@ -1522,7 +1522,7 @@ git commit -m "feat: asset check-out and check-in with guarded status transition
   - `createLocation(ctx, input)`, `listAssignableUsers(ctx)`
   - `GET /api/v1/assets/{id}/history` → `{ data: { events, assignments } }`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `api/src/lib/domain/audit.test.ts`:
 
@@ -1593,12 +1593,12 @@ describe("listAssetHistory", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd api && npx vitest run src/lib/domain/audit.test.ts`
 Expected: FAIL — the ordering assertion fails, or the module resolution fails, depending on what is already present.
 
-- [ ] **Step 3: Implement the location domain module**
+- [x] **Step 3: Implement the location domain module**
 
 `api/src/lib/domain/locations.ts`:
 
@@ -1668,7 +1668,7 @@ export const listAssignableUsers = (ctx: Ctx) =>
   );
 ```
 
-- [ ] **Step 4: Implement the route handlers**
+- [x] **Step 4: Implement the route handlers**
 
 `api/src/app/api/v1/assets/[id]/history/route.ts`:
 
@@ -1733,12 +1733,12 @@ export const GET = safe(async (req: Request) => {
 });
 ```
 
-- [ ] **Step 5: Run the entire API suite**
+- [x] **Step 5: Run the entire API suite**
 
 Run: `cd api && npm test`
 Expected: PASS — every suite from Tasks 1–9 green.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add api/src/lib/domain/locations.ts api/src/app/api/v1

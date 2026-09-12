@@ -36,7 +36,7 @@
   - `runImport(ctx, { rows, mapping, categoryId, dryRun, filename }): Promise<ImportResult>`
   - `interface ImportResult { jobId, total, created, updated, skipped, errors: { row: number; field: string; message: string }[] }`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `api/src/lib/domain/imports.test.ts`:
 
@@ -211,18 +211,18 @@ Bad One,BD-002,teleported
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd api && npx vitest run src/lib/domain/imports.test.ts`
 Expected: FAIL with `Cannot find module './imports'`.
 
-- [ ] **Step 3: Add the dependencies**
+- [x] **Step 3: Add the dependencies**
 
 ```bash
 cd api && npm install papaparse exceljs && npm install -D @types/papaparse
 ```
 
-- [ ] **Step 4: Implement the import domain module**
+- [x] **Step 4: Implement the import domain module**
 
 `api/src/lib/domain/imports.ts`:
 
@@ -481,7 +481,7 @@ export const getImportJob = (ctx: Ctx, id: string) =>
   );
 ```
 
-- [ ] **Step 5: Implement the route handlers**
+- [x] **Step 5: Implement the route handlers**
 
 `api/src/app/api/v1/imports/route.ts`:
 
@@ -571,12 +571,12 @@ export const GET = safe(async (
 });
 ```
 
-- [ ] **Step 6: Run the tests to verify they pass**
+- [x] **Step 6: Run the tests to verify they pass**
 
 Run: `cd api && npx vitest run src/lib/domain/imports.test.ts`
 Expected: PASS, 11 tests.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add api/src/lib/domain/imports.ts api/src/app/api/v1/imports api/package.json
@@ -604,7 +604,7 @@ git commit -m "feat: csv and xlsx import with column mapping and dry-run preview
 warranty documents, equipment manuals. Spec §13.4 marks them a rental prerequisite:
 before/after inspection photos are the entire basis of a damage claim.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `api/src/lib/domain/attachments.test.ts`:
 
@@ -713,12 +713,12 @@ describe("deleteAttachment", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd api && npx vitest run src/lib/domain/attachments.test.ts`
 Expected: FAIL with `Cannot find module './attachments'`.
 
-- [ ] **Step 3: Add the dependency and start MinIO**
+- [x] **Step 3: Add the dependency and start MinIO**
 
 ```bash
 cd api && npm install @aws-sdk/client-s3 @aws-sdk/s3-request-presigner
@@ -734,7 +734,7 @@ process.env.S3_ACCESS_KEY ??= "ams";
 process.env.S3_SECRET_KEY ??= "ams-secret";
 ```
 
-- [ ] **Step 4: Implement the storage adapter**
+- [x] **Step 4: Implement the storage adapter**
 
 `api/src/lib/storage/s3.ts`:
 
@@ -800,7 +800,7 @@ export async function presignGet(key: string, seconds = 300): Promise<string> {
 }
 ```
 
-- [ ] **Step 5: Implement the attachment domain module**
+- [x] **Step 5: Implement the attachment domain module**
 
 `api/src/lib/domain/attachments.ts`:
 
@@ -932,7 +932,7 @@ export const readAttachmentBody = (key: string) => getObject(key);
 export const attachmentUrl = (key: string) => presignGet(key, 300);
 ```
 
-- [ ] **Step 6: Implement the route handlers**
+- [x] **Step 6: Implement the route handlers**
 
 `api/src/app/api/v1/assets/[id]/attachments/route.ts`:
 
@@ -1030,12 +1030,12 @@ export const DELETE = safe(async (req: Request, { params }: Params) => {
 });
 ```
 
-- [ ] **Step 7: Run the tests to verify they pass**
+- [x] **Step 7: Run the tests to verify they pass**
 
 Run: `cd api && npx vitest run src/lib/domain/attachments.test.ts`
 Expected: PASS, 8 tests. (MinIO must be running — `docker compose up -d minio`.)
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add api/src/lib/storage api/src/lib/domain/attachments.ts api/src/app/api/v1 api/src/test/setup.ts api/package.json
@@ -1069,7 +1069,7 @@ git commit -m "feat: file attachments on s3-compatible storage with type and siz
 misconfigured or rate-limited primary degrades to a backup rather than silently dropping
 notifications. Secrets never leave the server in plaintext — reads come back masked.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `api/src/lib/crypto/secrets.test.ts`:
 
@@ -1227,12 +1227,12 @@ describe("buildProvider", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify they fail**
+- [x] **Step 2: Run to verify they fail**
 
 Run: `cd api && npx vitest run src/lib/crypto src/lib/email`
 Expected: FAIL — modules not found.
 
-- [ ] **Step 3: Add dependencies and the encryption key**
+- [x] **Step 3: Add dependencies and the encryption key**
 
 ```bash
 cd api && npm install nodemailer @aws-sdk/client-sesv2 && npm install -D @types/nodemailer
@@ -1251,7 +1251,7 @@ process.env.APP_ENCRYPTION_KEY ??=
   "0000000000000000000000000000000000000000000000000000000000000001";
 ```
 
-- [ ] **Step 4: Implement the secrets module**
+- [x] **Step 4: Implement the secrets module**
 
 `api/src/lib/crypto/secrets.ts`:
 
@@ -1334,7 +1334,7 @@ export function maskConfig(config: Config, secretKeys: string[]): Config {
 }
 ```
 
-- [ ] **Step 5: Implement the provider adapters**
+- [x] **Step 5: Implement the provider adapters**
 
 `api/src/lib/email/types.ts`:
 
@@ -1744,7 +1744,7 @@ export function sesProvider(
 > in Task 18 where an attachment first exists; a `Simple` send is correct for every
 > notification in Tasks 13–15.
 
-- [ ] **Step 6: Write the migration**
+- [x] **Step 6: Write the migration**
 
 `api/migrations/006_email.sql`:
 
@@ -1826,7 +1826,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE
   ON email_providers, email_templates, email_messages TO ams_app;
 ```
 
-- [ ] **Step 7: Implement the provider domain module**
+- [x] **Step 7: Implement the provider domain module**
 
 `api/src/lib/domain/emailProviders.ts`:
 
@@ -1965,12 +1965,12 @@ export const getActiveProviders = (ctx: Ctx) =>
   );
 ```
 
-- [ ] **Step 8: Run the tests to verify they pass**
+- [x] **Step 8: Run the tests to verify they pass**
 
 Run: `cd api && npx vitest run src/lib/crypto src/lib/email`
 Expected: PASS, 16 tests.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add api/migrations/006_email.sql api/src/lib/crypto api/src/lib/email api/src/lib/domain/emailProviders.ts api/package.json
@@ -2000,7 +2000,7 @@ git commit -m "feat: encrypted secrets and six pluggable email provider adapters
 **Design note (spec §9.2):** nothing calls a provider SDK from a request handler. Every
 message is a row first, so a provider outage is a retry, not a lost notification.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `api/src/lib/email/templates.test.ts`:
 
@@ -2209,12 +2209,12 @@ describe("processOutbox", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify they fail**
+- [x] **Step 2: Run to verify they fail**
 
 Run: `cd api && npx vitest run src/lib/email/templates.test.ts src/lib/email/outbox.test.ts`
 Expected: FAIL — `Cannot find module './templates'`.
 
-- [ ] **Step 3: Implement template rendering**
+- [x] **Step 3: Implement template rendering**
 
 `api/src/lib/email/templates.ts`:
 
@@ -2473,7 +2473,7 @@ export const upsertTemplate = (ctx: Ctx, key: string, template: Template) =>
   );
 ```
 
-- [ ] **Step 4: Implement the outbox and sender**
+- [x] **Step 4: Implement the outbox and sender**
 
 `api/src/lib/email/outbox.ts`:
 
@@ -2734,7 +2734,7 @@ export async function sendTestEmail(
 }
 ```
 
-- [ ] **Step 5: Implement the admin route handlers**
+- [x] **Step 5: Implement the admin route handlers**
 
 `api/src/app/api/admin/email/providers/route.ts`:
 
@@ -2869,12 +2869,12 @@ export const GET = safe(async (req: Request) => {
 });
 ```
 
-- [ ] **Step 6: Run the tests to verify they pass**
+- [x] **Step 6: Run the tests to verify they pass**
 
 Run: `cd api && npx vitest run src/lib/email`
 Expected: PASS — 7 template tests, 7 outbox tests, plus the 7 provider tests from Task 12.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add api/src/lib/email api/src/app/api/admin/email
@@ -2905,7 +2905,7 @@ git commit -m "feat: email templates, outbox worker and provider failover"
 webhooks (Task 45) become a second channel row in the same table rather than a parallel
 system.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `api/src/lib/notify/dispatch.test.ts`:
 
@@ -3064,12 +3064,12 @@ describe("seedDefaultRules", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd api && npx vitest run src/lib/notify`
 Expected: FAIL — `Cannot find module './rules'`.
 
-- [ ] **Step 3: Write the migration**
+- [x] **Step 3: Write the migration**
 
 `api/migrations/007_notifications.sql`:
 
@@ -3114,7 +3114,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE
   ON notification_rules, notification_prefs TO ams_app;
 ```
 
-- [ ] **Step 4: Implement recipient resolution**
+- [x] **Step 4: Implement recipient resolution**
 
 `api/src/lib/notify/recipients.ts`:
 
@@ -3201,7 +3201,7 @@ export async function resolveRecipients(
 }
 ```
 
-- [ ] **Step 5: Implement rules and dispatch**
+- [x] **Step 5: Implement rules and dispatch**
 
 `api/src/lib/notify/rules.ts`:
 
@@ -3375,7 +3375,7 @@ export async function dispatch(
 }
 ```
 
-- [ ] **Step 6: Fire the events from check-out and check-in**
+- [x] **Step 6: Fire the events from check-out and check-in**
 
 In `api/src/lib/domain/assignments.ts`, add the import and one call at the end of each
 function, **after** the transaction commits — a queued email must never be able to roll
@@ -3416,7 +3416,7 @@ const getAssetSummary = (ctx: Ctx, assetId: string) =>
 Apply the same shape to `checkIn`, dispatching `asset.checked_in` with
 `actorId: ctx.actor.type === "user" ? ctx.actor.id : null`.
 
-- [ ] **Step 7: Implement the admin route handlers**
+- [x] **Step 7: Implement the admin route handlers**
 
 `api/src/app/api/admin/notifications/rules/route.ts`:
 
@@ -3522,12 +3522,12 @@ export const PUT = safe(async (req: Request) => {
 });
 ```
 
-- [ ] **Step 8: Run the tests to verify they pass**
+- [x] **Step 8: Run the tests to verify they pass**
 
 Run: `cd api && npx vitest run src/lib/notify`
 Expected: PASS, 12 tests.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add api/migrations/007_notifications.sql api/src/lib/notify api/src/lib/domain/assignments.ts api/src/app/api/admin/notifications
@@ -3557,7 +3557,7 @@ git commit -m "feat: notification rules, recipient resolution and event dispatch
 of the same kind on the same day. An overdue asset must generate one email a day, not
 one per job tick.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `api/src/lib/jobs/jobs.test.ts`:
 
@@ -3718,12 +3718,12 @@ describe("runExpiryJobs", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd api && npx vitest run src/lib/jobs`
 Expected: FAIL — `Cannot find module './overdue'`.
 
-- [ ] **Step 3: Implement the overdue job**
+- [x] **Step 3: Implement the overdue job**
 
 `api/src/lib/jobs/overdue.ts`:
 
@@ -3800,7 +3800,7 @@ export async function runOverdueJob(ctx: Ctx): Promise<{ notified: number }> {
 }
 ```
 
-- [ ] **Step 4: Implement the expiry jobs**
+- [x] **Step 4: Implement the expiry jobs**
 
 `api/src/lib/jobs/expiring.ts`:
 
@@ -3889,7 +3889,7 @@ export async function runExpiryJobs(
 }
 ```
 
-- [ ] **Step 5: Implement the runner and its entrypoint**
+- [x] **Step 5: Implement the runner and its entrypoint**
 
 `api/src/lib/jobs/runner.ts`:
 
@@ -4014,12 +4014,12 @@ Add the script to `api/package.json`:
     "jobs:once": "tsx scripts/jobs.ts once"
 ```
 
-- [ ] **Step 6: Run the tests to verify they pass**
+- [x] **Step 6: Run the tests to verify they pass**
 
 Run: `cd api && npx vitest run src/lib/jobs`
 Expected: PASS, 10 tests.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add api/src/lib/jobs api/scripts/jobs.ts api/package.json docker-compose.yml
@@ -4045,7 +4045,7 @@ git commit -m "feat: scheduled jobs for overdue, warranty, licence and maintenan
 sees, so the whole payload is assembled in a single query using CTEs — a page that fires
 eight requests feels slow no matter how fast each one is.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `api/src/lib/domain/dashboard.test.ts`:
 
@@ -4179,12 +4179,12 @@ describe("getDashboardSummary", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd api && npx vitest run src/lib/domain/dashboard.test.ts`
 Expected: FAIL — `Cannot find module './dashboard'`.
 
-- [ ] **Step 3: Implement the dashboard module**
+- [x] **Step 3: Implement the dashboard module**
 
 `api/src/lib/domain/dashboard.ts`:
 
@@ -4326,7 +4326,7 @@ export function getDashboardSummary(ctx: Ctx): Promise<DashboardSummary> {
 }
 ```
 
-- [ ] **Step 4: Implement the route handler**
+- [x] **Step 4: Implement the route handler**
 
 `api/src/app/api/v1/dashboard/summary/route.ts`:
 
@@ -4342,12 +4342,12 @@ export const GET = safe(async (req: Request) => {
 });
 ```
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `cd api && npx vitest run src/lib/domain/dashboard.test.ts`
 Expected: PASS, 11 tests.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add api/src/lib/domain/dashboard.ts api/src/app/api/v1/dashboard
@@ -4375,7 +4375,7 @@ git commit -m "feat: dashboard summary aggregates in a single query"
   - `runReport(ctx, key, params): Promise<ReportResult>`
   - `renderJson(result): Response`, `renderCsv(result): Response`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `api/src/lib/reports/engine.test.ts`:
 
@@ -4547,12 +4547,12 @@ describe("renderCsv", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd api && npx vitest run src/lib/reports`
 Expected: FAIL — `Cannot find module './engine'`.
 
-- [ ] **Step 3: Implement the report types**
+- [x] **Step 3: Implement the report types**
 
 `api/src/lib/reports/types.ts`:
 
@@ -4615,7 +4615,7 @@ export interface ReportResult {
 }
 ```
 
-- [ ] **Step 4: Implement the report definitions**
+- [x] **Step 4: Implement the report definitions**
 
 `api/src/lib/reports/definitions/index.ts`:
 
@@ -4935,7 +4935,7 @@ export const REPORTS: Record<string, ReportDefinition> = Object.fromEntries(
 );
 ```
 
-- [ ] **Step 5: Implement the engine and the JSON/CSV renderers**
+- [x] **Step 5: Implement the engine and the JSON/CSV renderers**
 
 `api/src/lib/reports/engine.ts`:
 
@@ -5043,7 +5043,7 @@ export function renderCsv(result: ReportResult): Response {
 }
 ```
 
-- [ ] **Step 6: Implement the route handlers**
+- [x] **Step 6: Implement the route handlers**
 
 `api/src/app/api/v1/reports/route.ts`:
 
@@ -5107,12 +5107,12 @@ export const GET = safe(async (
 });
 ```
 
-- [ ] **Step 7: Run the tests to verify they pass**
+- [x] **Step 7: Run the tests to verify they pass**
 
 Run: `cd api && npx vitest run src/lib/reports`
 Expected: PASS, 16 tests.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add api/src/lib/reports api/src/app/api/v1/reports
@@ -5147,7 +5147,7 @@ own query — each takes a `ReportResult` and formats it. Charts are computed wi
 scale and shape primitives, which produce path geometry without touching a DOM, so the
 same code path serves the PDF, the PNG and a standalone SVG with no headless browser.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `api/src/lib/reports/charts.test.ts`:
 
@@ -5478,19 +5478,19 @@ describe("runDueSchedules", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify they fail**
+- [x] **Step 2: Run to verify they fail**
 
 Run: `cd api && npx vitest run src/lib/reports`
 Expected: FAIL — `Cannot find module './charts'`.
 
-- [ ] **Step 3: Add the dependencies**
+- [x] **Step 3: Add the dependencies**
 
 ```bash
 cd api && npm install pdfmake d3-scale d3-shape d3-array @resvg/resvg-js && \
   npm install -D @types/pdfmake @types/d3-scale @types/d3-shape @types/d3-array
 ```
 
-- [ ] **Step 4: Implement the palette and the chart builder**
+- [x] **Step 4: Implement the palette and the chart builder**
 
 `api/src/lib/reports/palette.ts`:
 
@@ -5728,7 +5728,7 @@ function lineChart(result: ReportResult, size: ChartSize): string {
 }
 ```
 
-- [ ] **Step 5: Implement the XLSX renderer**
+- [x] **Step 5: Implement the XLSX renderer**
 
 `api/src/lib/reports/renderers/xlsx.ts`:
 
@@ -5839,7 +5839,7 @@ export async function renderXlsx(result: ReportResult): Promise<Response> {
 }
 ```
 
-- [ ] **Step 6: Implement the PDF and SVG/PNG renderers**
+- [x] **Step 6: Implement the PDF and SVG/PNG renderers**
 
 `api/src/lib/reports/renderers/pdf.ts`:
 
@@ -6017,7 +6017,7 @@ export async function renderPng(result: ReportResult): Promise<Response> {
 }
 ```
 
-- [ ] **Step 7: Write the migration and the saved/scheduled report modules**
+- [x] **Step 7: Write the migration and the saved/scheduled report modules**
 
 `api/migrations/008_reports.sql`:
 
@@ -6346,7 +6346,7 @@ export async function runDueSchedules(now = new Date()): Promise<{ delivered: nu
 }
 ```
 
-- [ ] **Step 8: Wire the remaining formats into the report route**
+- [x] **Step 8: Wire the remaining formats into the report route**
 
 Replace the `switch` in `api/src/app/api/v1/reports/[key]/route.ts`:
 
@@ -6366,7 +6366,7 @@ import { renderSvg, renderPng } from "@/lib/reports/renderers/svg";
   }
 ```
 
-- [ ] **Step 9: Implement the saved-report and schedule route handlers**
+- [x] **Step 9: Implement the saved-report and schedule route handlers**
 
 `api/src/app/api/v1/saved-reports/route.ts`:
 
@@ -6475,7 +6475,7 @@ export const DELETE = safe(async (req: Request, { params }: Params) => {
 });
 ```
 
-- [ ] **Step 10: Run the tests to verify they pass**
+- [x] **Step 10: Run the tests to verify they pass**
 
 ```bash
 cd api
@@ -6486,12 +6486,12 @@ npx vitest run src/lib/reports
 Expected: PASS — 8 chart tests, 11 renderer tests, 9 schedule tests, plus the 16 engine
 tests from Task 17.
 
-- [ ] **Step 11: Run the whole API suite**
+- [x] **Step 11: Run the whole API suite**
 
 Run: `cd api && npm test`
 Expected: PASS — every suite from Tasks 1–18 green.
 
-- [ ] **Step 12: Commit**
+- [x] **Step 12: Commit**
 
 ```bash
 git add api/migrations/008_reports.sql api/src/lib/reports api/src/app/api/v1 api/src/app/api/admin api/package.json

@@ -73,7 +73,7 @@ visual language is most of what makes this look finished.
   - `useAuth(): { user, orgId, loading, signIn, signOut, can(scope) }`
   - `<RequireAuth>` — redirects to `/signin`, preserving the attempted path
 
-- [ ] **Step 1: Copy the template and prune it**
+- [x] **Step 1: Copy the template and prune it**
 
 ```bash
 cd AssetsManagementSystem
@@ -100,7 +100,7 @@ Remove the matching `overrides` block for `@react-jvectormap/*` from
     "test:watch": "vitest"
 ```
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 `web/src/api/client.test.ts`:
 
@@ -311,12 +311,12 @@ export default defineConfig({
 import "@testing-library/jest-dom/vitest";
 ```
 
-- [ ] **Step 3: Run to verify they fail**
+- [x] **Step 3: Run to verify they fail**
 
 Run: `cd web && npx vitest run src/api src/context`
 Expected: FAIL — `Cannot find module './client'`.
 
-- [ ] **Step 4: Implement the API client**
+- [x] **Step 4: Implement the API client**
 
 `web/src/api/client.ts`:
 
@@ -617,7 +617,7 @@ export interface ReportResult {
 }
 ```
 
-- [ ] **Step 5: Implement auth context and the route guard**
+- [x] **Step 5: Implement auth context and the route guard**
 
 `web/src/context/AuthContext.tsx`:
 
@@ -731,7 +731,7 @@ export default function RequireAuth() {
 }
 ```
 
-- [ ] **Step 6: Rewrite routing and the shell**
+- [x] **Step 6: Rewrite routing and the shell**
 
 `web/src/App.tsx`:
 
@@ -843,7 +843,7 @@ const othersItems: NavItem[] = [
 Adjust the icon identifiers to whichever exist in `src/icons/index.ts`; the file already
 imports a set, so reuse those names rather than adding new SVGs.
 
-- [ ] **Step 7: Wire the sign-in page to the API**
+- [x] **Step 7: Wire the sign-in page to the API**
 
 Replace the form body of `web/src/pages/AuthPages/SignIn.tsx` (keep its layout and
 `AuthPageLayout` wrapper) with a real submit:
@@ -924,7 +924,7 @@ export default function SignInForm() {
 }
 ```
 
-- [ ] **Step 8: Add the web Dockerfile and nginx config**
+- [x] **Step 8: Add the web Dockerfile and nginx config**
 
 `web/Dockerfile`:
 
@@ -964,12 +964,12 @@ server {
 }
 ```
 
-- [ ] **Step 9: Run the tests to verify they pass**
+- [x] **Step 9: Run the tests to verify they pass**
 
 Run: `cd web && npx vitest run src/api src/context`
 Expected: PASS, 14 tests.
 
-- [ ] **Step 10: Verify the app builds and boots**
+- [x] **Step 10: Verify the app builds and boots**
 
 ```bash
 cd web && npm run build
@@ -980,7 +980,7 @@ curl -s http://localhost:4000/api/health
 Expected: the build succeeds, and health returns `{"status":"ok","db":true}`.
 Visiting `http://localhost:3000` redirects to `/signin`.
 
-- [ ] **Step 11: Commit**
+- [x] **Step 11: Commit**
 
 ```bash
 git add web docker-compose.yml
@@ -1012,7 +1012,7 @@ git commit -m "feat: adapt tailadmin template with api client, auth context and 
 **Design note:** filter state lives in the URL. A filtered register is then a link
 someone can paste into a ticket, and the back button behaves the way people expect.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `web/src/components/assets/StatusBadge.test.tsx`:
 
@@ -1192,12 +1192,12 @@ describe("useAssetQuery", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify they fail**
+- [x] **Step 2: Run to verify they fail**
 
 Run: `cd web && npx vitest run src/components/assets src/hooks`
 Expected: FAIL — modules not found.
 
-- [ ] **Step 3: Implement the API modules**
+- [x] **Step 3: Implement the API modules**
 
 `web/src/api/assets.ts`:
 
@@ -1299,7 +1299,7 @@ export const catalogApi = {
 };
 ```
 
-- [ ] **Step 4: Implement the hooks**
+- [x] **Step 4: Implement the hooks**
 
 `web/src/hooks/useDebounced.ts`:
 
@@ -1384,7 +1384,7 @@ export function useAssetQuery() {
 }
 ```
 
-- [ ] **Step 5: Implement the register components**
+- [x] **Step 5: Implement the register components**
 
 `web/src/components/assets/StatusBadge.tsx`:
 
@@ -1872,7 +1872,7 @@ export default function BulkActionBar({ selected, onClear, onChanged }: Props) {
 }
 ```
 
-- [ ] **Step 6: Implement the register page**
+- [x] **Step 6: Implement the register page**
 
 `web/src/pages/Assets/AssetList.tsx`:
 
@@ -2013,12 +2013,12 @@ export default function AssetList() {
 }
 ```
 
-- [ ] **Step 7: Run the tests to verify they pass**
+- [x] **Step 7: Run the tests to verify they pass**
 
 Run: `cd web && npx vitest run src/components/assets src/hooks`
 Expected: PASS, 17 tests.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add web/src/api web/src/components/assets web/src/hooks web/src/pages/Assets
@@ -2042,7 +2042,7 @@ git commit -m "feat: asset register with url-driven filters, sorting and bulk ac
   - `<LabelPreview assetId assetTag />`
   - `describeEvent(event): string` — turns `asset.updated` + a changes diff into a sentence
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `web/src/components/assets/HistoryTimeline.test.tsx`:
 
@@ -2116,12 +2116,12 @@ describe("HistoryTimeline", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd web && npx vitest run src/components/assets/HistoryTimeline.test.tsx`
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Implement the timeline**
+- [x] **Step 3: Implement the timeline**
 
 `web/src/components/assets/HistoryTimeline.tsx`:
 
@@ -2227,7 +2227,7 @@ export default function HistoryTimeline({
 }
 ```
 
-- [ ] **Step 4: Implement attachments and the label preview**
+- [x] **Step 4: Implement attachments and the label preview**
 
 `web/src/components/assets/AssetAttachments.tsx`:
 
@@ -2402,7 +2402,7 @@ export default function LabelPreview({
 }
 ```
 
-- [ ] **Step 5: Implement the detail page and the tag redirect**
+- [x] **Step 5: Implement the detail page and the tag redirect**
 
 `web/src/pages/Assets/AssetDetail.tsx`:
 
@@ -2645,13 +2645,13 @@ export default function TagRedirect() {
 }
 ```
 
-- [ ] **Step 6: Run the tests to verify they pass**
+- [x] **Step 6: Run the tests to verify they pass**
 
 Run: `cd web && npx vitest run src/components/assets/HistoryTimeline.test.tsx`
 Expected: PASS, 9 tests. (`AssetDetail` imports the dialogs built in Task 25; create
 them as empty stubs returning `null` now if you run the page before then.)
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add web/src/components/assets web/src/pages/Assets
@@ -2678,7 +2678,7 @@ git commit -m "feat: asset detail with history timeline, attachments and label p
 frontend release. Server-side validation errors come back keyed by field and are shown
 inline — the form never silently discards what the user typed.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `web/src/components/assets/CustomFields.test.tsx`:
 
@@ -2759,12 +2759,12 @@ describe("CustomFields", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd web && npx vitest run src/components/assets/CustomFields.test.tsx`
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Implement the dynamic field renderer**
+- [x] **Step 3: Implement the dynamic field renderer**
 
 `web/src/components/assets/CustomFields.tsx`:
 
@@ -2861,7 +2861,7 @@ export default function CustomFields({ schema, value, onChange, errors }: Props)
 }
 ```
 
-- [ ] **Step 4: Implement the form page**
+- [x] **Step 4: Implement the form page**
 
 `web/src/pages/Assets/AssetForm.tsx`:
 
@@ -3157,12 +3157,12 @@ export default function AssetForm({ mode }: { mode: "create" | "edit" }) {
 }
 ```
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `cd web && npx vitest run src/components/assets`
 Expected: PASS, 9 new tests (26 in the folder).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add web/src/components/assets/CustomFields.tsx web/src/pages/Assets/AssetForm.tsx
@@ -3187,7 +3187,7 @@ git commit -m "feat: asset form with category-driven dynamic custom fields"
 out (already out, retired, lost). The dialog shows that message verbatim — the server's
 explanation is better than any guess the UI could make.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `web/src/components/assets/CheckOutDialog.test.tsx`:
 
@@ -3300,12 +3300,12 @@ describe("CheckOutDialog", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd web && npx vitest run src/components/assets/CheckOutDialog.test.tsx`
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Implement the check-out dialog**
+- [x] **Step 3: Implement the check-out dialog**
 
 `web/src/components/assets/CheckOutDialog.tsx`:
 
@@ -3497,7 +3497,7 @@ export default function CheckOutDialog({ assetId, isOpen, onClose, onDone }: Pro
 }
 ```
 
-- [ ] **Step 4: Implement the check-in dialog**
+- [x] **Step 4: Implement the check-in dialog**
 
 `web/src/components/assets/CheckInDialog.tsx`:
 
@@ -3626,12 +3626,12 @@ export default function CheckInDialog({ assetId, isOpen, onClose, onDone }: Prop
 }
 ```
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `cd web && npx vitest run src/components/assets/CheckOutDialog.test.tsx`
 Expected: PASS, 7 tests.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add web/src/components/assets/CheckOutDialog.tsx web/src/components/assets/CheckInDialog.tsx
@@ -3659,7 +3659,7 @@ payload in a few milliseconds and finishes with Enter. Detecting that burst patt
 rather than requiring a focused input — means warehouse and plant staff can scan from
 any screen without touching the mouse, and it needs no permissions at all.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `web/src/hooks/useHidScanner.test.tsx`:
 
@@ -3754,12 +3754,12 @@ describe("useHidScanner", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd web && npx vitest run src/hooks/useHidScanner.test.tsx`
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Implement the HID scanner hook**
+- [x] **Step 3: Implement the HID scanner hook**
 
 `web/src/hooks/useHidScanner.ts`:
 
@@ -3819,7 +3819,7 @@ export function useHidScanner(
 }
 ```
 
-- [ ] **Step 4: Implement the scan UI**
+- [x] **Step 4: Implement the scan UI**
 
 ```bash
 cd web && npm install @zxing/browser @zxing/library
@@ -4000,18 +4000,18 @@ export default function ScanButton() {
 In `web/src/layout/AppHeader.tsx`, import `ScanButton` and render it in the header's
 right-hand control group, beside the existing theme toggle.
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `cd web && npx vitest run src/hooks/useHidScanner.test.tsx`
 Expected: PASS, 8 tests.
 
-- [ ] **Step 6: Verify camera scanning by hand**
+- [x] **Step 6: Verify camera scanning by hand**
 
 Camera access needs a secure context. Open `http://localhost:3000` (localhost counts as
 secure), sign in, click **Scan**, and grant camera permission. Print a label from an
 asset detail page and scan it — the modal should navigate to that asset.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add web/src/hooks/useHidScanner.ts web/src/components/scan web/src/layout/AppHeader.tsx web/package.json
@@ -4037,7 +4037,7 @@ git commit -m "feat: camera and hardware scanner support with tag lookup"
 **Design note:** each KPI tile is a link into a pre-filtered register. A number nobody can
 click is a dead end; "4 overdue" should be one click away from the list of those four.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `web/src/components/dashboard/KpiTiles.test.tsx`:
 
@@ -4096,12 +4096,12 @@ describe("KpiTiles", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd web && npx vitest run src/components/dashboard`
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Implement the shared palette and API module**
+- [x] **Step 3: Implement the shared palette and API module**
 
 `web/src/lib/palette.ts`:
 
@@ -4143,7 +4143,7 @@ export const dashboardApi = {
 };
 ```
 
-- [ ] **Step 4: Implement the dashboard components**
+- [x] **Step 4: Implement the dashboard components**
 
 `web/src/components/dashboard/KpiTiles.tsx`:
 
@@ -4413,7 +4413,7 @@ export default function ExpiringSoon({
 }
 ```
 
-- [ ] **Step 5: Implement the dashboard page**
+- [x] **Step 5: Implement the dashboard page**
 
 Replace `web/src/pages/Dashboard/Home.tsx`:
 
@@ -4510,12 +4510,12 @@ export default function Home() {
 }
 ```
 
-- [ ] **Step 6: Run the tests to verify they pass**
+- [x] **Step 6: Run the tests to verify they pass**
 
 Run: `cd web && npx vitest run src/components/dashboard`
 Expected: PASS, 6 tests.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add web/src/api/dashboard.ts web/src/lib/palette.ts web/src/components/dashboard web/src/pages/Dashboard
@@ -4542,7 +4542,7 @@ git commit -m "feat: dashboard with clickable kpi tiles, charts and activity fee
 optional. A bulk import that cannot be previewed will eventually destroy someone's
 register, and the preview is what makes the destructive step safe.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `web/src/components/import/MappingStep.test.tsx`:
 
@@ -4622,12 +4622,12 @@ describe("MappingStep", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd web && npx vitest run src/components/import`
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Implement the imports API module**
+- [x] **Step 3: Implement the imports API module**
 
 `web/src/api/imports.ts`:
 
@@ -4677,7 +4677,7 @@ export const importsApi = {
 };
 ```
 
-- [ ] **Step 4: Implement the wizard steps**
+- [x] **Step 4: Implement the wizard steps**
 
 `web/src/components/import/UploadStep.tsx`:
 
@@ -5003,7 +5003,7 @@ export default function ResultStep({
 }
 ```
 
-- [ ] **Step 5: Implement the wizard page**
+- [x] **Step 5: Implement the wizard page**
 
 `web/src/pages/Import/ImportWizard.tsx`:
 
@@ -5200,12 +5200,12 @@ export default function ImportWizard() {
 }
 ```
 
-- [ ] **Step 6: Run the tests to verify they pass**
+- [x] **Step 6: Run the tests to verify they pass**
 
 Run: `cd web && npx vitest run src/components/import`
 Expected: PASS, 8 tests.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add web/src/api/imports.ts web/src/components/import web/src/pages/Import
@@ -5234,7 +5234,7 @@ git commit -m "feat: four-step import wizard with column mapping and dry-run pre
 `ChartSpec`, and this component renders it — which is why the on-screen chart and the
 PDF's chart are the same chart.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `web/src/components/reports/ReportTable.test.tsx`:
 
@@ -5308,12 +5308,12 @@ describe("ReportTable", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd web && npx vitest run src/components/reports`
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Implement the reports API module**
+- [x] **Step 3: Implement the reports API module**
 
 `web/src/api/reports.ts`:
 
@@ -5379,7 +5379,7 @@ export const reportsApi = {
 };
 ```
 
-- [ ] **Step 4: Implement the report components**
+- [x] **Step 4: Implement the report components**
 
 `web/src/components/reports/ReportTable.tsx`:
 
@@ -5700,7 +5700,7 @@ export default function ScheduleDialog({ savedReportId, isOpen, onClose, onDone 
 }
 ```
 
-- [ ] **Step 5: Implement the gallery and viewer pages**
+- [x] **Step 5: Implement the gallery and viewer pages**
 
 `web/src/pages/Reports/ReportGallery.tsx`:
 
@@ -5936,12 +5936,12 @@ export default function ReportViewer() {
 }
 ```
 
-- [ ] **Step 6: Run the tests to verify they pass**
+- [x] **Step 6: Run the tests to verify they pass**
 
 Run: `cd web && npx vitest run src/components/reports`
 Expected: PASS, 8 tests.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add web/src/api/reports.ts web/src/components/reports web/src/pages/Reports
@@ -5970,7 +5970,7 @@ mask as a placeholder and only sends a secret field when the user actually types
 value — so saving a provider to change its priority does not overwrite its API key with
 the mask.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `web/src/components/settings/ProviderDialog.test.tsx`:
 
@@ -6071,12 +6071,12 @@ describe("ProviderDialog", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd web && npx vitest run src/components/settings`
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Implement the settings API module**
+- [x] **Step 3: Implement the settings API module**
 
 `web/src/api/settings.ts`:
 
@@ -6211,7 +6211,7 @@ export const PROVIDER_LABELS: Record<ProviderType, string> = {
 };
 ```
 
-- [ ] **Step 4: Implement the provider dialog**
+- [x] **Step 4: Implement the provider dialog**
 
 `web/src/components/settings/ProviderDialog.tsx`:
 
@@ -6463,7 +6463,7 @@ export default function ProviderDialog({ isOpen, provider, onClose, onDone }: Pr
 }
 ```
 
-- [ ] **Step 5: Implement the provider list and the settings pages**
+- [x] **Step 5: Implement the provider list and the settings pages**
 
 `web/src/components/settings/ProviderList.tsx`:
 
@@ -6810,12 +6810,12 @@ export default function NotificationSettings() {
 }
 ```
 
-- [ ] **Step 6: Run the tests to verify they pass**
+- [x] **Step 6: Run the tests to verify they pass**
 
 Run: `cd web && npx vitest run src/components/settings`
 Expected: PASS, 7 tests.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add web/src/api/settings.ts web/src/components/settings web/src/pages/Settings
@@ -6843,7 +6843,7 @@ git commit -m "feat: email provider, template and notification rule settings"
 in a copy-once panel with an explicit warning, because there is no way to retrieve it
 afterwards — only to revoke and mint another.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `web/src/components/catalog/FieldSchemaEditor.test.tsx`:
 
@@ -6923,12 +6923,12 @@ describe("FieldSchemaEditor", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd web && npx vitest run src/components/catalog`
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Implement the field schema editor**
+- [x] **Step 3: Implement the field schema editor**
 
 `web/src/components/catalog/FieldSchemaEditor.tsx`:
 
@@ -7066,7 +7066,7 @@ export default function FieldSchemaEditor({ fields, onChange }: Props) {
 }
 ```
 
-- [ ] **Step 4: Implement the catalogue pages**
+- [x] **Step 4: Implement the catalogue pages**
 
 `web/src/pages/Catalog/Categories.tsx`:
 
@@ -7374,7 +7374,7 @@ export default function Locations() {
 }
 ```
 
-- [ ] **Step 5: Implement the users and API-key pages**
+- [x] **Step 5: Implement the users and API-key pages**
 
 `web/src/pages/Settings/Users.tsx`:
 
@@ -7621,12 +7621,12 @@ export default function ApiKeys() {
 }
 ```
 
-- [ ] **Step 6: Run the tests to verify they pass**
+- [x] **Step 6: Run the tests to verify they pass**
 
 Run: `cd web && npx vitest run src/components/catalog`
 Expected: PASS, 8 tests.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add web/src/components/catalog web/src/pages/Catalog web/src/pages/Settings

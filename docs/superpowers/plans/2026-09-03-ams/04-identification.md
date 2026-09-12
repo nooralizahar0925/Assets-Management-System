@@ -29,7 +29,7 @@ types it into the focused field exactly as a human would).
   - `renderLabelSvg(tag, symbology): Promise<string>`
   - `InvalidTagError`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `api/src/lib/domain/labels.test.ts`:
 
@@ -104,18 +104,18 @@ describe("renderLabelSvg", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd api && npx vitest run src/lib/domain/labels.test.ts`
 Expected: FAIL with `Cannot find module './labels'`.
 
-- [ ] **Step 3: Add the dependency**
+- [x] **Step 3: Add the dependency**
 
 ```bash
 cd api && npm install bwip-js
 ```
 
-- [ ] **Step 4: Implement the label module**
+- [x] **Step 4: Implement the label module**
 
 `api/src/lib/domain/labels.ts`:
 
@@ -201,7 +201,7 @@ export const parseSymbology = (raw: string | null): Symbology =>
   raw === "code128" ? "code128" : "qr";
 ```
 
-- [ ] **Step 5: Implement the route handlers**
+- [x] **Step 5: Implement the route handlers**
 
 `api/src/app/api/v1/assets/[id]/label.png/route.ts`:
 
@@ -281,12 +281,12 @@ export const GET = safe(async (
 });
 ```
 
-- [ ] **Step 6: Run the tests to verify they pass**
+- [x] **Step 6: Run the tests to verify they pass**
 
 Run: `cd api && npx vitest run src/lib/domain/labels.test.ts`
 Expected: PASS, 11 tests.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add api/src/lib/domain/labels.ts api/src/app/api/v1/assets api/package.json
@@ -315,7 +315,7 @@ git commit -m "feat: qr and code 128 label generation as png and svg"
 scan, HID scanner, and the `/a/<tag>` deep link all funnel through it. Keeping it a
 single, cheap, exact-match endpoint is what makes scanning feel instant.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `api/src/lib/domain/labels.sheet.test.ts`:
 
@@ -460,12 +460,12 @@ describe("lookupByTag", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd api && npx vitest run src/lib/domain/labels.sheet.test.ts`
 Expected: FAIL — `buildLabelSheet is not a function`.
 
-- [ ] **Step 3: Append the sheet builder and lookup to the label module**
+- [x] **Step 3: Append the sheet builder and lookup to the label module**
 
 Append to `api/src/lib/domain/labels.ts`:
 
@@ -676,7 +676,7 @@ export async function lookupByTag(ctx: Ctx, raw: string): Promise<Asset | null> 
 }
 ```
 
-- [ ] **Step 4: Implement the route handlers**
+- [x] **Step 4: Implement the route handlers**
 
 `api/src/app/api/v1/assets/lookup/route.ts`:
 
@@ -760,17 +760,17 @@ export const POST = safe(async (req: Request) => {
 });
 ```
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `cd api && npx vitest run src/lib/domain/labels.sheet.test.ts`
 Expected: PASS, 16 tests.
 
-- [ ] **Step 6: Run the whole API suite**
+- [x] **Step 6: Run the whole API suite**
 
 Run: `cd api && npm test`
 Expected: PASS — every suite from Tasks 1–20 green.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add api/src/lib/domain/labels.ts api/src/app/api/v1/assets/lookup api/src/app/api/v1/labels

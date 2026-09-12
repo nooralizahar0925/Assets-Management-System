@@ -14,6 +14,27 @@ Every one of these is pure JavaScript or ships a prebuilt binary — the Docker 
 
 ---
 
+## Status
+
+**All nine phases are executed.** Every step is ticked as of 2026-09-12.
+
+Phases 01–08 were built across earlier sessions and their boxes were never
+ticked at the time; they were ticked in one pass after checking that every file
+each task names exists — allowing for the names the draft guessed wrongly, which
+were many. `Dashboard.tsx` became `Dashboard/Home.tsx`, the migrations were
+renumbered when 01b inserted the authorisation ones, `backup.test.ts` moved
+beside the code it tests. Nothing was found missing.
+
+That check is worth less than the suites, which are the real evidence: 1053 API
+tests against a real Postgres, 471 web tests, 21 end-to-end tests against a
+running stack, all passing.
+
+Read the plan as a record of what was intended, not as a specification of what
+is there. It was wrong in some way on nearly every task — see each phase's
+commits for what was actually built and why.
+
+---
+
 ## Phase files
 
 | Phase | File | Tasks | Deliverable |

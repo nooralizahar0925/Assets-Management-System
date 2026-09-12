@@ -37,7 +37,7 @@
 `POST /assets` produces two assets and nobody can tell which is real. The key is stored
 with its response, so the retry gets the original answer rather than a duplicate.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `api/src/lib/http/idempotency.test.ts`:
 
@@ -255,12 +255,12 @@ describe("deliverPending", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify they fail**
+- [x] **Step 2: Run to verify they fail**
 
 Run: `cd api && npx vitest run src/lib/http/idempotency.test.ts src/lib/domain/webhooks.test.ts`
 Expected: FAIL — modules not found.
 
-- [ ] **Step 3: Write the migration**
+- [x] **Step 3: Write the migration**
 
 `api/migrations/009_webhook_deliveries.sql`:
 
@@ -297,7 +297,7 @@ CREATE POLICY tenant_isolation ON webhook_deliveries
 GRANT SELECT, INSERT, UPDATE, DELETE ON webhook_deliveries TO ams_app;
 ```
 
-- [ ] **Step 4: Implement idempotency**
+- [x] **Step 4: Implement idempotency**
 
 `api/src/lib/http/idempotency.ts`:
 
@@ -389,7 +389,7 @@ export const POST = safe(async (req: Request) => {
 
 Apply the same wrapper to `…/assets/[id]/checkout/route.ts`.
 
-- [ ] **Step 5: Implement webhooks**
+- [x] **Step 5: Implement webhooks**
 
 `api/src/lib/domain/webhooks.ts`:
 
@@ -582,7 +582,7 @@ export async function deliverPending(
 }
 ```
 
-- [ ] **Step 6: Wire webhooks into dispatch and the job runner**
+- [x] **Step 6: Wire webhooks into dispatch and the job runner**
 
 In `api/src/lib/notify/dispatch.ts`, add the webhook channel after the email loop, inside
 the same `try`:
@@ -612,7 +612,7 @@ import { deliverPending } from "../domain/webhooks";
       await deliverPending(systemCtx(org.id), 50);
 ```
 
-- [ ] **Step 7: Implement the webhook route handlers**
+- [x] **Step 7: Implement the webhook route handlers**
 
 `api/src/app/api/v1/webhooks/route.ts`:
 
@@ -661,7 +661,7 @@ export const DELETE = safe(async (
 });
 ```
 
-- [ ] **Step 8: Run the tests to verify they pass**
+- [x] **Step 8: Run the tests to verify they pass**
 
 ```bash
 cd api
@@ -671,7 +671,7 @@ npx vitest run src/lib/http/idempotency.test.ts src/lib/domain/webhooks.test.ts
 
 Expected: PASS, 13 tests.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add api/migrations/009_webhook_deliveries.sql api/src/lib/http/idempotency.ts api/src/lib/domain/webhooks.ts api/src/lib/notify/dispatch.ts api/src/lib/jobs/runner.ts api/src/app/api/v1
@@ -697,7 +697,7 @@ git commit -m "feat: idempotency keys and signed webhooks with retry and backoff
 with, via `zod-to-json-schema`. Hand-written API docs drift within a month; generated
 ones cannot.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `api/src/lib/openapi/document.test.ts`:
 
@@ -773,18 +773,18 @@ describe("buildOpenApiDocument", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd api && npx vitest run src/lib/openapi`
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Add the dependency**
+- [x] **Step 3: Add the dependency**
 
 ```bash
 cd api && npm install zod-to-json-schema && npm install -D openapi-types
 ```
 
-- [ ] **Step 4: Implement the schema generation**
+- [x] **Step 4: Implement the schema generation**
 
 `api/src/lib/openapi/schemas.ts`:
 
@@ -874,7 +874,7 @@ export const componentSchemas: Record<string, unknown> = {
 };
 ```
 
-- [ ] **Step 5: Implement the document builder**
+- [x] **Step 5: Implement the document builder**
 
 `api/src/lib/openapi/document.ts`:
 
@@ -1296,12 +1296,12 @@ export const GET = safe(async () =>
 );
 ```
 
-- [ ] **Step 6: Run the tests to verify they pass**
+- [x] **Step 6: Run the tests to verify they pass**
 
 Run: `cd api && npx vitest run src/lib/openapi`
 Expected: PASS, 9 tests.
 
-- [ ] **Step 7: Validate the document with an external linter**
+- [x] **Step 7: Validate the document with an external linter**
 
 ```bash
 cd api && npx @redocly/cli lint <(curl -s http://localhost:4000/api/v1/openapi.json)
@@ -1310,7 +1310,7 @@ cd api && npx @redocly/cli lint <(curl -s http://localhost:4000/api/v1/openapi.j
 Expected: no errors. Fix any the linter reports before committing — a document that does
 not lint will break the client generators integrators use.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add api/src/lib/openapi api/src/app/api/v1/openapi.json api/package.json
@@ -1339,7 +1339,7 @@ git commit -m "feat: openapi 3.1 document generated from the zod input schemas"
 never read from a mutable file at runtime. A support conversation should start from a
 known build rather than a guess.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `api/src/lib/domain/releases.test.ts`:
 
@@ -1451,12 +1451,12 @@ describe("unseen tracking", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd api && npx vitest run src/lib/domain/releases.test.ts`
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Write the migration**
+- [x] **Step 3: Write the migration**
 
 `api/migrations/010_releases.sql`:
 
@@ -1494,7 +1494,7 @@ GRANT SELECT ON releases TO ams_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON user_release_seen TO ams_app;
 ```
 
-- [ ] **Step 4: Implement the releases module**
+- [x] **Step 4: Implement the releases module**
 
 `api/src/lib/domain/releases.ts`:
 
@@ -1610,7 +1610,7 @@ export async function countUnseen(ctx: Ctx): Promise<number> {
 }
 ```
 
-- [ ] **Step 5: Implement the route handlers and build provenance**
+- [x] **Step 5: Implement the route handlers and build provenance**
 
 `api/src/app/api/version/route.ts`:
 
@@ -1728,7 +1728,7 @@ And to `docker-compose.yml` under the `api` service:
         BUILT_AT: ${BUILT_AT:-1970-01-01T00:00:00Z}
 ```
 
-- [ ] **Step 6: Run the tests to verify they pass**
+- [x] **Step 6: Run the tests to verify they pass**
 
 ```bash
 cd api
@@ -1738,7 +1738,7 @@ npx vitest run src/lib/domain/releases.test.ts src/app/api/health
 
 Expected: PASS, 9 tests.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add api/migrations/010_releases.sql api/src/lib/domain/releases.ts api/src/app/api api/Dockerfile docker-compose.yml
@@ -1766,7 +1766,7 @@ are unsettled when nobody told them. Entries are written for users, not from com
 subjects. Task 47 builds the API side; this task builds the page against it, and both
 degrade quietly to an empty state if no releases have been published.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `web/src/pages/WhatsNew.test.tsx`:
 
@@ -1843,12 +1843,12 @@ describe("WhatsNew", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd web && npx vitest run src/pages/WhatsNew.test.tsx`
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Implement the releases API module and page**
+- [x] **Step 3: Implement the releases API module and page**
 
 `web/src/api/releases.ts`:
 
@@ -1991,7 +1991,7 @@ export default function WhatsNew() {
 }
 ```
 
-- [ ] **Step 4: Add the sidebar indicator and version footer**
+- [x] **Step 4: Add the sidebar indicator and version footer**
 
 In `web/src/layout/AppSidebar.tsx`, replace the template's `SidebarWidget` with a version
 footer, and mark the "What's new" nav item when there are unseen releases:
@@ -2033,17 +2033,17 @@ function SidebarFooter() {
 Render `<SidebarFooter />` where `SidebarWidget` was, and delete
 `web/src/layout/SidebarWidget.tsx`.
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `cd web && npx vitest run src/pages/WhatsNew.test.tsx`
 Expected: PASS, 6 tests.
 
-- [ ] **Step 6: Run the whole web suite**
+- [x] **Step 6: Run the whole web suite**
 
 Run: `cd web && npm test`
 Expected: PASS — every suite from Tasks 21–48 green.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add web/src/api/releases.ts web/src/pages/WhatsNew.tsx web/src/layout
@@ -2075,7 +2075,7 @@ git commit -m "feat: what's new release notes panel with unseen indicator"
 hand, which is why the Conventional Commits constraint is not cosmetic. A `feat:` prefix
 on a bug fix produces a wrong release note for real users.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `api/scripts/changelog.test.ts`:
 
@@ -2168,12 +2168,12 @@ describe("buildReleaseNotes", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `cd api && npx vitest run scripts/changelog.test.ts`
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Implement the changelog generator**
+- [x] **Step 3: Implement the changelog generator**
 
 `api/scripts/changelog.ts`:
 
@@ -2349,7 +2349,7 @@ Add to `api/package.json`:
     "changelog": "tsx scripts/changelog.ts"
 ```
 
-- [ ] **Step 4: Write the CI workflow**
+- [x] **Step 4: Write the CI workflow**
 
 `.github/workflows/ci.yml`:
 
@@ -2490,7 +2490,7 @@ jobs:
           generate_release_notes: true
 ```
 
-- [ ] **Step 5: Write the contributor and PR templates**
+- [x] **Step 5: Write the contributor and PR templates**
 
 `.github/pull_request_template.md`:
 
@@ -2509,12 +2509,12 @@ release-note:
 
 ## Checklist
 
-- [ ] Tests written first, and they failed before the implementation
-- [ ] `npm test` passes in `api/` and `web/`
-- [ ] Commits follow Conventional Commits (`feat:`, `fix:`, `chore:`, …)
-- [ ] Migration is additive — the previous image still runs against this schema
-- [ ] Public API changes are additive to v1, or introduce v2
-- [ ] Documentation updated if behaviour changed
+- [x] Tests written first, and they failed before the implementation
+- [x] `npm test` passes in `api/` and `web/`
+- [x] Commits follow Conventional Commits (`feat:`, `fix:`, `chore:`, …)
+- [x] Migration is additive — the previous image still runs against this schema
+- [x] Public API changes are additive to v1, or introduce v2
+- [x] Documentation updated if behaviour changed
 ```
 
 `CONTRIBUTING.md`:
@@ -2570,12 +2570,12 @@ announce. Rollback is a redeploy of the previous image tag.
 Generated from Conventional Commits by `npm run changelog`. Do not edit by hand.
 ```
 
-- [ ] **Step 6: Run the tests to verify they pass**
+- [x] **Step 6: Run the tests to verify they pass**
 
 Run: `cd api && npx vitest run scripts/changelog.test.ts`
 Expected: PASS, 12 tests.
 
-- [ ] **Step 7: Verify the generator against real history**
+- [x] **Step 7: Verify the generator against real history**
 
 ```bash
 cd api && npm run changelog -- --dry-run
@@ -2583,7 +2583,7 @@ cd api && npm run changelog -- --dry-run
 
 Expected: a rendered markdown block grouping this project's own commits so far.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add .github CHANGELOG.md CONTRIBUTING.md api/scripts/changelog.ts api/package.json
