@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { Client, type QueryResultRow } from "pg";
-import { seed, SEED_USERS, invokedAsScript } from "./seed";
+import { seed, SEED_USERS, SEED_STRAINED, invokedAsScript } from "./seed";
+import { needsAttention } from "../src/lib/platform/attention";
 
 /**
  * The seed is the first thing a new developer runs and the last thing anybody
@@ -37,7 +38,10 @@ beforeAll(async () => {
   // earlier run would be measured instead of a fresh one - and the test would
   // pass or fail on data this version never produced. Every tenant table
   // references organizations ON DELETE CASCADE.
-  await query("DELETE FROM organizations WHERE slug = $1", ["demo"]);
+  await query("DELETE FROM organizations WHERE slug = ANY($1)",
+    [["demo", SEED_STRAINED.slug]]);
+  await query("DELETE FROM platform_admins WHERE lower(email) = lower($1)",
+    [SEED_STRAINED.operator]);
   ({ orgId } = await seed());
 }, 60_000);
 
@@ -106,6 +110,78 @@ describe("the demo seed", () => {
     expect(again.orgId).toBe(orgId);
     expect(await count("assets")).toBe(before);
   }, 60_000);
+});
+
+describe("what the seed leaves for the platform console", () => {
+  // Without these the console opens onto an empty page: no operator to sign in
+  // as, no customer on a plan, and a "needs attention" list with nothing on it.
+  // A console nobody can demonstrate is a console nobody checks.
+
+  it("creates the operator account the console is opened with", async () => {
+    const rows = await query<{ n: number }>(
+      "SELECT count(*)::int AS n FROM platform_admins WHERE lower(email) = lower($1)",
+      [SEED_STRAINED.operator],
+    );
+    expect(rows[0].n).toBe(1);
+  });
+
+  it("puts the demo organisation on a plan", async () => {
+    // With no plan it is entitled to the register and nothing else, so half the
+    // interface is hidden and the demo shows less than the product does.
+    const rows = await query<{ plan_code: string | null }>(
+      "SELECT plan_code FROM organizations WHERE id = $1", [orgId],
+    );
+    expect(rows[0].plan_code).toBe("professional");
+  });
+
+  it("creates a second customer, so the list is a list", async () => {
+    const rows = await query<{ plan_code: string | null }>(
+      "SELECT plan_code FROM organizations WHERE slug = $1", [SEED_STRAINED.slug],
+    );
+    expect(rows[0]?.plan_code).toBe("starter");
+  });
+
+  it("leaves that customer over a limit and days from the end of a trial",
+    async () => {
+      // Both of the things an operator would actually ring somebody about, on
+      // one customer, visible the moment the console is opened.
+      const rows = await query<{ id: string }>(
+        "SELECT id FROM organizations WHERE slug = $1", [SEED_STRAINED.slug],
+      );
+      const item = (await needsAttention())
+        .find((candidate) => candidate.org_id === rows[0].id);
+
+      expect(item).toBeDefined();
+      expect(item!.reasons.map((r) => r.kind).sort())
+        .toEqual(["over-limit", "trial-ending"]);
+    });
+
+  it("never resets the operator password on a later run", async () => {
+    // The one row in this database that is somebody's live credential. A seed
+    // left in a start-up script that reset it on every boot would hand the
+    // whole deployment back to whoever last read the default.
+    const before = await query<{ password_hash: string }>(
+      "SELECT password_hash FROM platform_admins WHERE lower(email) = lower($1)",
+      [SEED_STRAINED.operator],
+    );
+    await seed();
+    const after = await query<{ password_hash: string }>(
+      "SELECT password_hash FROM platform_admins WHERE lower(email) = lower($1)",
+      [SEED_STRAINED.operator],
+    );
+
+    expect(after[0].password_hash).toBe(before[0].password_hash);
+  }, 60_000);
+
+  it("gives that customer somebody who can sign in", async () => {
+    const rows = await query<{ n: number }>(
+      `SELECT count(*)::int AS n FROM users u
+         JOIN organizations o ON o.id = u.org_id
+        WHERE o.slug = $1 AND u.role_id IS NOT NULL`,
+      [SEED_STRAINED.slug],
+    );
+    expect(rows[0].n).toBeGreaterThan(0);
+  });
 });
 
 describe("running the seed as a script", () => {

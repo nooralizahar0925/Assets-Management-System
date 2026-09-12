@@ -43,6 +43,33 @@ describe("the platform connection", () => {
     ).rejects.toThrow(/permission denied/i);
   });
 
+  it("can count a customer's assets without reading one", async () => {
+    // The console shows "620 assets against a limit of 500". It has no reason
+    // to know what any of them are, and a column grant is what makes that a
+    // fact about the database rather than a habit of the code above it.
+    await expect(
+      withPlatform((c) => c.query("SELECT count(*) FROM assets")),
+    ).resolves.toBeDefined();
+
+    await expect(
+      withPlatform((c) => c.query("SELECT name FROM assets LIMIT 1")),
+    ).rejects.toThrow(/permission denied/i);
+
+    await expect(
+      withPlatform((c) => c.query("SELECT * FROM assets LIMIT 1")),
+    ).rejects.toThrow(/permission denied/i);
+  });
+
+  it("can tell when somebody last signed in, not who or from where", async () => {
+    await expect(
+      withPlatform((c) => c.query("SELECT max(created_at) FROM sessions")),
+    ).resolves.toBeDefined();
+
+    await expect(
+      withPlatform((c) => c.query("SELECT * FROM sessions LIMIT 1")),
+    ).rejects.toThrow(/permission denied/i);
+  });
+
   it("cannot read the email outbox", async () => {
     // Queued mail carries customer names, addresses and asset details.
     await expect(

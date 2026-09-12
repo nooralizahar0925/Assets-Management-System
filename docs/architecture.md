@@ -48,8 +48,26 @@ Two connections exist deliberately:
 |---|---|---|
 | `DATABASE_URL` | `ams_app` | everything a request does |
 | `MIGRATION_DATABASE_URL` | `ams` (owner) | migrations, bootstrap, backups |
+| `PLATFORM_DATABASE_URL` | `ams_platform` | the platform console, and nothing else |
 
 The owner connection is not reachable from a request handler.
+
+## The platform plane
+
+The console that creates and manages customers is a second identity plane
+living in the same deployment: its own table of accounts, its own sessions, its
+own cookie, and `ams_platform` — a role with `BYPASSRLS`, because a list of
+every customer cannot be produced under a policy that shows one.
+
+`BYPASSRLS` means row-level security protects nobody from that role, so the
+protection is grants instead: it holds column-level `SELECT` on `assets`,
+`attachments` and `sessions` — enough to count, not enough to read — and no
+grant at all on `audit_events`, `email_messages` or anything else a customer
+owns.
+
+Each plane's code reads only its own cookie, so neither session is worth
+anything on the other side. [docs/platform.md](platform.md) is the operator's
+guide to it.
 
 ## Authorisation
 

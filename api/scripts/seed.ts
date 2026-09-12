@@ -76,12 +76,12 @@ interface Provisioned {
  * would report success over a tenant nobody can sign in to. The admin account
  * is what "seeded" means, so that is what is checked.
  */
-async function provision(name: string): Promise<Provisioned> {
+async function provision(name: string, slug: string): Promise<Provisioned> {
   const owner = await ownerClient();
   try {
     const { rows } = await owner.query<{ id: string }>(
       "SELECT id FROM organizations WHERE slug = $1",
-      [SLUG],
+      [slug],
     );
 
     if (rows[0]) {
@@ -99,7 +99,7 @@ async function provision(name: string): Promise<Provisioned> {
     const id = randomUUID();
     await owner.query(
       "INSERT INTO organizations (id, name, slug) VALUES ($1::uuid, $2, $3)",
-      [id, name, SLUG],
+      [id, name, slug],
     );
     await seedRolesForOrg(owner, id);
     return { orgId: id, needsSeeding: true, createdHere: true };
@@ -168,6 +168,106 @@ export const SEED_USERS = {
   viewer: "viewer@demo.local",
 } as const;
 
+/**
+ * The second customer, and the operator who looks after both.
+ *
+ * One customer is not a list. Worse, a single healthy one leaves the console's
+ * front page empty, which looks identical to a console that is broken. This
+ * one is deliberately in trouble: days from the end of a trial and holding
+ * more assets than its cap allows, so "needs attention" has both kinds of
+ * reason on it and the limit warnings have something to warn about.
+ */
+export const SEED_STRAINED = {
+  name: "Sinar Rental",
+  slug: "sinar",
+  admin: "admin@sinar.local",
+  operator: "ops@demo.local",
+  /** Below what the organisation already holds, on purpose. */
+  assetCap: 5,
+  assets: 8,
+} as const;
+
+/**
+ * The operator account, and the demo organisation's plan.
+ *
+ * Neither is ever overwritten. Re-running the seed against a database somebody
+ * has been using must not reset a password or move a customer back onto the
+ * plan they were sold two changes ago.
+ */
+async function seedPlatform(demoOrgId: string): Promise<void> {
+  const { hashPassword } = await import("../src/lib/auth/password");
+  const hash = await hashPassword(password());
+  const owner = await ownerClient();
+  try {
+    const { rowCount } = await owner.query(
+      `INSERT INTO platform_admins (email, password_hash, name)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (lower(email)) DO NOTHING`,
+      [SEED_STRAINED.operator, hash, "Demo Operator"],
+    );
+
+    // Said out loud, because the alternative is a silent one. The row is left
+    // exactly as it is - re-seeding must never reset a live operator password -
+    // which means an account created under a different SEED_PASSWORD keeps it,
+    // and somebody reading the summary below would otherwise take the printed
+    // password to be the one that works.
+    if (rowCount === 0) {
+      process.stdout.write(
+        `\n${SEED_STRAINED.operator} already exists. Its password was left ` +
+          `alone.\nIf it is not the one you expect: npm run platform:admin -- ` +
+          `--email ${SEED_STRAINED.operator}\n`,
+      );
+    }
+    await owner.query(
+      `UPDATE organizations SET plan_code = 'professional'
+        WHERE id = $1 AND plan_code IS NULL`,
+      [demoOrgId],
+    );
+  } finally {
+    await owner.end();
+  }
+}
+
+/** The customer in trouble. See SEED_STRAINED for why there is one. */
+async function seedStrainedCustomer(): Promise<void> {
+  const { orgId, needsSeeding, createdHere } =
+    await provision(SEED_STRAINED.name, SEED_STRAINED.slug);
+  if (!needsSeeding) return;
+
+  try {
+    const adminId = await createUser(
+      orgId, "Administrator", "Rina Halim", SEED_STRAINED.admin,
+    );
+    const { createAsset } = await import("../src/lib/domain/assets");
+    const ctx = adminCtx(orgId, adminId);
+
+    for (let n = 1; n <= SEED_STRAINED.assets; n += 1) {
+      await createAsset(ctx, { name: `Forklift ${n}` });
+    }
+
+    const owner = await ownerClient();
+    try {
+      // The cap is applied after the assets exist, not before: a limit refuses
+      // writes, so seeding it first would refuse the very rows that are meant
+      // to breach it. Being capped below what you already hold is also how an
+      // organisation gets into this state in real life.
+      await owner.query(
+        `UPDATE organizations
+            SET plan_code       = 'starter',
+                trial_ends_at   = (now() + interval '3 days')::date,
+                limit_overrides = $2::jsonb
+          WHERE id = $1`,
+        [orgId, JSON.stringify({ max_assets: SEED_STRAINED.assetCap })],
+      );
+    } finally {
+      await owner.end();
+    }
+  } catch (err) {
+    if (createdHere) await discardOrganisation(orgId);
+    throw err;
+  }
+}
+
 export interface SeedResult {
   orgId: string;
   users: Record<string, string>;
@@ -183,25 +283,36 @@ export interface SeedResult {
  * hand, and a check nobody runs is a check that quietly stops being true.
  */
 export async function seed(): Promise<SeedResult> {
-  const { orgId, needsSeeding, createdHere } = await provision("Demo Logistics");
-  if (!needsSeeding) return { orgId, users: { ...SEED_USERS }, seeded: false };
+  const { orgId, needsSeeding, createdHere } = await provision("Demo Logistics", SLUG);
 
-  try {
-    await seedInto(orgId);
-  } catch (err) {
-    // A half-seeded tenant is worse than none: the organisation exists, so the
-    // next run would find it, see no users, and build on the leftovers.
-    if (createdHere) await discardOrganisation(orgId);
-    throw err;
+  if (needsSeeding) {
+    try {
+      await seedInto(orgId);
+    } catch (err) {
+      // A half-seeded tenant is worse than none: the organisation exists, so
+      // the next run would find it, see no users, and build on the leftovers.
+      if (createdHere) await discardOrganisation(orgId);
+      throw err;
+    }
   }
 
-  return { orgId, users: { ...SEED_USERS }, seeded: true };
+  // Outside that branch, and idempotent. A database seeded before the console
+  // existed has the demo organisation and none of this, and re-running the
+  // seed is how anybody would expect to get the rest.
+  await seedPlatform(orgId);
+  await seedStrainedCustomer();
+
+  return { orgId, users: { ...SEED_USERS }, seeded: needsSeeding };
 }
 
 async function main() {
   const { seeded } = await seed();
   if (!seeded) {
-    process.stdout.write(`"${SLUG}" is already seeded. Nothing to do.\n`);
+    // Not "nothing to do": the console's own rows are seeded either way, and
+    // saying otherwise would be a lie on the run that adds them.
+    process.stdout.write(
+      `The "${SLUG}" organisation is already seeded; it was left alone.\n`,
+    );
   }
 }
 
@@ -381,7 +492,12 @@ async function seedInto(orgId: string) {
       `    technician@demo.local  Technician\n` +
       `    viewer@demo.local      Viewer\n\n` +
       `  Password: ${process.env.SEED_PASSWORD ? "(from SEED_PASSWORD)" : password()}\n\n` +
-      `Sign in as each to see how much of the interface a role changes.\n`,
+      `Sign in as each to see how much of the interface a role changes.\n\n` +
+      `  The platform console is at /platform. A different sign-in, for you\n` +
+      `  rather than for a customer:\n\n` +
+      `    ${SEED_STRAINED.operator}          Operator\n\n` +
+      `  It has two customers on it, one of them over a limit and three days\n` +
+      `  from the end of a trial.\n`,
   );
 }
 

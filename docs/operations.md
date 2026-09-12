@@ -119,9 +119,36 @@ Sweeps are idempotent, so running one late or twice is safe.
 
 ## Removing a tenant
 
+Prefer the console: **Customers → the customer → Delete**, which asks for their
+slug and writes the deletion to the platform audit. Suspension is almost always
+what is actually wanted, and is reversible — [docs/platform.md](platform.md)
+covers the difference.
+
+Directly, if the console is unavailable:
+
 ```sql
 DELETE FROM organizations WHERE slug = '<slug>';
 ```
 
 Every tenant table cascades from it. Take a backup first: there is no undo, and
 this is the one delete in the system that is genuinely permanent.
+
+## "A customer says they cannot sign in at all"
+
+If their people are told the organisation's access is **suspended**, that is not
+a fault: somebody suspended them, on purpose, and the reason is on their page in
+the console. Lift it there and access returns immediately — allow up to a
+minute, as each API instance caches the answer briefly.
+
+If they are told their **address and password do not match**, that is an
+ordinary credential problem; see "Nobody can sign in" above.
+
+## Locked out of the platform console
+
+```bash
+docker compose exec api npm run platform:admin -- --email you@example.com
+```
+
+Re-running it for an address that already exists resets that password rather
+than failing. It needs `PLATFORM_DATABASE_URL`, and it is the only way into that
+plane that does not already require being in it.

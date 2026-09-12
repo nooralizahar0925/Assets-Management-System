@@ -37,11 +37,18 @@ export default function SignInForm() {
     } catch (err) {
       // A sign-in failure must not distinguish "no such account" from "wrong
       // password" - the API already refuses to, and repeating its message keeps
-      // it that way.
+      // it that way. The two exceptions below are cases where the credential
+      // was not the problem, and where saying it was would send somebody to
+      // fix something that is not broken.
       setError(
         err instanceof ApiError && err.status === 429
           ? "Too many attempts. Please wait a few minutes and try again."
-          : "That email address and password do not match.",
+          : err instanceof ApiError && err.status === 403
+            // Only ever answered to a correct credential, so this reveals
+            // nothing: the account is fine, the subscription is not.
+            ? err.problem.detail
+              ?? "This organisation's access has been suspended."
+            : "That email address and password do not match.",
       );
     } finally {
       setSubmitting(false);

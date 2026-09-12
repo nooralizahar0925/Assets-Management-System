@@ -78,6 +78,32 @@ describe("SignInForm", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(/wait a few minutes/i);
   });
 
+  it("says a suspended organisation is suspended, not that the password is wrong",
+    async () => {
+      // The API only answers 403 to somebody whose credential was correct, so
+      // this reveals nothing an attacker could use - and calling it a password
+      // failure sends a paying customer to reset a password that works, when
+      // what they need is to ring whoever manages their subscription.
+      renderForm();
+      await waitFor(() => expect(screen.getByLabelText(/email/i)).toBeInTheDocument());
+
+      vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        json({
+          type: "https://ams.dev/errors/organization-suspended",
+          title: "Organisation suspended",
+          status: 403,
+          detail:
+            "This organisation's access has been suspended. Its data is intact. "
+            + "Contact whoever manages your subscription to restore access.",
+        }, 403),
+      );
+      await fillAndSubmit();
+
+      const alert = await screen.findByRole("alert");
+      expect(alert).toHaveTextContent(/suspended/i);
+      expect(alert).not.toHaveTextContent(/do not match/i);
+    });
+
   it("toggles password visibility", async () => {
     renderForm();
     await waitFor(() => expect(screen.getByLabelText(/^password/i)).toBeInTheDocument());

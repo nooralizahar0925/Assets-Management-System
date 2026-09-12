@@ -86,6 +86,7 @@ cd api && npm run seed:check      # signs in as all four and reads the dashboard
 | [Database](docs/database.md) | Schema, the rules that hold everywhere, migrations |
 | [Deployment](docs/deployment.md) | Environment variables, deploy order, rollback |
 | [Operations](docs/operations.md) | Diagnosing a problem, routine work, rotating secrets |
+| [Platform console](docs/platform.md) | Renting this to companies: customers, plans, limits, suspension |
 | [Development](docs/development.md) | Local setup, how tests are written here, conventions |
 | [User guide](docs/user-guide.md) | The in-app help centre as one printable document |
 | [Accepted risks](docs/accepted-risks.md) | Known trade-offs and why they were accepted |

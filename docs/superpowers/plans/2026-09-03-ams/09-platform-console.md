@@ -1418,19 +1418,19 @@ release-note: none
 - Modify: `e2e/smoke.spec.ts`
 - Modify: `.github/workflows/ci.yml` if the smoke job needs the new variables
 
-- [ ] **Step 1: Write `docs/platform.md`** covering: the two planes and why;
+- [x] **Step 1: Write `docs/platform.md`** covering: the two planes and why;
 creating the first operator; provisioning a customer; what each feature means
 commercially; how a limit behaves when reached; suspension versus deletion; and
 **what the operator can and cannot see** — the console shows counts, never a
 customer's assets, and that boundary is a grant in the database, not a promise.
 
-- [ ] **Step 2: Extend the seed** with one platform admin
+- [x] **Step 2: Extend the seed** with one platform admin
 (`ops@demo.local`), the demo organisation on `professional`, and a second
 organisation on `starter` that is **over its asset limit and in a trial ending
 in three days**, so the attention list and the limit warnings have something
 real to show.
 
-- [ ] **Step 3: Extend the smoke suite**
+- [x] **Step 3: Extend the smoke suite**
 
 ```ts
 test("the operator signs in and sees their customers", async ({ page }) => { /* … */ });
@@ -1440,7 +1440,7 @@ test("a tenant session cannot reach the console", async ({ page }) => {
 test("a suspended customer cannot sign in, and says why", async ({ page }) => { /* … */ });
 ```
 
-- [ ] **Step 4: Run everything and commit**
+- [x] **Step 4: Run everything and commit**
 
 ```
 docs: the platform console, and a seed that shows it doing something

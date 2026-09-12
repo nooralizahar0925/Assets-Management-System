@@ -159,3 +159,90 @@ test.describe("signing out", () => {
     expect(me.status()).toBe(401);
   });
 });
+
+/**
+ * The platform console.
+ *
+ * Two planes share this deployment: customers, and whoever rents it to them.
+ * They must not be able to reach each other, and no unit test can prove that
+ * across a real browser, a real proxy and two real cookies.
+ */
+
+const OPERATOR = process.env.SEED_OPERATOR_EMAIL ?? "ops@demo.local";
+const STRAINED = { slug: "sinar", name: "Sinar Rental", admin: "admin@sinar.local" };
+
+async function signInAsOperator(page: Page) {
+  await page.goto("/platform");
+  await page.getByLabel(/email/i).fill(OPERATOR);
+  await page.getByLabel(/password/i).fill(PASSWORD);
+  await page.getByRole("button", { name: /sign in/i }).click();
+  await expect(page.getByRole("heading", { name: /needs attention/i }))
+    .toBeVisible({ timeout: 15_000 });
+}
+
+test.describe("the platform console", () => {
+  test("the operator signs in and sees their customers", async ({ page }) => {
+    await signInAsOperator(page);
+
+    await page.getByRole("link", { name: /all customers/i }).click();
+    await expect(page.getByText("Demo Logistics").first()).toBeVisible();
+    await expect(page.getByText(STRAINED.name).first()).toBeVisible();
+  });
+
+  test("a tenant session cannot reach the console", async ({ page, request }) => {
+    // The assertion that matters most in this whole phase. A customer's
+    // administrator is the most privileged thing inside a tenant, and it must
+    // buy exactly nothing on the other plane.
+    await signIn(page);
+
+    const session = (await page.context().cookies())
+      .find((c) => c.name === "ams_session");
+    expect(session).toBeDefined();
+
+    const refused = await request.get("/api/platform/orgs", {
+      headers: { cookie: `${session!.name}=${session!.value}` },
+    });
+    expect(refused.status()).toBe(401);
+
+    // And in the browser, carrying that same cookie, the console offers its own
+    // sign-in rather than anybody's data.
+    await page.goto("/platform");
+    await expect(page.getByRole("heading", { name: /operator sign-in/i }))
+      .toBeVisible();
+    await expect(page.getByText("Demo Logistics")).toHaveCount(0);
+  });
+
+  test("a suspended customer cannot sign in, and says why", async ({ page, request }) => {
+    const login = await request.post("/api/platform/auth/login", {
+      data: { email: OPERATOR, password: PASSWORD },
+    });
+    expect(login.status(), await login.text()).toBe(200);
+
+    const listed = await request.get("/api/platform/orgs");
+    const { data } = await listed.json() as { data: { id: string; slug: string }[] };
+    const target = data.find((org) => org.slug === STRAINED.slug);
+    expect(target, `no "${STRAINED.slug}" - has the seed run?`).toBeDefined();
+
+    const suspended = await request.post(
+      `/api/platform/orgs/${target!.id}/suspend`,
+      { data: { reason: "Smoke test. Lifted at the end of this test." } },
+    );
+    expect(suspended.ok(), await suspended.text()).toBe(true);
+
+    try {
+      await page.goto("/signin");
+      await page.getByRole("textbox", { name: /email/i }).fill(STRAINED.admin);
+      await page.getByRole("textbox", { name: /password/i }).fill(PASSWORD);
+      await page.getByRole("button", { name: /sign in/i }).click();
+
+      // Refused, and told why: "wrong password" here would send somebody
+      // hunting for an account problem that does not exist.
+      await expect(page.getByRole("alert")).toContainText(/suspended/i);
+      await expect(page).toHaveURL(/signin/);
+    } finally {
+      // Left suspended, the next run finds it missing from the attention list
+      // and this suite fails for a reason that has nothing to do with the code.
+      await request.delete(`/api/platform/orgs/${target!.id}/suspend`);
+    }
+  });
+});

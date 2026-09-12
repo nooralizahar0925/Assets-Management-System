@@ -12,7 +12,9 @@ forget to copy.
 |---|---|---|
 | `DATABASE_URL` | yes | the application connection, as `ams_app` |
 | `MIGRATION_DATABASE_URL` | yes | the owner connection, for migrations and backups |
+| `PLATFORM_DATABASE_URL` | yes | the platform console's connection, as `ams_platform` |
 | `APP_DB_PASSWORD` | yes | the password the migration runner sets on `ams_app` |
+| `PLATFORM_DB_PASSWORD` | yes | the password the migration runner sets on `ams_platform` |
 | `SESSION_SECRET` | yes | signs session cookies; 32 random bytes |
 | `APP_ENCRYPTION_KEY` | yes | 64 hex characters. Encrypts stored provider credentials |
 | `APP_BASE_URL` | yes | the public URL. Decides cookie security, CORS, and every link in an email or a QR label |
@@ -41,7 +43,12 @@ docker compose up -d db minio
 docker compose run --rm api npm run migrate     # schema, roles, permissions
 docker compose run --rm api npm run seed        # only for a demo environment
 docker compose up -d
+docker compose exec api npm run platform:admin --   --email you@example.com --name "Your Name"   # your own console account
 ```
+
+The last command prints a password once and never again. Without it there is no
+way into the platform console, and so no way to create a customer — see
+[docs/platform.md](platform.md).
 
 `npm run migrate` also reconciles the permission catalogue and every
 organisation's system roles and notification rules with the code, so adding a
