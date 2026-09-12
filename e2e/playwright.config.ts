@@ -10,9 +10,9 @@ import { defineConfig, devices } from "@playwright/test";
  * each one passes every test in both workspaces.
  *
  * BASE_URL points at whatever is serving the web app: the compose stack on
- * :3000 by default, or the Vite dev server on :5173 while developing.
+ * :3400 by default, or the Vite dev server on :5473 while developing.
  */
-const baseURL = process.env.BASE_URL ?? "http://localhost:3000";
+const baseURL = process.env.BASE_URL ?? "http://localhost:3400";
 
 export default defineConfig({
   testDir: ".",

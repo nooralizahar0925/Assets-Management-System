@@ -19,7 +19,7 @@ const isProduction = process.env.NODE_ENV === "production";
  * work everywhere.
  */
 if (process.argv.includes("--test")) {
-  const port = process.env.TEST_DB_PORT ?? "5433";
+  const port = process.env.TEST_DB_PORT ?? "5443";
   process.env.MIGRATION_DATABASE_URL ??= `postgres://ams:ams@localhost:${port}/ams_test`;
 }
 

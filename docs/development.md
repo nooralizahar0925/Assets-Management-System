@@ -11,19 +11,23 @@ cd api && npm install && npm run migrate && npm run seed
 cd ../web && npm install
 ```
 
-Then `npm run dev` in each of `api` (port 4000) and `web` (port 5173). The seed
+Then `npm run dev` in each of `api` (port 4400) and `web` (port 5473). The seed
 prints four sign-in addresses and a shared password.
 
-The database is published on **5442**, not 5432. A machine with PostgreSQL
-already installed is listening on 5432, and connections reach *that* server
-instead of the container — which fails as a password error and looks like a
-wrong credential rather than a wrong server. This cost an afternoon once.
+Every published port is deliberately an unusual one — 3400, 4400, 5442, 5443,
+5473, 9400 — and none of them is the default anything else picks. A machine
+with PostgreSQL already installed is listening on 5432, and a connection aimed
+there reaches *that* server rather than the container: it fails as a password
+error and reads as a wrong credential rather than a wrong server. This cost an
+afternoon once. The same trap is waiting on 3000 and 9000 for anybody running a
+second project. Inside the compose network nothing changed; these are only the
+ports that leave the machine, and each has an override in `.env.example`.
 
 ## The test suites
 
 ```bash
-cd api  && npm test          # 852 tests, real Postgres on 5433
-cd web  && npm test          # 339 tests, jsdom
+cd api  && npm test          # 1053 tests, real Postgres on 5443
+cd web  && npm test          # 471 tests, jsdom
 ```
 
 The API tests are **integration tests against a real database**, not mocks. RLS,

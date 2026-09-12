@@ -21,7 +21,7 @@ const MAX_SCALE = 10;
  * lands on the asset page — no app to install, no scanner mode to find.
  */
 export function tagUrl(tag: string): string {
-  const base = (process.env.APP_BASE_URL ?? "http://localhost:3000").replace(/\/$/, "");
+  const base = (process.env.APP_BASE_URL ?? "http://localhost:3400").replace(/\/$/, "");
   return `${base}/a/${encodeURIComponent(tag)}`;
 }
 

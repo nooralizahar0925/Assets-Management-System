@@ -25,7 +25,7 @@ export const GET = safe(async (req: Request) => {
   });
 });
 
-const baseUrl = () => (process.env.APP_BASE_URL ?? "http://localhost:3000")
+const baseUrl = () => (process.env.APP_BASE_URL ?? "http://localhost:3400")
   .replace(/\/$/, "");
 
 /**

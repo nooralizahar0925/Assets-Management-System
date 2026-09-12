@@ -39,7 +39,7 @@ const owner = async () => {
   const c = new Client({
     connectionString:
       process.env.MIGRATION_DATABASE_URL ??
-      "postgres://ams:ams@localhost:5433/ams_test",
+      "postgres://ams:ams@localhost:5443/ams_test",
   });
   await c.connect();
   return c;
@@ -106,8 +106,8 @@ describe("the restore drill", () => {
     // which is the same reason the runbook tells an operator to restore
     // somewhere harmless first and look before touching the real one.
     const scratch = "ams_restore_drill";
-    const adminUrl = "postgres://ams:ams@localhost:5433/ams_test";
-    const scratchUrl = `postgres://ams:ams@localhost:5433/${scratch}`;
+    const adminUrl = "postgres://ams:ams@localhost:5443/ams_test";
+    const scratchUrl = `postgres://ams:ams@localhost:5443/${scratch}`;
     const scratchDumpUrl = databaseNamed(scratch);
 
     const archive = await dumpDatabase(DUMP_URL);

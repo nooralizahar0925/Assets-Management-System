@@ -96,7 +96,7 @@ describe("GET /api/v1/assets/lookup", () => {
 
   it("resolves a full deep link, as a phone camera would produce", async () => {
     const url = `http://api.test/api/v1/assets/lookup?tag=${
-      encodeURIComponent(`http://localhost:3000/a/${assetTag}`)}`;
+      encodeURIComponent(`http://localhost:3400/a/${assetTag}`)}`;
     const res = await LOOKUP(get(viewerSession, url));
     expect(res.status).toBe(200);
   });

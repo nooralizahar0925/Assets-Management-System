@@ -1,7 +1,7 @@
 // The throwaway Postgres from docker-compose.test.yml. The port is overridable
-// because 5433 is a common choice and may already be taken on a given machine;
+// because 5443 may already be taken on a given machine;
 // set TEST_DB_PORT for both compose and the tests.
-const port = process.env.TEST_DB_PORT ?? "5433";
+const port = process.env.TEST_DB_PORT ?? "5443";
 
 // The tenant-scoped connection: least privilege, subject to row-level security.
 process.env.DATABASE_URL ??=
@@ -21,7 +21,7 @@ process.env.PLATFORM_DATABASE_URL ??=
 
 // MinIO from docker-compose.yml, for the attachment tests. Start it with
 // `docker compose up -d minio`.
-process.env.S3_ENDPOINT ??= "http://localhost:9000";
+process.env.S3_ENDPOINT ??= "http://localhost:9400";
 process.env.S3_BUCKET ??= "ams-attachments";
 process.env.S3_ACCESS_KEY ??= "ams";
 process.env.S3_SECRET_KEY ??= "ams-secret";
@@ -35,9 +35,12 @@ process.env.APP_ENCRYPTION_KEY ??=
 // keeps stdin open so an archive can be piped back in for a restore.
 const container = process.env.TEST_DB_CONTAINER ?? "assetsmanagementsystem-db-test-1";
 process.env.PG_DUMP_COMMAND ??= `docker exec -i ${container} pg_dump`;
-// pg_dump runs inside that container, so it reaches the server on the
-// container's own port, not the one published to this host. Set this wherever
-// PG_DUMP_COMMAND is set - the address and the command are one decision.
+// 5432, deliberately not TEST_DB_PORT. pg_dump runs inside that container, so
+// "localhost" is the container and the server is on its own port - the
+// published one means nothing there. Renumbering the host ports once swept
+// this up with them and every backup test failed with "connection refused".
+// Set this wherever PG_DUMP_COMMAND is set: the address and the command are
+// one decision.
 process.env.PG_DUMP_DATABASE_URL ??= "postgres://ams:ams@localhost:5432/ams_test";
 process.env.PG_RESTORE_COMMAND ??= `docker exec -i ${container} pg_restore`;
 

@@ -9,7 +9,7 @@ services:
     # installed is listening on 5432, and connections then reach that one
     # instead of this container - which fails as a password error and looks
     # like a wrong credential rather than a wrong server.
-    ports: ["${DB_PORT:-5432}:5432"]
+    ports: ["${DB_PORT:-5442}:5432"]
     volumes: ["db_data:/var/lib/postgresql/data"]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ams -d ams"]
@@ -38,7 +38,7 @@ services:
       PLATFORM_DB_PASSWORD: ${PLATFORM_DB_PASSWORD:-ams_platform}
       SESSION_SECRET: ${SESSION_SECRET:-dev-secret-change-me}
       APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY:?APP_ENCRYPTION_KEY must be set - see .env.example}
-      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:3000}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:3400}
       S3_ENDPOINT: http://minio:9000
       S3_BUCKET: ams-attachments
       S3_ACCESS_KEY: ${MINIO_ROOT_USER:-ams}
@@ -47,7 +47,7 @@ services:
       # retention, different access, different blast radius.
       S3_BACKUP_BUCKET: ${S3_BACKUP_BUCKET:-ams-backups}
       BACKUP_KEEP: ${BACKUP_KEEP:-14}
-    ports: ["4000:4000"]
+    ports: ["${API_PORT:-4400}:4000"]
     depends_on:
       db: { condition: service_healthy }
 
@@ -59,7 +59,7 @@ services:
     command: ["node", "dist-scripts/jobs.js"]
     environment:
       DATABASE_URL: postgres://ams_app:${APP_DB_PASSWORD:-ams_app}@db:5432/ams
-      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:3000}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:3400}
       APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY:?APP_ENCRYPTION_KEY must be set - see .env.example}
       JOB_INTERVAL_MS: ${JOB_INTERVAL_MS:-900000}
       EXPIRY_WINDOW_DAYS: ${EXPIRY_WINDOW_DAYS:-90}
@@ -78,7 +78,7 @@ services:
       # than a runtime environment variable.
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL-}
-    ports: ["3000:80"]
+    ports: ["${WEB_PORT:-3400}:80"]
     depends_on: [api]
 
   # Object storage for attachments (Task 11). S3-compatible, so production can
@@ -91,7 +91,7 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-ams}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-ams-secret}
-    ports: ["9000:9000", "9001:9001"]
+    ports: ["${MINIO_PORT:-9400}:9000", "${MINIO_CONSOLE_PORT:-9401}:9001"]
     volumes: ["minio_data:/data"]
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]

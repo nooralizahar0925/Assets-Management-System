@@ -26,7 +26,7 @@ const isProduction = process.env.NODE_ENV === "production";
 
 /** Points the seed at the throwaway database, matching src/test/setup.ts. */
 if (process.argv.includes("--test")) {
-  const port = process.env.TEST_DB_PORT ?? "5433";
+  const port = process.env.TEST_DB_PORT ?? "5443";
   process.env.MIGRATION_DATABASE_URL ??= `postgres://ams:ams@localhost:${port}/ams_test`;
   process.env.DATABASE_URL ??= `postgres://ams_app:ams_app@localhost:${port}/ams_test`;
   process.env.APP_ENCRYPTION_KEY ??=
@@ -485,8 +485,8 @@ async function seedInto(orgId: string) {
 
   process.stdout.write(
     `\nSeeded "Demo Logistics" with ${created.length} assets.\n\n` +
-      `  Sign in at http://localhost:3000/signin (docker compose)\n` +
-      `             or http://localhost:5173/signin (npm run dev)\n\n` +
+      `  Sign in at http://localhost:3400/signin (docker compose)\n` +
+      `             or http://localhost:5473/signin (npm run dev)\n\n` +
       `    admin@demo.local       Administrator\n` +
       `    manager@demo.local     Manager\n` +
       `    technician@demo.local  Technician\n` +

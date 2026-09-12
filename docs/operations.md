@@ -44,7 +44,7 @@ In order of likelihood:
    `/api` so both halves share an origin. Check the browser's network tab for
    requests going somewhere unexpected.
 3. **The database is not the one you think.** A locally installed PostgreSQL on
-   5432 shadows the container's published port, and the failure reads as a wrong
+   5432 shadows the container's published port (5442), and the failure reads as a wrong
    password.
 4. **Login throttling.** Repeated failures lock an address and an IP for a
    period. `login_attempts` shows it; it clears itself.

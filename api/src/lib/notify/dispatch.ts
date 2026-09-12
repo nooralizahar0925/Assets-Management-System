@@ -5,7 +5,7 @@ import { resolveRecipients, type EventContext } from "./recipients";
 import { logError } from "../http/logger";
 import { queueDelivery } from "../domain/webhooks";
 
-const baseUrl = () => process.env.APP_BASE_URL ?? "http://localhost:3000";
+const baseUrl = () => process.env.APP_BASE_URL ?? "http://localhost:3400";
 
 /**
  * The single entry point for every notification in the system.

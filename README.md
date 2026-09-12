@@ -22,10 +22,12 @@ npm run migrate                   # schema, roles and the permission catalogue
 npm run seed                      # an organisation you can sign in to
 ```
 
-The database is published on **5442**, not 5432, because a machine with
-PostgreSQL already installed is listening on 5432 — connections then reach that
-one instead of the container, and the failure looks like a wrong password rather
-than a wrong server. Change `DB_PORT` if 5442 is taken too.
+Every published port is an unusual one on purpose — web 3400, API 4400,
+Postgres 5442, MinIO 9400 — because a machine with PostgreSQL already installed
+is listening on 5432, and a connection aimed there reaches that one instead of
+the container: the failure looks like a wrong password rather than a wrong
+server. The same applies to 3000 and 9000 for anyone running a second project.
+Each has an override in `.env.example`.
 
 The seed prints four sign-in addresses and their shared password. It is
 idempotent — running it twice does nothing the second time — and it refuses to
@@ -35,12 +37,12 @@ well-known password cannot reach a real deployment by accident.
 Then start the two halves:
 
 ```bash
-cd api && npm run dev             # http://localhost:4000
-cd web && npm run dev             # http://localhost:5173
+cd api && npm run dev             # http://localhost:4400
+cd web && npm run dev             # http://localhost:5473
 ```
 
 Or run everything in containers with `docker compose up --build`, which serves
-the web app on <http://localhost:3000>.
+the web app on <http://localhost:3400>.
 
 Both the Vite dev server and the container's nginx proxy `/api` to the API, so
 the browser only ever talks to one origin. That is deliberate: cross-origin
@@ -114,4 +116,4 @@ It is deliberately shallow — one path through the product. Everything it can
 catch is something no unit test can: a web build pointing at the wrong API, a
 cookie the browser refuses because `APP_BASE_URL` disagrees with how the page is
 served, an nginx that does not proxy `/api`, a migration that did not run. Point
-it at the dev servers instead with `BASE_URL=http://localhost:5173 npm test`.
+it at the dev servers instead with `BASE_URL=http://localhost:5473 npm test`.

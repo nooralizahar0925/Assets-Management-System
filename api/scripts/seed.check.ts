@@ -6,7 +6,7 @@
  * Run against the test database with: npx tsx scripts/seed.check.ts --test
  */
 if (process.argv.includes("--test")) {
-  const port = process.env.TEST_DB_PORT ?? "5433";
+  const port = process.env.TEST_DB_PORT ?? "5443";
   process.env.DATABASE_URL ??= `postgres://ams_app:ams_app@localhost:${port}/ams_test`;
   process.env.MIGRATION_DATABASE_URL ??= `postgres://ams:ams@localhost:${port}/ams_test`;
   process.env.APP_ENCRYPTION_KEY ??=

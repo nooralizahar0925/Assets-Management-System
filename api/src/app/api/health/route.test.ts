@@ -23,7 +23,7 @@ afterEach(async () => {
     const owner = new Client({
       connectionString:
         process.env.MIGRATION_DATABASE_URL ??
-        "postgres://ams:ams@localhost:5433/ams_test",
+        "postgres://ams:ams@localhost:5443/ams_test",
     });
     await owner.connect();
     await owner.query("INSERT INTO schema_migrations (filename) VALUES ($1)", [removed]);
@@ -61,7 +61,7 @@ describe("GET /api/health", () => {
     const owner = new Client({
       connectionString:
         process.env.MIGRATION_DATABASE_URL ??
-        "postgres://ams:ams@localhost:5433/ams_test",
+        "postgres://ams:ams@localhost:5443/ams_test",
     });
     await owner.connect();
     const { rows } = await owner.query<{ filename: string }>(

@@ -25,25 +25,25 @@ jobs:
           POSTGRES_DB: ams_test
           POSTGRES_USER: ams
           POSTGRES_PASSWORD: ams
-        ports: ["5433:5432"]
+        ports: ["5443:5432"]
         options: >-
           --health-cmd "pg_isready -U ams -d ams_test"
           --health-interval 5s --health-timeout 3s --health-retries 20
 
     env:
-      DATABASE_URL: postgres://ams_app:ams_app@localhost:5433/ams_test
-      MIGRATION_DATABASE_URL: postgres://ams:ams@localhost:5433/ams_test
-      S3_ENDPOINT: http://localhost:9000
+      DATABASE_URL: postgres://ams_app:ams_app@localhost:5443/ams_test
+      MIGRATION_DATABASE_URL: postgres://ams:ams@localhost:5443/ams_test
+      S3_ENDPOINT: http://localhost:9400
       S3_ACCESS_KEY: ams
       S3_SECRET_KEY: ams-secret
       APP_ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000001"
       # The suite reaches pg_dump through the database container; on a runner
       # the client is installed directly, so the plain binaries are correct -
       # and the address changes with them. Inside the container the server is
-      # on 5432; from the runner it is the published 5433.
+      # on 5432; from the runner it is the published 5443.
       PG_DUMP_COMMAND: pg_dump
       PG_RESTORE_COMMAND: pg_restore
-      PG_DUMP_DATABASE_URL: postgres://ams:ams@localhost:5433/ams_test
+      PG_DUMP_DATABASE_URL: postgres://ams:ams@localhost:5443/ams_test
 
     steps:
       - uses: actions/checkout@v4
@@ -58,12 +58,12 @@ jobs:
       # exercise the same object store, which they did not before.
       - name: Start object storage
         run: |
-          docker run -d --name minio -p 9000:9000 -e MINIO_ROOT_USER=ams -e MINIO_ROOT_PASSWORD=ams-secret minio/minio:RELEASE.2025-09-07T16-13-09Z server /data
+          docker run -d --name minio -p 9400:9000 -e MINIO_ROOT_USER=ams -e MINIO_ROOT_PASSWORD=ams-secret minio/minio:RELEASE.2025-09-07T16-13-09Z server /data
 
       - name: Wait for object storage
         run: |
           for i in $(seq 1 30); do
-            curl -fsS http://localhost:9000/minio/health/live && exit 0
+            curl -fsS http://localhost:9400/minio/health/live && exit 0
             sleep 2
           done
           echo "MinIO never became ready."
@@ -155,7 +155,7 @@ jobs:
       # its defaults hides a missing variable until deployment.
       APP_ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000001"
       SESSION_SECRET: ci-session-secret-not-a-real-one
-      APP_BASE_URL: http://localhost:3000
+      APP_BASE_URL: http://localhost:3400
       # The container runs with NODE_ENV=production, and the seed refuses to
       # give a production database a well-known password - correctly. This
       # stack is thrown away at the end of the job, so it gets one explicitly.
@@ -195,7 +195,7 @@ jobs:
         # needs to be, and the failure says what was wrong.
         run: |
           for i in $(seq 1 60); do
-            body=$(curl -fsS http://localhost:3000/api/health || true)
+            body=$(curl -fsS http://localhost:3400/api/health || true)
             echo "$body" | grep -q '"status":"ok"' && exit 0
             sleep 2
           done
@@ -222,7 +222,7 @@ jobs:
         run: npm test
         working-directory: e2e
         env:
-          BASE_URL: http://localhost:3000
+          BASE_URL: http://localhost:3400
 
       - name: Keep the trace of a failure
         if: failure()

@@ -32,7 +32,7 @@ const owner = async () => {
   const c = new Client({
     connectionString:
       process.env.MIGRATION_DATABASE_URL ??
-      "postgres://ams:ams@localhost:5433/ams_test",
+      "postgres://ams:ams@localhost:5443/ams_test",
   });
   await c.connect();
   return c;

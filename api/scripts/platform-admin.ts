@@ -72,7 +72,7 @@ async function main(): Promise<void> {
     );
 
     const { existed } = rows[0];
-    const base = process.env.APP_BASE_URL ?? "http://localhost:3000";
+    const base = process.env.APP_BASE_URL ?? "http://localhost:3400";
 
     process.stdout.write(
       `\n${existed ? "Reset" : "Created"} the platform account for ${email}.\n\n` +

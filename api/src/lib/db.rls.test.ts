@@ -15,7 +15,7 @@ beforeAll(async () => {
   const owner = new Client({
     connectionString:
       process.env.MIGRATION_DATABASE_URL ??
-      "postgres://ams:ams@localhost:5433/ams_test",
+      "postgres://ams:ams@localhost:5443/ams_test",
   });
   await owner.connect();
   // The slug is derived from the run's random id. A fixed slug would collide
@@ -175,7 +175,7 @@ describe("every tenant table is protected", () => {
     const owner = new Client({
       connectionString:
         process.env.MIGRATION_DATABASE_URL ??
-        "postgres://ams:ams@localhost:5433/ams_test",
+        "postgres://ams:ams@localhost:5443/ams_test",
     });
     await owner.connect();
     try {
