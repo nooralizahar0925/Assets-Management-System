@@ -1,6 +1,22 @@
 import "@testing-library/jest-dom/vitest";
 import { afterEach } from "vitest";
-import { cleanup } from "@testing-library/react";
+import { cleanup, configure } from "@testing-library/react";
+
+/**
+ * Five seconds for findBy and waitFor, not one.
+ *
+ * Nothing here is slow on purpose. But several tests render the whole
+ * application, whose routes are lazy, and a Suspense boundary that resolves in
+ * 40ms on an idle machine can take well over a second when the other fifty-odd
+ * test files are competing for the same cores. The result was a suite that
+ * passed three runs in five and failed a different test each time - which
+ * teaches everybody to re-run it rather than read it, and that is how a real
+ * failure gets waved through.
+ *
+ * This costs nothing when an element is genuinely there, and delays a genuine
+ * failure by four seconds. That is the right trade.
+ */
+configure({ asyncUtilTimeout: 5_000 });
 
 // Testing Library registers its own auto-cleanup only when vitest globals are
 // enabled. Globals are off here - the same choice the api package made - so the

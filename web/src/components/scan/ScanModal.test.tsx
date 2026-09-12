@@ -117,6 +117,43 @@ describe("scanning with the camera", () => {
     await waitFor(() => expect(onResolved).toHaveBeenCalled());
   });
 
+  it("blames the http page, not the phone, when the browser blocks the camera",
+    async () => {
+      // The single likeliest failure in the field. getUserMedia needs a secure
+      // context, and a phone opening the LAN address over http is not one - so
+      // the camera is refused before any of our code runs. "Camera unavailable"
+      // sends somebody hunting through phone settings for a problem that is in
+      // the URL bar.
+      const secure = Object.getOwnPropertyDescriptor(window, "isSecureContext");
+      Object.defineProperty(window, "isSecureContext", {
+        value: false, configurable: true,
+      });
+      decodeFromVideoDevice.mockRejectedValue(new Error("NotAllowedError"));
+
+      try {
+        renderModal();
+        const message = await screen.findByText(/https/i);
+        expect(message).toHaveTextContent(/not.*(secure|https)/i);
+        expect(screen.queryByText(/^Camera unavailable/)).not.toBeInTheDocument();
+      } finally {
+        if (secure) Object.defineProperty(window, "isSecureContext", secure);
+      }
+    });
+
+  it("says permission was refused when it was refused", async () => {
+    // Distinct from having no camera: the fix is to grant it, and the message
+    // is the only thing that says so.
+    Object.defineProperty(window, "isSecureContext", {
+      value: true, configurable: true,
+    });
+    const refused = new Error("Permission denied");
+    refused.name = "NotAllowedError";
+    decodeFromVideoDevice.mockRejectedValue(refused);
+
+    renderModal();
+    expect(await screen.findByText(/permission/i)).toBeInTheDocument();
+  });
+
   it("names the tag that did not resolve rather than saying it failed", async () => {
     vi.mocked(assetsApi.lookup).mockRejectedValue(new Error("404"));
     renderModal();

@@ -94,6 +94,7 @@ cd api && npm run seed:check      # signs in as all four and reads the dashboard
 | [Accepted risks](docs/accepted-risks.md) | Known trade-offs and why they were accepted |
 | [Restore runbook](docs/runbooks/restore.md) | Restoring from a backup, and the trap in it |
 | [Release runbook](docs/runbooks/release.md) | Cutting and publishing a release |
+| [Scanning check](docs/runbooks/scanning-check.md) | The ten-minute human test no suite can do |
 
 ## Tests
 

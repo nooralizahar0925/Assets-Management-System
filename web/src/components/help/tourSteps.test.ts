@@ -1,23 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { readdir, readFile } from "node:fs/promises";
-import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
 import { TOUR_STEPS } from "./tourSteps";
+import { sources } from "../../test/sources";
 
-const SRC = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
-
-async function sourceFiles(dir: string): Promise<string[]> {
-  const entries = await readdir(dir, { withFileTypes: true });
-  const out: string[] = [];
-  for (const entry of entries) {
-    const full = join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...(await sourceFiles(full)));
-    else if (/\.tsx?$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name)) {
-      out.push(full);
-    }
-  }
-  return out;
-}
 
 /**
  * Every `data-tour` attribute the application actually renders.
@@ -30,9 +14,8 @@ async function sourceFiles(dir: string): Promise<string[]> {
  */
 async function renderedTourAnchors(): Promise<Set<string>> {
   const anchors = new Set<string>();
-  for (const file of await sourceFiles(SRC)) {
-    if (file.endsWith("tourSteps.ts")) continue;
-    const text = await readFile(file, "utf8");
+  for (const { name, text } of await sources()) {
+    if (name.endsWith("tourSteps.ts")) continue;
     for (const match of text.matchAll(/data-tour="([a-z-]+)"/g)) {
       anchors.add(match[1]);
     }

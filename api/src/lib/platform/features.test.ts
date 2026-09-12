@@ -1,23 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { readdir, readFile } from "node:fs/promises";
-import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
 import { FEATURES, FEATURE_KEYS, ALWAYS_ON, isFeatureKey } from "./features";
+import { sources } from "../../test/sources";
 
-const SRC = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
-async function sourceFiles(dir: string): Promise<string[]> {
-  const entries = await readdir(dir, { withFileTypes: true });
-  const out: string[] = [];
-  for (const entry of entries) {
-    const full = join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...(await sourceFiles(full)));
-    else if (entry.name.endsWith(".ts") && !entry.name.endsWith(".test.ts")) {
-      out.push(full);
-    }
-  }
-  return out;
-}
 
 describe("the feature catalogue", () => {
   it("has no duplicate keys", () => {
@@ -49,8 +34,8 @@ describe("the feature catalogue", () => {
     // feature nobody enforces is a line on a price list that means nothing,
     // and the customer finds out by using what they did not buy.
     const gated = new Set<string>();
-    for (const file of await sourceFiles(SRC)) {
-      const text = await readFile(file, "utf8");
+    for (const source of await sources()) {
+      const text = source.text;
       for (const match of text.matchAll(
         /(?:hasFeature|requireFeature)\(\s*\w+\s*,\s*"([a-z_]+)"/g,
       )) {
@@ -69,8 +54,8 @@ describe("the feature catalogue", () => {
     // The other half of Task 61's guard, and safe to run now: a gate for a
     // feature the catalogue does not list would be a check nobody can satisfy.
     const gated = new Set<string>();
-    for (const file of await sourceFiles(SRC)) {
-      const text = await readFile(file, "utf8");
+    for (const source of await sources()) {
+      const text = source.text;
       for (const match of text.matchAll(
         /(?:hasFeature|requireFeature)\(\s*\w+\s*,\s*"([a-z_]+)"/g,
       )) {

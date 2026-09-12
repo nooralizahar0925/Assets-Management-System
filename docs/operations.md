@@ -7,6 +7,7 @@ The two long-form procedures have their own runbooks:
 
 - [Restoring from a backup](runbooks/restore.md)
 - [Cutting a release](runbooks/release.md)
+- [Checking scanning works](runbooks/scanning-check.md)
 
 ## First moves, whatever the symptom
 

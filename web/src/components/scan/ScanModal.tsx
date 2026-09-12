@@ -7,6 +7,41 @@ import Label from "../form/Label";
 import { assetsApi } from "../../api/assets";
 import type { Asset } from "../../api/types";
 
+/**
+ * Why the camera did not start.
+ *
+ * Worth telling apart. "insecure" is the one that actually happens: a phone
+ * opening the deployment's LAN address over http is not a secure context, so
+ * getUserMedia is refused by the browser before any of this code runs - and it
+ * is refused with the same exception as a denied permission. Somebody told only
+ * "camera unavailable" goes hunting through phone settings for a problem that
+ * is in the URL bar.
+ */
+type CameraProblem = "none" | "insecure" | "refused" | "missing";
+
+const CAMERA_MESSAGE: Record<CameraProblem, string> = {
+  none: "Camera unavailable. Use a handheld scanner or enter the tag below.",
+  insecure:
+    "This page is not served over HTTPS, so the browser will not allow the "
+    + "camera. Open it over HTTPS, or use a handheld scanner or the box below.",
+  refused:
+    "Camera permission was refused. Allow it in your browser settings, or use "
+    + "a handheld scanner or the box below.",
+  missing:
+    "No camera was found. Use a handheld scanner or enter the tag below.",
+};
+
+function diagnose(err: unknown): CameraProblem {
+  // Checked first: an insecure page refuses with the same NotAllowedError a
+  // denied permission does, so asking about the error alone gets it wrong.
+  if (typeof window !== "undefined" && window.isSecureContext === false) {
+    return "insecure";
+  }
+  const name = err instanceof Error ? err.name : "";
+  if (name === "NotAllowedError" || name === "SecurityError") return "refused";
+  return "missing";
+}
+
 interface Props {
   isOpen: boolean;
   onClose: () => void;
@@ -19,6 +54,7 @@ export default function ScanModal({ isOpen, onClose, onResolved }: Props) {
   const [manual, setManual] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [cameraReady, setCameraReady] = useState(false);
+  const [cameraProblem, setCameraProblem] = useState<CameraProblem>("none");
 
   async function resolve(value: string) {
     setError(null);
@@ -47,10 +83,12 @@ export default function ScanModal({ isOpen, onClose, onResolved }: Props) {
         controlsRef.current = controls;
         setCameraReady(true);
       })
-      .catch(() => {
-        // No camera, or permission refused. Manual entry still works, so this is
-        // a downgrade rather than a failure.
+      .catch((err: unknown) => {
+        // Manual entry still works, so any of these is a downgrade rather than
+        // a failure - but which one decides what the person should do next, and
+        // one message for all three sends them to the wrong place.
         setCameraReady(false);
+        setCameraProblem(diagnose(err));
       });
 
     return () => {
@@ -58,6 +96,7 @@ export default function ScanModal({ isOpen, onClose, onResolved }: Props) {
       controlsRef.current?.stop();
       controlsRef.current = null;
       setCameraReady(false);
+      setCameraProblem("none");
     };
   }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -80,7 +119,7 @@ export default function ScanModal({ isOpen, onClose, onResolved }: Props) {
         <video ref={videoRef} className="h-full w-full object-cover" muted playsInline />
         {!cameraReady && (
           <p className="absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-white/70">
-            Camera unavailable. Use a handheld scanner or enter the tag below.
+            {CAMERA_MESSAGE[cameraProblem]}
           </p>
         )}
         {cameraReady && (

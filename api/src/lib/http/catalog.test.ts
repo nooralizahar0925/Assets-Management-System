@@ -1,24 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { readdir, readFile } from "node:fs/promises";
-import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
 import { ERROR_CATALOG, errorTypeUri } from "./catalog";
 import { problem } from "./problem";
-
-const SRC = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
-
-async function sourceFiles(dir: string): Promise<string[]> {
-  const entries = await readdir(dir, { withFileTypes: true });
-  const out: string[] = [];
-  for (const entry of entries) {
-    const full = join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...(await sourceFiles(full)));
-    else if (entry.name.endsWith(".ts") && !entry.name.endsWith(".test.ts")) {
-      out.push(full);
-    }
-  }
-  return out;
-}
+import { sources, withoutComments } from "../../test/sources";
 
 /**
  * Every slug the API can actually return, read out of the source.
@@ -28,18 +11,13 @@ async function sourceFiles(dir: string): Promise<string[]> {
  * and forgets the documentation. Reading the source instead turns that from a
  * stale page into a failing build.
  */
-const withoutComments = (source: string) =>
-  source
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/^\s*\/\/.*$/gm, "");
-
 async function slugsInSource(): Promise<Set<string>> {
   const slugs = new Set<string>();
-  for (const file of await sourceFiles(SRC)) {
+  for (const source of await sources()) {
     // Comments are stripped first. Without that, a doc comment explaining the
     // catalogue by example - as this file's own does - registers as a real
     // error slug, and writing documentation breaks the build.
-    const text = withoutComments(await readFile(file, "utf8"));
+    const text = withoutComments(source.text);
     for (const match of text.matchAll(/\bproblem\(\s*\d+\s*,\s*"([a-z0-9-]+)"/g)) {
       slugs.add(match[1]);
     }

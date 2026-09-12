@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { readdir, readFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { matchPath } from "react-router";
+import { sources } from "./test/sources";
 
 const SRC = dirname(fileURLToPath(import.meta.url));
 
@@ -14,19 +15,6 @@ const SRC = dirname(fileURLToPath(import.meta.url));
  * by a customer. The route table is the only authority on what exists, so this
  * reads both out of the source rather than trusting a list.
  */
-
-async function sourceFiles(dir: string): Promise<string[]> {
-  const entries = await readdir(dir, { withFileTypes: true });
-  const out: string[] = [];
-  for (const entry of entries) {
-    const full = join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...(await sourceFiles(full)));
-    else if (/\.tsx?$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name)) {
-      out.push(full);
-    }
-  }
-  return out;
-}
 
 async function routes(): Promise<string[]> {
   const app = await readFile(join(SRC, "App.tsx"), "utf8");
@@ -65,10 +53,7 @@ interface Link {
 async function internalLinks(): Promise<Link[]> {
   const links: Link[] = [];
 
-  for (const file of await sourceFiles(SRC)) {
-    const text = await readFile(file, "utf8");
-    const name = file.slice(SRC.length + 1).replace(/\\/g, "/");
-
+  for (const { name, text } of await sources()) {
     const patterns = [
       /\bto="(\/[^"]*)"/g,                    // <Link to="/assets">
       /\bto=\{`(\/[^`]*)`\}/g,                // <Link to={`/assets/${id}`}>

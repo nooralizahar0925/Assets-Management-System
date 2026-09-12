@@ -1,9 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { readdir, readFile } from "node:fs/promises";
-import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { sources } from "../test/sources";
 
-const SRC = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 /**
  * Nobody formats a date by hand any more.
@@ -18,30 +15,13 @@ const SRC = join(dirname(fileURLToPath(import.meta.url)), "..");
  * and a new bespoke one fails here rather than shipping.
  */
 
-async function sourceFiles(dir: string): Promise<string[]> {
-  const entries = await readdir(dir, { withFileTypes: true });
-  const out: string[] = [];
-  for (const entry of entries) {
-    const full = join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...(await sourceFiles(full)));
-    else if (/\.tsx?$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name)) {
-      out.push(full);
-    }
-  }
-  return out;
-}
-
-const relative = (file: string) => file.slice(SRC.length + 1).replace(/\\/g, "/");
 
 describe("date formatting", () => {
   it("happens in one place", async () => {
     const offenders: string[] = [];
 
-    for (const file of await sourceFiles(SRC)) {
-      const name = relative(file);
+    for (const { name, text } of await sources()) {
       if (name === "lib/datetime.ts") continue;
-
-      const text = await readFile(file, "utf8");
 
       // Formatting a date, rather than a number. Number#toLocaleString is
       // fine and common - it is how the counts get their thousands separators.
@@ -60,6 +40,6 @@ describe("date formatting", () => {
   });
 
   it("found the source files, so the check is not passing on an empty list", async () => {
-    expect((await sourceFiles(SRC)).length).toBeGreaterThan(50);
+    expect((await sources()).length).toBeGreaterThan(50);
   });
 });

@@ -1,26 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { readdir, readFile } from "node:fs/promises";
-import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
 import { WEBHOOK_EVENTS } from "./webhooks";
+import { sources, withoutComments } from "../../test/sources";
 
-const SRC = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
-async function sourceFiles(dir: string): Promise<string[]> {
-  const entries = await readdir(dir, { withFileTypes: true });
-  const out: string[] = [];
-  for (const entry of entries) {
-    const full = join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...(await sourceFiles(full)));
-    else if (entry.name.endsWith(".ts") && !entry.name.endsWith(".test.ts")) {
-      out.push(full);
-    }
-  }
-  return out;
-}
-
-const withoutComments = (source: string) =>
-  source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 
 /**
  * Every event name the system actually dispatches, read out of the source.
@@ -33,8 +15,8 @@ const withoutComments = (source: string) =>
  */
 async function dispatchedEvents(): Promise<Set<string>> {
   const events = new Set<string>();
-  for (const file of await sourceFiles(SRC)) {
-    const text = withoutComments(await readFile(file, "utf8"));
+  for (const source of await sources()) {
+    const text = withoutComments(source.text);
 
     for (const match of text.matchAll(/\bdispatch\(\s*\w+\s*,\s*"([a-z._]+)"/g)) {
       events.add(match[1]);
