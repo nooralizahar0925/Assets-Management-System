@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router";
-import Label from "../components/form/Label";
-import Input from "../components/form/input/InputField";
+import Field, { FIELD_CLASS } from "./Field";
 import { platformApi, type Plan, type ProvisionedOrganisation } from "../api/platform";
 import { ApiError } from "../api/client";
 
@@ -143,51 +142,38 @@ export default function NewOrganisation() {
       </p>
 
       <form onSubmit={submit} className="mt-6 space-y-4">
-        <div>
-          <Label htmlFor="org-name">Organisation name</Label>
-          <Input
-            id="org-name" type="text" value={name} placeholder="Acme Ltd"
-            onChange={(e) => setName(e.target.value)}
-          />
-        </div>
+        <Field
+          id="org-name" label="Organisation name" value={name}
+          placeholder="Acme Ltd" onChange={setName}
+        />
 
-        <div>
-          <Label htmlFor="org-slug">Slug</Label>
-          <Input
-            id="org-slug" type="text" value={slug}
-            onChange={(e) => { setSlugEdited(true); setSlug(e.target.value); }}
+        <Field
+          id="org-slug" label="Slug" value={slug}
+          onChange={(next) => { setSlugEdited(true); setSlug(next); }}
+          hint="Appears in URLs and in exports they keep. It cannot be changed later."
+        />
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field
+            id="admin-name" label="Their administrator" value={adminName}
+            placeholder="Ayu Lestari" onChange={setAdminName}
           />
-          <p className="mt-1 text-theme-xs text-gray-500">
-            Appears in URLs and in exports they keep. It cannot be changed later.
-          </p>
+          <Field
+            id="admin-email" label="Their email" value={adminEmail}
+            placeholder="ayu@acme.example" onChange={setAdminEmail}
+          />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <Label htmlFor="admin-name">Their administrator</Label>
-            <Input
-              id="admin-name" type="text" value={adminName} placeholder="Ayu Lestari"
-              onChange={(e) => setAdminName(e.target.value)}
-            />
-          </div>
-          <div>
-            <Label htmlFor="admin-email">Their email</Label>
-            <Input
-              id="admin-email" type="text" value={adminEmail}
-              placeholder="ayu@acme.example"
-              onChange={(e) => setAdminEmail(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <Label htmlFor="org-plan">Plan</Label>
+            <label htmlFor="org-plan" className="block text-theme-xs font-medium text-gray-300">
+              Plan
+            </label>
             <select
               id="org-plan"
               value={planCode}
               onChange={(e) => setPlanCode(e.target.value)}
-              className="h-11 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 text-sm text-gray-100"
+              className={FIELD_CLASS}
             >
               <option value="">No plan yet</option>
               {plans.map((plan) => (
@@ -195,17 +181,11 @@ export default function NewOrganisation() {
               ))}
             </select>
           </div>
-          <div>
-            <Label htmlFor="org-trial">Trial days</Label>
-            <Input
-              id="org-trial" type="text" value={trialDays} placeholder="30"
-              onChange={(e) => setTrialDays(e.target.value.replace(/\D/g, ""))}
-            />
-            <p className="mt-1 text-theme-xs text-gray-500">
-              Leave empty for none. A lapsed trial is shown to you; nothing is
-              suspended automatically.
-            </p>
-          </div>
+          <Field
+            id="org-trial" label="Trial days" value={trialDays} placeholder="30"
+            onChange={(next) => setTrialDays(next.replace(/\D/g, ""))}
+            hint="Leave empty for none. A lapsed trial is shown to you; nothing is suspended automatically."
+          />
         </div>
 
         {error && (

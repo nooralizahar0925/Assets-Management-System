@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { inDays as iso } from "../../test/dates";
 import { screen, waitFor } from "@testing-library/react";
 import { renderPage } from "../../test/render";
 import MaintenanceList from "./MaintenanceList";
@@ -7,9 +8,6 @@ const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status, headers: { "content-type": "application/json" },
   });
-
-const iso = (offsetDays: number) =>
-  new Date(Date.now() + offsetDays * 86_400_000).toISOString().slice(0, 10);
 
 const SCHEDULES = [
   {

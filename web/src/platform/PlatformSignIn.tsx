@@ -1,7 +1,6 @@
 import { useState } from "react";
 import PageMeta from "../components/common/PageMeta";
-import Label from "../components/form/Label";
-import Input from "../components/form/input/InputField";
+import Field from "./Field";
 import { usePlatformAuth } from "./PlatformAuthContext";
 import { ApiError } from "../api/client";
 
@@ -61,25 +60,23 @@ export default function PlatformSignIn() {
           </p>
 
           <form onSubmit={submit} className="mt-6 space-y-4">
-            <div>
-              <Label htmlFor="operator-email">Email</Label>
-              <Input
-                id="operator-email"
-                type="text"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
+            <Field
+              id="operator-email"
+              label="Email"
+              value={email}
+              onChange={setEmail}
+              autoComplete="username"
+              placeholder="you@example.com"
+            />
 
-            <div>
-              <Label htmlFor="operator-password">Password</Label>
-              <Input
-                id="operator-password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
+            <Field
+              id="operator-password"
+              label="Password"
+              type="password"
+              value={password}
+              onChange={setPassword}
+              autoComplete="current-password"
+            />
 
             {error && (
               <div

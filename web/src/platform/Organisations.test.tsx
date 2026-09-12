@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { inDays } from "../test/dates";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
@@ -11,8 +12,6 @@ vi.mock("../api/platform", () => ({
 
 const { platformApi } = await import("../api/platform");
 
-const day = 86_400_000;
-const inDays = (n: number) => new Date(Date.now() + n * day).toISOString().slice(0, 10);
 
 const ROWS = [
   {
