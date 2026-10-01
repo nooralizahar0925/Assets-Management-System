@@ -1,0 +1,116 @@
+name: assets-demo
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ams
+      POSTGRES_USER: ams
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ams -d ams"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    networks: [internal]
+
+  minio:
+    image: rustfs/rustfs:1.0.0
+    restart: unless-stopped
+    security_opt: [no-new-privileges:true]
+    environment:
+      RUSTFS_VOLUMES: /data
+      RUSTFS_ACCESS_KEY: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER}
+      RUSTFS_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    networks: [internal]
+
+  api:
+    image: assets-demo-api:${RELEASE_TAG:-v1}
+    build:
+      context: ./api
+      args:
+        APP_VERSION: ${RELEASE_TAG:-v1}
+        GIT_SHA: ${GIT_SHA:-local}
+        BUILD_TIME: ${BUILD_TIME:-unknown}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://ams_app:${APP_DB_PASSWORD:?Set APP_DB_PASSWORD}@db:5432/ams
+      MIGRATION_DATABASE_URL: postgresql://ams:${POSTGRES_PASSWORD}@db:5432/ams
+      PLATFORM_DATABASE_URL: postgresql://ams_platform:${PLATFORM_DB_PASSWORD:?Set PLATFORM_DB_PASSWORD}@db:5432/ams
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD}
+      PLATFORM_DB_PASSWORD: ${PLATFORM_DB_PASSWORD}
+      SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET}
+      APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY:?Set APP_ENCRYPTION_KEY}
+      APP_BASE_URL: https://assets-demo.solusiproteksimandiri.com
+      S3_ENDPOINT: http://minio:9000
+      S3_BUCKET: ams-attachments
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      S3_BACKUP_BUCKET: ams-backups
+      SEED_PASSWORD: ${SEED_PASSWORD:?Set SEED_PASSWORD}
+    depends_on:
+      db: { condition: service_healthy }
+      minio: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    networks: [internal]
+
+  jobs:
+    image: assets-demo-api:${RELEASE_TAG:-v1}
+    command: ["node", "dist-scripts/jobs.js"]
+    profiles: [scheduler]
+    restart: unless-stopped
+    healthcheck:
+      disable: true
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://ams_app:${APP_DB_PASSWORD}@db:5432/ams
+      APP_BASE_URL: https://assets-demo.solusiproteksimandiri.com
+      APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY}
+      S3_ENDPOINT: http://minio:9000
+      S3_BUCKET: ams-attachments
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+    depends_on:
+      api: { condition: service_healthy }
+    networks: [internal]
+
+  web:
+    image: assets-demo-web:${RELEASE_TAG:-v1}
+    build:
+      context: ./web
+      args:
+        VITE_API_BASE_URL: ""
+    restart: unless-stopped
+    depends_on:
+      api: { condition: service_healthy }
+    networks:
+      internal: {}
+      edge:
+        aliases: [assets-demo-web]
+
+networks:
+  internal:
+    internal: true
+  edge:
+    external: true
+    name: broker-kut-staging-edge
+
+volumes:
+  db_data:
+  minio_data:
