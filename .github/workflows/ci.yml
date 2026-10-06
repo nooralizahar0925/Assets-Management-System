@@ -50,23 +50,19 @@ jobs:
 
       # Object storage for attachments and backups.
       #
-      # A step rather than a `services:` entry, because a service container
-      # cannot be given a command and minio/minio needs `server /data`. This
-      # used to be bitnami/minio, whose only virtue was starting the server by
-      # itself - and which was withdrawn, taking this job with it. Running the
-      # same image docker-compose runs means CI and everybody's laptop now
-      # exercise the same object store, which they did not before.
+      # Use the same S3-compatible image as the local and public-demo stacks.
+      # The previous minio/minio tag is no longer available from Docker Hub.
       - name: Start object storage
         run: |
-          docker run -d --name minio -p 9400:9000 -e MINIO_ROOT_USER=ams -e MINIO_ROOT_PASSWORD=ams-secret minio/minio:RELEASE.2025-09-07T16-13-09Z server /data
+          docker run -d --name minio -p 9400:9000 -e RUSTFS_VOLUMES=/data -e RUSTFS_ACCESS_KEY=ams -e RUSTFS_SECRET_KEY=ams-secret rustfs/rustfs:1.0.0
 
       - name: Wait for object storage
         run: |
           for i in $(seq 1 30); do
-            curl -fsS http://localhost:9400/minio/health/live && exit 0
+            curl -fsS http://localhost:9400/health && exit 0
             sleep 2
           done
-          echo "MinIO never became ready."
+          echo "Object storage never became ready."
           docker logs minio
           exit 1
 

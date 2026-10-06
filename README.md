@@ -44,6 +44,31 @@ cd web && npm run dev             # http://localhost:5473
 Or run everything in containers with `docker compose up --build`, which serves
 the web app on <http://localhost:3400>.
 
+### Windows PowerShell on this machine
+
+The root `.env` configures the Docker app at `http://localhost:3400`; `api/.env`
+configures the separate Vite development app at `http://localhost:5473`. Keep
+the database and platform passwords aligned between them. For the full local
+stack, open PowerShell in this repository and run:
+
+```powershell
+docker compose up -d db minio
+docker compose run --rm api npm run migrate:prod
+$env:SEED_PASSWORD = ((Get-Content .env | Where-Object { $_ -like 'SEED_PASSWORD=*' } | Select-Object -First 1) -split '=', 2)[1]
+docker compose run --rm -e SEED_PASSWORD api npm run seed:prod
+Remove-Item Env:SEED_PASSWORD
+docker compose up -d --build
+```
+
+Set `SEED_PASSWORD` in the root `.env` before the seed command. Open
+<http://localhost:3400/help> for the searchable guide and optional first-time
+walkthrough. The seed command prints the local sign-in addresses; use the
+password you set in `.env`.
+If Docker cannot connect to `//./pipe/docker_engine`, check that your PowerShell
+session can access Docker Desktop before retrying. The demo values in `.env`
+are for local use; replace the example session secret and encryption key before
+using real data.
+
 Both the Vite dev server and the container's nginx proxy `/api` to the API, so
 the browser only ever talks to one origin. That is deliberate: cross-origin
 would need CORS on the API and would fail its CSRF origin check on every write.

@@ -18,17 +18,18 @@ const renderHelp = (route = "/help") =>
   );
 
 describe("the help centre", () => {
-  it("lists articles grouped by section", () => {
+  it("shows a guide index beside the first article", () => {
     renderHelp();
-    expect(screen.getByText("Getting started")).toBeInTheDocument();
-    expect(screen.getByText("Scanning and labels")).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "Guide topics" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Scanning and labels" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Setting up your register" })).toBeInTheDocument();
   });
 
   it("filters as you type", async () => {
     renderHelp();
     await userEvent.type(screen.getByRole("searchbox"), "barcode");
     expect(screen.getByText(/Scanning labels and printing them/i)).toBeInTheDocument();
-    expect(screen.queryByText(/Running and scheduling reports/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Running and scheduling reports/i })).not.toBeInTheDocument();
   });
 
   it("finds an article by a word that is nowhere in its title", async () => {
@@ -41,14 +42,15 @@ describe("the help centre", () => {
   it("tells you when nothing matches, and what to try instead", async () => {
     renderHelp();
     await userEvent.type(screen.getByRole("searchbox"), "zzzznotathing");
-    expect(screen.getByText(/No articles match/i)).toBeInTheDocument();
+    expect(screen.getByText(/No guides match/i)).toBeInTheDocument();
   });
 
-  it("opens one article on its own page", () => {
+  it("opens a deep-linked article in the guide layout", () => {
     renderHelp("/help/scanning");
-    expect(screen.getByRole("heading", { level: 1 }))
+    expect(screen.getByRole("heading", { level: 2, name: "Scanning labels and printing them" }))
       .toHaveTextContent("Scanning labels and printing them");
     expect(screen.getByText("Code 128")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Print this guide" })).toBeInTheDocument();
   });
 
   it("leads back to the list from an article", () => {
@@ -69,5 +71,15 @@ describe("the help centre", () => {
     renderHelp();
     expect(screen.getByRole("button", { name: /replay the guided tour/i }))
       .toBeInTheDocument();
+  });
+
+  it("offers a first-time walkthrough with saved progress", async () => {
+    localStorage.clear();
+    renderHelp();
+    await userEvent.click(screen.getByRole("button", { name: "Open walkthrough" }));
+    expect(screen.getByText("Step 1 of 8")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Next step" }));
+    expect(screen.getByText("Explore the asset register")).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem("ams.guide.walkthrough.v1.guest") ?? "null").id).toBe("register");
   });
 });

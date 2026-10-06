@@ -1,17 +1,19 @@
 import {
-  createContext, useCallback, useContext, useEffect, useState,
+  createContext, useCallback, useContext, useEffect, useRef, useState,
 } from "react";
 import type { ReactNode } from "react";
-import { useLocation } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { useAuth } from "../../context/AuthContext";
 import { TOUR_STEPS } from "./tourSteps";
 
 interface TourValue {
   start: () => void;
   hasSeen: boolean;
+  userId: string | null;
+  permissions: string[] | null;
 }
 
-const TourContext = createContext<TourValue>({ start: () => {}, hasSeen: true });
+const TourContext = createContext<TourValue>({ start: () => {}, hasSeen: true, userId: null, permissions: null });
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const useTour = () => useContext(TourContext);
@@ -36,7 +38,10 @@ const TOUR_PAGE = "/assets";
 export function TourProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const [hasSeen, setHasSeen] = useState(true);
+  const [requested, setRequested] = useState(false);
+  const manualStart = useRef(false);
 
   useEffect(() => {
     if (!user) return;
@@ -59,7 +64,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
-  const start = useCallback(() => {
+  const drive = useCallback(() => {
     void (async () => {
       const [{ driver }] = await Promise.all([
         import("driver.js"),
@@ -73,18 +78,35 @@ export function TourProvider({ children }: { children: ReactNode }) {
     })();
   }, [markSeen]);
 
+  const start = useCallback(() => {
+    manualStart.current = true;
+    if (pathname !== TOUR_PAGE) {
+      setRequested(true);
+      void navigate(TOUR_PAGE);
+      return;
+    }
+    drive();
+  }, [pathname, navigate, drive]);
+
   useEffect(() => {
-    if (!user || hasSeen) return;
+    if (!requested || pathname !== TOUR_PAGE) return;
+    // Wait for the destination page to mount before measuring its tour targets.
+    const timer = setTimeout(() => { setRequested(false); drive(); }, 600);
+    return () => clearTimeout(timer);
+  }, [requested, pathname, drive]);
+
+  useEffect(() => {
+    if (!user || hasSeen || requested || manualStart.current) return;
     if (pathname !== TOUR_PAGE) return;
 
     // A short delay so the register has painted: driver.js measures elements,
     // and highlighting one that is still a loading skeleton points at nothing.
-    const timer = setTimeout(start, 600);
+    const timer = setTimeout(drive, 600);
     return () => clearTimeout(timer);
-  }, [user, hasSeen, pathname, start]);
+  }, [user, hasSeen, requested, pathname, drive]);
 
   return (
-    <TourContext.Provider value={{ start, hasSeen }}>
+    <TourContext.Provider value={{ start, hasSeen, userId: user?.id ?? null, permissions: user?.permissions ?? null }}>
       {children}
     </TourContext.Provider>
   );

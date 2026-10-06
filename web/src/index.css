@@ -779,6 +779,27 @@ span.flatpickr-weekday,
   @apply min-h-screen;
 }
 
+@media print {
+  .asset-help-page .asset-help-index,
+  .asset-help-page .asset-help-walkthrough,
+  .asset-help-page .asset-help-print,
+  .asset-help-page > .mb-6,
+  .asset-help-page .asset-help-article ~ button,
+  [data-tour="sidebar"],
+  header,
+  nav[aria-label="Breadcrumb"] {
+    display: none !important;
+  }
+  .asset-help-page .asset-help-article {
+    border: 0;
+    padding: 0;
+    box-shadow: none;
+  }
+  .asset-help-page > .grid {
+    display: block;
+  }
+}
+
 .simplebar-scrollbar::before {
   @apply !bg-gray-200 !rounded-full dark:!bg-gray-700 !opacity-100;
 }
