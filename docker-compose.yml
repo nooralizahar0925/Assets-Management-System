@@ -57,6 +57,8 @@ services:
   jobs:
     build: ./api
     command: ["node", "dist-scripts/jobs.js"]
+    healthcheck:
+      disable: true
     environment:
       DATABASE_URL: postgres://ams_app:${APP_DB_PASSWORD:-ams_app}@db:5432/ams
       APP_BASE_URL: ${APP_BASE_URL:-http://localhost:3400}
@@ -84,21 +86,23 @@ services:
   # Object storage for attachments (Task 11). S3-compatible, so production can
   # swap in real S3 by changing the endpoint and credentials only.
   minio:
-    # Pinned, and pinned to the same tag CI runs. `latest` is what broke CI the
-    # first time it ever ran: the image it named had been withdrawn.
-    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
-    command: server /data --console-address ":9001"
+    # RustFS provides the same S3 API and is also used by the demo deployment.
+    # The old minio/minio tag is no longer available from Docker Hub.
+    image: rustfs/rustfs:1.0.0
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-ams}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-ams-secret}
+      RUSTFS_VOLUMES: /data
+      RUSTFS_CONSOLE_ADDRESS: 0.0.0.0:9001
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_ACCESS_KEY: ${MINIO_ROOT_USER:-ams}
+      RUSTFS_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-ams-secret}
     ports: ["${MINIO_PORT:-9400}:9000", "${MINIO_CONSOLE_PORT:-9401}:9001"]
-    volumes: ["minio_data:/data"]
+    volumes: ["rustfs_data:/data"]
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/health"]
       interval: 10s
       timeout: 5s
       retries: 5
 
 volumes:
   db_data:
-  minio_data:
+  rustfs_data:

@@ -1,14 +1,14 @@
 # Architecture
 
 Four processes: a Postgres database, a Next.js API, a static React application,
-and MinIO for files. Nothing else is required to run the whole product.
+and S3-compatible object storage for files (RustFS in local Compose).
 
 ```
    browser ──► web (nginx, static)
       │
       └──────► api (Next.js route handlers) ──► postgres
                         │
-                        └──────────────────────► minio (attachments, backups)
+                        └──────────────────────► object store (attachments, backups)
 ```
 
 The web build is static files. It holds no secrets and makes no decisions that
