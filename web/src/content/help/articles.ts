@@ -297,7 +297,12 @@ export function searchArticles(query: string): Article[] {
   if (!needle) return ARTICLES;
 
   return ARTICLES.filter((article) =>
-    [article.title, article.summary, article.section, ...article.keywords]
+    [article.title, article.summary, article.section, ...article.keywords,
+      ...article.blocks.flatMap((block) => {
+        if (block.kind === "steps" || block.kind === "list") return block.items;
+        if (block.kind === "term") return [block.term, block.definition];
+        return [block.text];
+      })]
       .join(" ")
       .toLowerCase()
       .includes(needle),
